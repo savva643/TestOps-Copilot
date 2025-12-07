@@ -75,8 +75,8 @@ export function GeneratePage() {
   return (
     <div className="generate-page">
       <div className="page-header">
-        <Typography family="system" purpose="title" size="l">Generate Test Case</Typography>
-        <Typography family="system" purpose="body" size="m">
+        <Typography purpose="title" size="l">Generate Test Case</Typography>
+        <Typography purpose="body" size="m">
           Create test cases from requirements or OpenAPI specifications
         </Typography>
       </div>
@@ -87,7 +87,7 @@ export function GeneratePage() {
         <Card>
           <form onSubmit={handleSubmit} className="generate-form">
             <div className="form-section">
-              <Typography family="system" purpose="title" size="m">Test Configuration</Typography>
+              <Typography purpose="title" size="m">Test Configuration</Typography>
               <div className="form-grid">
                 <div className="form-group">
                   <label htmlFor="testType">Test Type *</label>
@@ -165,7 +165,7 @@ export function GeneratePage() {
             <Divider />
 
             <div className="form-section">
-              <Typography family="system" purpose="title" size="m">Input</Typography>
+              <Typography purpose="title" size="m">Input</Typography>
               <div className="form-group">
                 <label htmlFor="file">Upload OpenAPI Specification (Optional)</label>
                 <input
@@ -175,12 +175,12 @@ export function GeneratePage() {
                   onChange={handleFileChange}
                   disabled={parsing}
                 />
-                {parsing && <Typography family="system" purpose="body" size="s">Parsing OpenAPI file...</Typography>}
+                {parsing && <Typography purpose="body" size="s">Parsing OpenAPI file...</Typography>}
                 {file && !parsing && (
                   <div className="file-info">
-                    <Typography family="system" purpose="body" size="s">✓ Selected: {file.name}</Typography>
+                    <Typography purpose="body" size="s">✓ Selected: {file.name}</Typography>
                     {parsedSpec && (
-                      <Typography family="system" purpose="body" size="s">
+                      <Typography purpose="body" size="s">
                         Found {parsedSpec.endpoints?.length || 0} endpoints
                       </Typography>
                     )}
@@ -202,7 +202,7 @@ export function GeneratePage() {
             </div>
 
             {error && (
-              <Alert appearance="negative" title="Error" description={error} />
+              <Alert appearance="error" title="Error" description={error} />
             )}
 
             <ButtonFilled
@@ -217,20 +217,20 @@ export function GeneratePage() {
 
         {result && (
           <Card className="result-section">
-            <Typography family="system" purpose="title" size="m">Generation Result</Typography>
+            <Typography purpose="title" size="m">Generation Result</Typography>
             <Divider />
             <div className="result-header">
-              <Status label="Success" appearance="positive" />
-              <Typography family="system" purpose="body" size="m">Task ID: {result.task_id}</Typography>
+              <Status label="Success" appearance="success" />
+              <Typography purpose="body" size="m">Task ID: {result.task_id}</Typography>
             </div>
             <div className="result-content">
-              <Typography family="system" purpose="body" size="m">
+              <Typography purpose="body" size="m">
                 <strong>Status:</strong> {result.status}
               </Typography>
-              <Typography family="system" purpose="body" size="m">
+              <Typography purpose="body" size="m">
                 <strong>Message:</strong> {result.message}
               </Typography>
-              <Typography family="system" purpose="body" size="s" className="info-text">
+              <Typography purpose="body" size="s" className="info-text">
                 Check the Tasks page to see the generated test case when it's ready.
               </Typography>
             </div>

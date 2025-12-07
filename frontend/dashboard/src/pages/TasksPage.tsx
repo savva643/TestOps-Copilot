@@ -66,12 +66,12 @@ export function TasksPage() {
     return () => clearInterval(interval)
   }, [polling, taskId])
 
-  const getStatusAppearance = (status: string): 'positive' | 'negative' | 'warning' | 'neutral' => {
+  const getStatusAppearance = (status: string): 'success' | 'error' | 'warning' | 'neutral' => {
     switch (status) {
       case 'completed':
-        return 'positive'
+        return 'success'
       case 'failed':
-        return 'negative'
+        return 'error'
       case 'pending':
         return 'warning'
       default:
@@ -96,8 +96,8 @@ export function TasksPage() {
   return (
     <div className="tasks-page">
       <div className="page-header">
-        <Typography family="system" purpose="title" size="l">Task Status</Typography>
-        <Typography family="system" purpose="body" size="m">Check the status of test generation tasks</Typography>
+        <Typography purpose="title" size="l">Task Status</Typography>
+        <Typography purpose="body" size="m">Check the status of test generation tasks</Typography>
       </div>
 
       <Divider />
@@ -129,14 +129,14 @@ export function TasksPage() {
           </div>
 
           {error && (
-            <Alert appearance="negative" title="Error" description={error} />
+            <Alert appearance="error" title="Error" description={error} />
           )}
         </Card>
 
         {taskStatus && (
           <Card>
             <div className="status-header">
-              <Typography family="system" purpose="title" size="m">Task Status</Typography>
+              <Typography purpose="title" size="m">Task Status</Typography>
               <Status label={taskStatus.status.toUpperCase()} appearance={getStatusAppearance(taskStatus.status)} />
             </div>
 
@@ -144,7 +144,7 @@ export function TasksPage() {
 
             <div className="task-details">
               <div className="detail-row">
-                <Typography family="system" purpose="body" size="m"><strong>Task ID:</strong></Typography>
+                <Typography purpose="body" size="m"><strong>Task ID:</strong></Typography>
                 <code>{taskStatus.task_id}</code>
               </div>
 
@@ -152,26 +152,26 @@ export function TasksPage() {
                 <>
                   <Divider />
                   <div className="result-section">
-                    <Typography family="system" purpose="title" size="m">Generated Test Case</Typography>
+                    <Typography purpose="title" size="m">Generated Test Case</Typography>
                     <div className="test-case-info">
                       <div className="info-row">
-                        <Typography family="system" purpose="body" size="m">Type:</Typography>
-                        <Typography family="system" purpose="body" size="m">{taskStatus.result.test_type || 'N/A'}</Typography>
+                        <Typography purpose="body" size="m">Type:</Typography>
+                        <Typography purpose="body" size="m">{taskStatus.result.test_type || 'N/A'}</Typography>
                       </div>
                       <div className="info-row">
-                        <Typography family="system" purpose="body" size="m">Feature:</Typography>
-                        <Typography family="system" purpose="body" size="m">{taskStatus.result.feature || 'N/A'}</Typography>
+                        <Typography purpose="body" size="m">Feature:</Typography>
+                        <Typography purpose="body" size="m">{taskStatus.result.feature || 'N/A'}</Typography>
                       </div>
                       <div className="info-row">
-                        <Typography family="system" purpose="body" size="m">Priority:</Typography>
-                        <Typography family="system" purpose="body" size="m">{taskStatus.result.priority || 'N/A'}</Typography>
+                        <Typography purpose="body" size="m">Priority:</Typography>
+                        <Typography purpose="body" size="m">{taskStatus.result.priority || 'N/A'}</Typography>
                       </div>
                     </div>
 
                     {taskStatus.result.test_case && (
                       <div className="code-preview">
                         <div className="code-header">
-                          <Typography family="system" purpose="body" size="m">Generated Code</Typography>
+                          <Typography purpose="body" size="m">Generated Code</Typography>
                           <ButtonFilled label="Download" onClick={downloadCode} size="s" />
                         </div>
                         <pre className="code-content">
@@ -184,12 +184,12 @@ export function TasksPage() {
               )}
 
               {taskStatus.status === 'failed' && taskStatus.error && (
-                <Alert appearance="negative" title="Error" description={taskStatus.error} />
+                <Alert appearance="error" title="Error" description={taskStatus.error} />
               )}
 
               {taskStatus.status === 'pending' && (
                 <div className="pending-section">
-                  <Typography family="system" purpose="body" size="m">Task is being processed...</Typography>
+                  <Typography purpose="body" size="m">Task is being processed...</Typography>
                   <div className="loader">Loading...</div>
                 </div>
               )}
