@@ -66,14 +66,14 @@ export function TasksPage() {
     return () => clearInterval(interval)
   }, [polling, taskId])
 
-  const getStatusAppearance = (status: string): 'success' | 'error' | 'warning' | 'neutral' => {
+  const getStatusAppearance = (status: string): 'green' | 'red' | 'yellow' | 'neutral' => {
     switch (status) {
       case 'completed':
-        return 'success'
+        return 'green'
       case 'failed':
-        return 'error'
+        return 'red'
       case 'pending':
-        return 'warning'
+        return 'yellow'
       default:
         return 'neutral'
     }

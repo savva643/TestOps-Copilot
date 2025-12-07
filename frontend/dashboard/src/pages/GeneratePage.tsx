@@ -220,7 +220,7 @@ export function GeneratePage() {
             <Typography family="sans" purpose="title" size="m">Generation Result</Typography>
             <Divider />
             <div className="result-header">
-              <Status label="Success" appearance="success" />
+              <Status label="Success" appearance="green" />
               <Typography family="sans" purpose="body" size="m">Task ID: {result.task_id}</Typography>
             </div>
             <div className="result-content">
