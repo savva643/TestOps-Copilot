@@ -1,0 +1,58 @@
+"""API test in Allure TestOps as Code format with AAA pattern."""
+
+import allure
+import pytest
+import httpx
+from typing import Dict, Any
+
+
+@allure.label("owner", "{{ owner }}")
+@allure.feature("{{ feature }}")
+@allure.story("{{ story }}")
+@allure.suite("api")
+class APITests:
+    """Generated API tests."""
+
+    @allure.title("API Test: {{ test_case[:50] }}...")
+    {% if jira_link %}
+    @allure.link("{{ jira_link }}", name="JIRA Ticket")
+    {% endif %}
+    @allure.tag("{{ priority }}")
+    @allure.label("priority", "{{ priority }}")
+    def test_api_endpoint(self) -> None:
+        """
+        API test following AAA pattern.
+        
+        {{ test_case }}
+        """
+        # Arrange
+        base_url = "{{ specification.get('base_url', 'https://api.example.com') }}"
+        endpoint = "{{ specification.get('endpoint', '/api/v1/endpoint') }}"
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer <token>",
+        }
+        payload: Dict[str, Any] = {}
+
+        # Act
+        with allure.step("Send API request"):
+            response = httpx.post(
+                f"{base_url}{endpoint}",
+                headers=headers,
+                json=payload,
+                timeout=30.0,
+            )
+
+        # Assert
+        with allure.step("Verify response status"):
+            assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+
+        with allure.step("Verify response body"):
+            response_data = response.json()
+            assert response_data is not None
+            allure.attach(
+                str(response_data),
+                name="Response Body",
+                attachment_type=allure.attachment_type.JSON,
+            )
+

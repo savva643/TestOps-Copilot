@@ -1,0 +1,117 @@
+stages:
+  - lint
+  - test
+  - build
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+
+# Python linting
+lint-python:
+  stage: lint
+  image: python:3.11-slim
+  before_script:
+    - pip install black isort flake8
+  script:
+    - |
+      for service in backend/*/; do
+        echo "Linting $service"
+        cd "$service"
+        black --check .
+        isort --check-only .
+        flake8 . || true
+        cd - > /dev/null
+      done
+  only:
+    - merge_requests
+    - main
+
+# Frontend linting
+lint-frontend:
+  stage: lint
+  image: node:18-alpine
+  before_script:
+    - cd frontend/dashboard
+    - npm ci
+  script:
+    - npm run lint
+    - npm run format -- --check
+  only:
+    - merge_requests
+    - main
+
+# Python tests
+test-python:
+  stage: test
+  image: python:3.11-slim
+  services:
+    - postgres:15-alpine
+    - redis:7-alpine
+  variables:
+    POSTGRES_DB: testops_test
+    POSTGRES_USER: testops
+    POSTGRES_PASSWORD: testops_test
+    REDIS_URL: redis://redis:6379/0
+  before_script:
+    - pip install pytest pytest-cov
+  script:
+    - |
+      for service in backend/*/; do
+        echo "Testing $service"
+        cd "$service"
+        if [ -f "pyproject.toml" ]; then
+          pip install -e .
+          pytest --cov=app --cov-report=term-missing || true
+        fi
+        cd - > /dev/null
+      done
+  only:
+    - merge_requests
+    - main
+
+# Build Docker images
+build-backend:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - |
+      for service in core-agent-service spec-parser-service code-generator-service test-optimizer-service integration-gateway; do
+        docker build -t $CI_REGISTRY_IMAGE/backend/$service:latest backend/$service/
+        docker push $CI_REGISTRY_IMAGE/backend/$service:latest
+      done
+  only:
+    - main
+    - tags
+
+build-frontend:
+  stage: build
+  image: node:18-alpine
+  before_script:
+    - cd frontend/dashboard
+    - npm ci
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - frontend/dashboard/dist
+  only:
+    - main
+    - tags
+
+# Deploy (placeholder - customize for your environment)
+deploy:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - echo "Deploy to production"
+    # Add your deployment commands here
+  only:
+    - main
+  when: manual
+

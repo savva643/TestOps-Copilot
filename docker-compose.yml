@@ -1,0 +1,212 @@
+version: '3.8'
+
+services:
+  # Databases
+  postgres:
+    image: postgres:15-alpine
+    container_name: testops-postgres
+    environment:
+      POSTGRES_USER: testops
+      POSTGRES_PASSWORD: testops_password
+      POSTGRES_DB: testops_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U testops"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: testops-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Celery Worker
+  celery-worker:
+    build:
+      context: ./backend/core_agent_service
+      dockerfile: Dockerfile
+    container_name: testops-celery-worker
+    command: celery -A app.tasks.celery_app worker --loglevel=info
+    env_file:
+      - ./backend/core_agent_service/.env
+    environment:
+      - POSTGRES_URL=postgresql://testops:testops_password@postgres:5432/testops_db
+      - REDIS_URL=redis://redis:6379/0
+      - CLOUD_RU_LLM_API_KEY=NTZiMjgxNTAtNmVkNi00NzlhLTg4YWUtNGI1MmQ2MzQ0YzBm.72dcf949523da340c0bce16e5ca7a663
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app/backend
+    networks:
+      - testops-network
+
+  # Celery Beat (для периодических задач)
+  celery-beat:
+    build:
+      context: ./backend/core_agent_service
+      dockerfile: Dockerfile
+    container_name: testops-celery-beat
+    command: celery -A app.tasks.celery_app beat --loglevel=info
+    environment:
+      - POSTGRES_URL=postgresql://testops:testops_password@postgres:5432/testops_db
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app/backend
+    networks:
+      - testops-network
+
+  # Backend Services
+  core-agent-service:
+    build:
+      context: ./backend/core_agent_service
+      dockerfile: Dockerfile
+    container_name: testops-core-agent
+    ports:
+      - "8001:8000"
+    env_file:
+      - ./backend/core_agent_service/.env
+    environment:
+      - POSTGRES_URL=postgresql://testops:testops_password@postgres:5432/testops_db
+      - REDIS_URL=redis://redis:6379/0
+      - CLOUD_RU_LLM_API_KEY=NTZiMjgxNTAtNmVkNi00NzlhLTg4YWUtNGI1MmQ2MzQ0YzBm.72dcf949523da340c0bce16e5ca7a663
+      - SPEC_PARSER_URL=http://spec-parser-service:8000
+      - CODE_GENERATOR_URL=http://code-generator-service:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app/backend
+    networks:
+      - testops-network
+
+  spec-parser-service:
+    build:
+      context: ./backend/spec_parser_service
+      dockerfile: Dockerfile
+    container_name: testops-spec-parser
+    ports:
+      - "8002:8000"
+    environment:
+      - POSTGRES_URL=postgresql://testops:testops_password@postgres:5432/testops_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app/backend
+    networks:
+      - testops-network
+
+  code-generator-service:
+    build:
+      context: ./backend/code_generator_service
+      dockerfile: Dockerfile
+    container_name: testops-code-generator
+    ports:
+      - "8003:8000"
+    environment:
+      - POSTGRES_URL=postgresql://testops:testops_password@postgres:5432/testops_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app/backend
+    networks:
+      - testops-network
+
+  test-optimizer-service:
+    build:
+      context: ./backend/test_optimizer_service
+      dockerfile: Dockerfile
+    container_name: testops-test-optimizer
+    ports:
+      - "8004:8000"
+    environment:
+      - POSTGRES_URL=postgresql://testops:testops_password@postgres:5432/testops_db
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app/backend
+    networks:
+      - testops-network
+
+  integration-gateway:
+    build:
+      context: ./backend/integration_gateway
+      dockerfile: Dockerfile
+    container_name: testops-gateway
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/integration_gateway/.env
+    environment:
+      - CORE_AGENT_URL=http://core-agent-service:8000
+      - SPEC_PARSER_URL=http://spec-parser-service:8000
+      - CODE_GENERATOR_URL=http://code-generator-service:8000
+      - TEST_OPTIMIZER_URL=http://test-optimizer-service:8000
+      - API_KEY=testops-copilot-api-key-2024
+    depends_on:
+      - core-agent-service
+      - spec-parser-service
+      - code-generator-service
+      - test-optimizer-service
+    networks:
+      - testops-network
+
+  # Frontend
+  frontend-dashboard:
+    build:
+      context: ./frontend/dashboard
+      dockerfile: Dockerfile
+    container_name: testops-frontend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./frontend/dashboard/.env
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - VITE_API_KEY=testops-copilot-api-key-2024
+    depends_on:
+      - integration-gateway
+    volumes:
+      - ./frontend/dashboard:/app
+      - /app/node_modules
+    networks:
+      - testops-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  testops-network:
+    driver: bridge
+
+
+
+
