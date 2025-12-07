@@ -19,7 +19,12 @@ export interface ParseOpenAPIResponse {
     description?: string
   }>
   schemas: Record<string, any>
-  info: Record<string, any>
+  info: {
+    title?: string
+    version?: string
+    description?: string
+    [key: string]: any
+  }
 }
 
 export async function parseOpenAPI(file: File): Promise<ParseOpenAPIResponse> {

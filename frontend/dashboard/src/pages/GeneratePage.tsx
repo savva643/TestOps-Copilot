@@ -28,8 +28,9 @@ export function GeneratePage() {
       try {
         const spec = await parseOpenAPI(selectedFile)
         setParsedSpec(spec)
-        if (spec.description) {
-          setDescription(spec.description)
+        // Extract description from info if available
+        if (spec.info?.description) {
+          setDescription(spec.info.description)
         }
       } catch (err) {
         setError('Failed to parse OpenAPI file')
