@@ -4,9 +4,10 @@ import { parseOpenAPI, ParseOpenAPIResponse } from '../api/parser'
 import { ButtonFilled } from '@snack-uikit/button'
 import { Card } from '@snack-uikit/card'
 import { Typography } from '@snack-uikit/typography'
-// Using basic HTML inputs with snack-uikit styling for now
-// Will update when snack-uikit packages are properly installed
-import { Badge } from '@snack-uikit/badge'
+import { TextField, SelectField, TextareaField } from '@snack-uikit/fields'
+import { Status } from '@snack-uikit/status'
+import { Alert } from '@snack-uikit/alert'
+import { Divider } from '@snack-uikit/divider'
 import './GeneratePage.css'
 
 export function GeneratePage() {
@@ -81,84 +82,69 @@ export function GeneratePage() {
         </Typography>
       </div>
 
+      <Divider />
+
       <div className="generate-container">
         <Card>
           <form onSubmit={handleSubmit} className="generate-form">
             <div className="form-section">
               <Typography variant="h3" size="m">Test Configuration</Typography>
               <div className="form-grid">
-                <div className="form-group">
-                  <label htmlFor="testType">Test Type *</label>
-                  <select
-                    id="testType"
-                    value={testType}
-                    onChange={(e) => setTestType(e.target.value)}
-                    required
-                  >
-                    <option value="manual">Manual Test</option>
-                    <option value="api">API Test</option>
-                    <option value="ui">UI Test</option>
-                  </select>
-                </div>
+                <SelectField
+                  label="Test Type *"
+                  value={testType}
+                  onChange={(value) => setTestType(value)}
+                  options={[
+                    { value: 'manual', label: 'Manual Test' },
+                    { value: 'api', label: 'API Test' },
+                    { value: 'ui', label: 'UI Test' },
+                  ]}
+                  required
+                />
 
-                <div className="form-group">
-                  <label htmlFor="priority">Priority</label>
-                  <select
-                    id="priority"
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value)}
-                  >
-                    <option value="CRITICAL">Critical</option>
-                    <option value="NORMAL">Normal</option>
-                    <option value="LOW">Low</option>
-                  </select>
-                </div>
+                <SelectField
+                  label="Priority"
+                  value={priority}
+                  onChange={(value) => setPriority(value)}
+                  options={[
+                    { value: 'CRITICAL', label: 'Critical' },
+                    { value: 'NORMAL', label: 'Normal' },
+                    { value: 'LOW', label: 'Low' },
+                  ]}
+                />
 
-                <div className="form-group">
-                  <label htmlFor="feature">Feature</label>
-                  <input
-                    id="feature"
-                    type="text"
-                    value={feature}
-                    onChange={(e) => setFeature(e.target.value)}
-                    placeholder="e.g., User Management"
-                  />
-                </div>
+                <TextField
+                  label="Feature"
+                  value={feature}
+                  onChange={(value) => setFeature(value)}
+                  placeholder="e.g., User Management"
+                />
 
-                <div className="form-group">
-                  <label htmlFor="story">Story</label>
-                  <input
-                    id="story"
-                    type="text"
-                    value={story}
-                    onChange={(e) => setStory(e.target.value)}
-                    placeholder="e.g., User Registration"
-                  />
-                </div>
+                <TextField
+                  label="Story"
+                  value={story}
+                  onChange={(value) => setStory(value)}
+                  placeholder="e.g., User Registration"
+                />
 
-                <div className="form-group">
-                  <label htmlFor="owner">Owner</label>
-                  <input
-                    id="owner"
-                    type="text"
-                    value={owner}
-                    onChange={(e) => setOwner(e.target.value)}
-                    placeholder="QA Team"
-                  />
-                </div>
+                <TextField
+                  label="Owner"
+                  value={owner}
+                  onChange={(value) => setOwner(value)}
+                  placeholder="QA Team"
+                />
 
-                <div className="form-group">
-                  <label htmlFor="jiraLink">JIRA Link</label>
-                  <input
-                    id="jiraLink"
-                    type="url"
-                    value={jiraLink}
-                    onChange={(e) => setJiraLink(e.target.value)}
-                    placeholder="https://jira.example.com/TICKET-123"
-                  />
-                </div>
+                <TextField
+                  label="JIRA Link"
+                  value={jiraLink}
+                  onChange={(value) => setJiraLink(value)}
+                  placeholder="https://jira.example.com/TICKET-123"
+                  type="url"
+                />
               </div>
             </div>
+
+            <Divider />
 
             <div className="form-section">
               <Typography variant="h3" size="m">Input</Typography>
@@ -184,25 +170,18 @@ export function GeneratePage() {
                 )}
               </div>
 
-              <div className="form-group">
-                <label htmlFor="description">Description / Requirements *</label>
-                <textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={12}
-                  placeholder="Enter test case description, requirements, or API endpoint details..."
-                  required
-                />
-              </div>
+              <TextareaField
+                label="Description / Requirements *"
+                value={description}
+                onChange={(value) => setDescription(value)}
+                placeholder="Enter test case description, requirements, or API endpoint details..."
+                rows={12}
+                required
+              />
             </div>
 
             {error && (
-              <Card className="error-card">
-                <Typography variant="body" size="m" color="error">
-                  <strong>Error:</strong> {error}
-                </Typography>
-              </Card>
+              <Alert appearance="negative" title="Error" description={error} />
             )}
 
             <ButtonFilled
@@ -218,8 +197,9 @@ export function GeneratePage() {
         {result && (
           <Card className="result-section">
             <Typography variant="h3" size="m">Generation Result</Typography>
+            <Divider />
             <div className="result-header">
-              <Badge label="Success" variant="success" />
+              <Status label="Success" appearance="positive" />
               <Typography variant="body" size="m">Task ID: {result.task_id}</Typography>
             </div>
             <div className="result-content">

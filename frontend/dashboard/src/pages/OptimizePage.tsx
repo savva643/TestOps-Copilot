@@ -1,5 +1,6 @@
 import { Card } from '@snack-uikit/card'
 import { Typography } from '@snack-uikit/typography'
+import { Divider } from '@snack-uikit/divider'
 import './OptimizePage.css'
 
 export function OptimizePage() {
@@ -10,9 +11,12 @@ export function OptimizePage() {
         <Typography variant="body" size="m">Analyze test coverage and find duplicates</Typography>
       </div>
 
+      <Divider />
+
       <Card className="coming-soon">
         <div className="coming-soon-icon">🚀</div>
         <Typography variant="h2" size="l">Coming Soon in v1.1</Typography>
+        <Divider />
         <Typography variant="body" size="m">
           This feature will allow you to:
         </Typography>

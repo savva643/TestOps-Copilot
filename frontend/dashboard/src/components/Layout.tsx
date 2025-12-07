@@ -1,7 +1,6 @@
 import { ReactNode, createContext, useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useThemeConfig } from '@snack-uikit/utils'
-// @ts-ignore - CSS module import
 import DefaultBrand from '@snack-uikit/figma-tokens/build/css/brand.module.css'
 import { ButtonFilled } from '@snack-uikit/button'
 import './Layout.css'

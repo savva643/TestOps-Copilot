@@ -3,8 +3,11 @@ import { getTaskStatus } from '../api/tasks'
 import { Card } from '@snack-uikit/card'
 import { Typography } from '@snack-uikit/typography'
 import { ButtonFilled } from '@snack-uikit/button'
-// Using basic HTML inputs with snack-uikit styling for now
-import { Badge } from '@snack-uikit/badge'
+import { TextField } from '@snack-uikit/fields'
+import { Status } from '@snack-uikit/status'
+import { Alert } from '@snack-uikit/alert'
+import { Divider } from '@snack-uikit/divider'
+import { Loader } from '@snack-uikit/loaders'
 import './TasksPage.css'
 
 interface TaskStatus {
@@ -65,16 +68,16 @@ export function TasksPage() {
     return () => clearInterval(interval)
   }, [polling, taskId])
 
-  const getStatusVariant = (status: string): 'success' | 'error' | 'warning' | 'info' => {
+  const getStatusAppearance = (status: string): 'positive' | 'negative' | 'warning' | 'neutral' => {
     switch (status) {
       case 'completed':
-        return 'success'
+        return 'positive'
       case 'failed':
-        return 'error'
+        return 'negative'
       case 'pending':
         return 'warning'
       default:
-        return 'info'
+        return 'neutral'
     }
   }
 
@@ -99,15 +102,16 @@ export function TasksPage() {
         <Typography variant="body" size="m">Check the status of test generation tasks</Typography>
       </div>
 
+      <Divider />
+
       <div className="tasks-container">
         <Card>
           <div className="search-form">
-            <input
-              type="text"
+            <TextField
+              label="Task ID"
               value={taskId}
-              onChange={(e) => setTaskId(e.target.value)}
+              onChange={(value) => setTaskId(value)}
               placeholder="Enter task ID"
-              className="task-input"
               onKeyPress={(e) => e.key === 'Enter' && handleCheck()}
             />
             <ButtonFilled
@@ -119,11 +123,7 @@ export function TasksPage() {
           </div>
 
           {error && (
-            <Card className="error-card">
-              <Typography variant="body" size="m" color="error">
-                <strong>Error:</strong> {error}
-              </Typography>
-            </Card>
+            <Alert appearance="negative" title="Error" description={error} />
           )}
         </Card>
 
@@ -131,8 +131,10 @@ export function TasksPage() {
           <Card>
             <div className="status-header">
               <Typography variant="h3" size="m">Task Status</Typography>
-              <Badge label={taskStatus.status.toUpperCase()} variant={getStatusVariant(taskStatus.status)} />
+              <Status label={taskStatus.status.toUpperCase()} appearance={getStatusAppearance(taskStatus.status)} />
             </div>
+
+            <Divider />
 
             <div className="task-details">
               <div className="detail-row">
@@ -142,6 +144,7 @@ export function TasksPage() {
 
               {taskStatus.status === 'completed' && taskStatus.result && (
                 <>
+                  <Divider />
                   <div className="result-section">
                     <Typography variant="h4" size="m">Generated Test Case</Typography>
                     <div className="test-case-info">
@@ -175,20 +178,13 @@ export function TasksPage() {
               )}
 
               {taskStatus.status === 'failed' && taskStatus.error && (
-                <Card className="error-card">
-                  <Typography variant="body" size="m" color="error">
-                    <strong>Error:</strong>
-                  </Typography>
-                  <pre>{taskStatus.error}</pre>
-                </Card>
+                <Alert appearance="negative" title="Error" description={taskStatus.error} />
               )}
 
               {taskStatus.status === 'pending' && (
                 <div className="pending-section">
                   <Typography variant="body" size="m">Task is being processed...</Typography>
-                  <div className="progress-bar">
-                    <div className="progress-fill"></div>
-                  </div>
+                  <Loader size="m" />
                 </div>
               )}
             </div>

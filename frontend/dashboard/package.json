@@ -20,16 +20,15 @@
     "@snack-uikit/utils": "*",
     "@snack-uikit/figma-tokens": "*",
     "@snack-uikit/button": "*",
+    "@snack-uikit/card": "*",
     "@snack-uikit/fields": "*",
     "@snack-uikit/typography": "*",
-    "@snack-uikit/card": "*",
-    "@snack-uikit/icon-button": "*",
-    "@snack-uikit/select": "*",
-    "@snack-uikit/textarea": "*",
-    "@snack-uikit/file-upload": "*",
-    "@snack-uikit/badge": "*",
     "@snack-uikit/divider": "*",
-    "@snack-uikit/spinner": "*"
+    "@snack-uikit/status": "*",
+    "@snack-uikit/alert": "*",
+    "@snack-uikit/loaders": "*",
+    "@snack-uikit/tabs": "*",
+    "@snack-uikit/table": "*"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",

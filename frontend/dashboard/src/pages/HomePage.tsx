@@ -1,6 +1,7 @@
 import { Card } from '@snack-uikit/card'
 import { Typography } from '@snack-uikit/typography'
 import { ButtonFilled } from '@snack-uikit/button'
+import { Divider } from '@snack-uikit/divider'
 import { Link } from 'react-router-dom'
 import './HomePage.css'
 
@@ -18,6 +19,8 @@ export function HomePage() {
           </Link>
         </div>
       </div>
+
+      <Divider />
 
       <div className="features-grid">
         <Card>
@@ -87,13 +90,15 @@ export function HomePage() {
         </Card>
       </div>
 
+      <Divider />
+
       <Card className="quick-start">
         <Typography variant="h2" size="l">Quick Start</Typography>
         <ol>
-          <li>Go to Generate Tests page</li>
-          <li>Upload OpenAPI specification or enter description</li>
-          <li>Select test type (Manual, API, or UI)</li>
-          <li>Get generated test cases in seconds</li>
+          <li><Typography variant="body" size="m">Go to Generate Tests page</Typography></li>
+          <li><Typography variant="body" size="m">Upload OpenAPI specification or enter description</Typography></li>
+          <li><Typography variant="body" size="m">Select test type (Manual, API, or UI)</Typography></li>
+          <li><Typography variant="body" size="m">Get generated test cases in seconds</Typography></li>
         </ol>
       </Card>
     </div>
