@@ -3,11 +3,9 @@ import { getTaskStatus } from '../api/tasks'
 import { Card } from '@snack-uikit/card'
 import { Typography } from '@snack-uikit/typography'
 import { ButtonFilled } from '@snack-uikit/button'
-import { TextField } from '@snack-uikit/fields'
 import { Status } from '@snack-uikit/status'
 import { Alert } from '@snack-uikit/alert'
 import { Divider } from '@snack-uikit/divider'
-import { Loader } from '@snack-uikit/loaders'
 import './TasksPage.css'
 
 interface TaskStatus {
@@ -98,8 +96,8 @@ export function TasksPage() {
   return (
     <div className="tasks-page">
       <div className="page-header">
-        <Typography variant="h1" size="xl">Task Status</Typography>
-        <Typography variant="body" size="m">Check the status of test generation tasks</Typography>
+        <Typography family="system" purpose="title" size="l">Task Status</Typography>
+        <Typography family="system" purpose="body" size="m">Check the status of test generation tasks</Typography>
       </div>
 
       <Divider />
@@ -107,13 +105,21 @@ export function TasksPage() {
       <div className="tasks-container">
         <Card>
           <div className="search-form">
-            <TextField
-              label="Task ID"
-              value={taskId}
-              onChange={(value) => setTaskId(value)}
-              placeholder="Enter task ID"
-              onKeyPress={(e) => e.key === 'Enter' && handleCheck()}
-            />
+            <div className="form-group">
+              <label htmlFor="taskId">Task ID</label>
+              <input
+                id="taskId"
+                type="text"
+                value={taskId}
+                onChange={(e) => setTaskId(e.target.value)}
+                placeholder="Enter task ID"
+                onKeyPress={(e: React.KeyboardEvent) => {
+                  if (e.key === 'Enter') {
+                    handleCheck()
+                  }
+                }}
+              />
+            </div>
             <ButtonFilled
               label={loading ? 'Checking...' : 'Check Status'}
               onClick={handleCheck}
@@ -130,7 +136,7 @@ export function TasksPage() {
         {taskStatus && (
           <Card>
             <div className="status-header">
-              <Typography variant="h3" size="m">Task Status</Typography>
+              <Typography family="system" purpose="title" size="m">Task Status</Typography>
               <Status label={taskStatus.status.toUpperCase()} appearance={getStatusAppearance(taskStatus.status)} />
             </div>
 
@@ -138,7 +144,7 @@ export function TasksPage() {
 
             <div className="task-details">
               <div className="detail-row">
-                <Typography variant="body" size="m"><strong>Task ID:</strong></Typography>
+                <Typography family="system" purpose="body" size="m"><strong>Task ID:</strong></Typography>
                 <code>{taskStatus.task_id}</code>
               </div>
 
@@ -146,26 +152,26 @@ export function TasksPage() {
                 <>
                   <Divider />
                   <div className="result-section">
-                    <Typography variant="h4" size="m">Generated Test Case</Typography>
+                    <Typography family="system" purpose="title" size="m">Generated Test Case</Typography>
                     <div className="test-case-info">
                       <div className="info-row">
-                        <Typography variant="body" size="m">Type:</Typography>
-                        <Typography variant="body" size="m">{taskStatus.result.test_type || 'N/A'}</Typography>
+                        <Typography family="system" purpose="body" size="m">Type:</Typography>
+                        <Typography family="system" purpose="body" size="m">{taskStatus.result.test_type || 'N/A'}</Typography>
                       </div>
                       <div className="info-row">
-                        <Typography variant="body" size="m">Feature:</Typography>
-                        <Typography variant="body" size="m">{taskStatus.result.feature || 'N/A'}</Typography>
+                        <Typography family="system" purpose="body" size="m">Feature:</Typography>
+                        <Typography family="system" purpose="body" size="m">{taskStatus.result.feature || 'N/A'}</Typography>
                       </div>
                       <div className="info-row">
-                        <Typography variant="body" size="m">Priority:</Typography>
-                        <Typography variant="body" size="m">{taskStatus.result.priority || 'N/A'}</Typography>
+                        <Typography family="system" purpose="body" size="m">Priority:</Typography>
+                        <Typography family="system" purpose="body" size="m">{taskStatus.result.priority || 'N/A'}</Typography>
                       </div>
                     </div>
 
                     {taskStatus.result.test_case && (
                       <div className="code-preview">
                         <div className="code-header">
-                          <Typography variant="body" size="m">Generated Code</Typography>
+                          <Typography family="system" purpose="body" size="m">Generated Code</Typography>
                           <ButtonFilled label="Download" onClick={downloadCode} size="s" />
                         </div>
                         <pre className="code-content">
@@ -183,8 +189,8 @@ export function TasksPage() {
 
               {taskStatus.status === 'pending' && (
                 <div className="pending-section">
-                  <Typography variant="body" size="m">Task is being processed...</Typography>
-                  <Loader size="m" />
+                  <Typography family="system" purpose="body" size="m">Task is being processed...</Typography>
+                  <div className="loader">Loading...</div>
                 </div>
               )}
             </div>

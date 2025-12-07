@@ -1,4 +1,4 @@
-import { ReactNode, createContext, useState, useEffect } from 'react'
+import { ReactNode, createContext, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useThemeConfig } from '@snack-uikit/utils'
 import DefaultBrand from '@snack-uikit/figma-tokens/build/css/brand.module.css'
