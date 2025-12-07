@@ -36,7 +36,7 @@ services:
       context: ./backend/core_agent_service
       dockerfile: Dockerfile
     container_name: testops-celery-worker
-    command: celery -A app.tasks.celery_app worker --loglevel=info
+    command: uv run celery -A app.tasks.celery_app worker --loglevel=info
     env_file:
       - ./backend/core_agent_service/.env
     environment:
@@ -59,7 +59,7 @@ services:
       context: ./backend/core_agent_service
       dockerfile: Dockerfile
     container_name: testops-celery-beat
-    command: celery -A app.tasks.celery_app beat --loglevel=info
+    command: uv run celery -A app.tasks.celery_app beat --loglevel=info
     environment:
       - POSTGRES_URL=postgresql://testops:testops_password@postgres:5432/testops_db
       - REDIS_URL=redis://redis:6379/0
