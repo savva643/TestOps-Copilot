@@ -5,15 +5,13 @@ WORKDIR /app
 # Установка uv для управления зависимостями
 RUN pip install --no-cache-dir uv
 
-# Копирование файлов зависимостей
-COPY pyproject.toml uv.lock* ./
+# Копирование кода приложения (сначала код, потом зависимости)
+# uv sync требует наличия директории пакета для сборки
+COPY . .
 
-# Установка зависимостей
+# Установка зависимостей и пакета в editable mode
 # Using uv sync without --frozen since uv.lock may not exist
 RUN uv sync
-
-# Копирование кода приложения
-COPY . .
 
 # Переменные окружения
 ENV PYTHONPATH=/app

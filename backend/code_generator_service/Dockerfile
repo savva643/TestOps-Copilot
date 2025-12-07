@@ -4,12 +4,12 @@ WORKDIR /app
 
 RUN pip install --no-cache-dir uv
 
-COPY pyproject.toml uv.lock* ./
+# Copy code first - uv sync needs the package directory to build
+COPY . .
 
+# Install dependencies and the package in editable mode
 # Using uv sync without --frozen since uv.lock may not exist
 RUN uv sync
-
-COPY . .
 
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
