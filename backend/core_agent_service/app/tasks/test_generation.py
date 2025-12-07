@@ -3,7 +3,6 @@
 from typing import Optional, Dict, Any
 import structlog
 from celery import Task
-from app.tasks.celery_app import celery_app
 from app.services.llm_client import LLMClient
 from app.services.prompt_engineer import PromptEngineer, PromptValidationError
 
@@ -33,13 +32,6 @@ class ProgressTrackingTask(Task):
         )
 
 
-@celery_app.task(
-    name="generate_test_case",
-    bind=True,
-    base=ProgressTrackingTask,
-    max_retries=3,
-    default_retry_delay=60,
-)
 def generate_test_case_task(
     self: ProgressTrackingTask,
     description: str,
@@ -154,5 +146,15 @@ def generate_test_case_task(
         raise
 
 
+# Register task with celery_app to avoid circular import
+# Import here after function definition
+from app.tasks.celery_app import celery_app
 
+generate_test_case_task = celery_app.task(
+    name="generate_test_case",
+    bind=True,
+    base=ProgressTrackingTask,
+    max_retries=3,
+    default_retry_delay=60,
+)(generate_test_case_task)
 

@@ -5,9 +5,6 @@ from celery.signals import task_prerun, task_postrun
 import structlog
 from app.core.config import settings
 
-# Import tasks to register them
-from app.tasks import test_generation  # noqa: F401
-
 logger = structlog.get_logger()
 
 celery_app = Celery(
@@ -32,6 +29,9 @@ celery_app.conf.update(
     task_default_retry_delay=60,  # 1 minute
     task_max_retries=3,
 )
+
+# Auto-discover tasks to avoid circular imports
+celery_app.autodiscover_tasks(['app.tasks'], force=True)
 
 
 @task_prerun.connect
