@@ -202,7 +202,7 @@ export function GeneratePage() {
             </div>
 
             {error && (
-              <Alert appearance="negative" title="Error" description={error} />
+              <Alert appearance="error" title="Error" description={error} />
             )}
 
             <ButtonFilled
@@ -220,7 +220,7 @@ export function GeneratePage() {
             <Typography family="sans" purpose="title" size="m">Generation Result</Typography>
             <Divider />
             <div className="result-header">
-              <Status label="Success" appearance="positive" />
+              <Status label="Success" appearance="success" />
               <Typography family="sans" purpose="body" size="m">Task ID: {result.task_id}</Typography>
             </div>
             <div className="result-content">

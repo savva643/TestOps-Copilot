@@ -66,12 +66,12 @@ export function TasksPage() {
     return () => clearInterval(interval)
   }, [polling, taskId])
 
-  const getStatusAppearance = (status: string): 'positive' | 'negative' | 'warning' | 'neutral' => {
+  const getStatusAppearance = (status: string): 'success' | 'error' | 'warning' | 'neutral' => {
     switch (status) {
       case 'completed':
-        return 'positive'
+        return 'success'
       case 'failed':
-        return 'negative'
+        return 'error'
       case 'pending':
         return 'warning'
       default:
@@ -129,7 +129,7 @@ export function TasksPage() {
           </div>
 
           {error && (
-            <Alert appearance="negative" title="Error" description={error} />
+            <Alert appearance="error" title="Error" description={error} />
           )}
         </Card>
 
@@ -184,7 +184,7 @@ export function TasksPage() {
               )}
 
               {taskStatus.status === 'failed' && taskStatus.error && (
-                <Alert appearance="negative" title="Error" description={taskStatus.error} />
+                <Alert appearance="error" title="Error" description={taskStatus.error} />
               )}
 
               {taskStatus.status === 'pending' && (
