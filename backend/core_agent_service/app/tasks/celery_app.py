@@ -5,6 +5,9 @@ from celery.signals import task_prerun, task_postrun
 import structlog
 from app.core.config import settings
 
+# Import tasks to register them
+from app.tasks import test_generation  # noqa: F401
+
 logger = structlog.get_logger()
 
 celery_app = Celery(

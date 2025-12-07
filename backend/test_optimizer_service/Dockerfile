@@ -2,6 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Install git for GitPython
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache-dir uv
 
 # Copy code first - uv sync needs the package directory to build

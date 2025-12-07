@@ -7,7 +7,7 @@ import structlog
 
 from app.core.security import verify_api_key
 from app.services.llm_client import LLMClient
-from app.tasks.celery_app import generate_test_case_task
+from app.tasks.test_generation import generate_test_case_task
 
 logger = structlog.get_logger()
 
