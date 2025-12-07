@@ -6,7 +6,8 @@ RUN pip install --no-cache-dir uv
 
 COPY pyproject.toml uv.lock* ./
 
-RUN uv sync --frozen
+# Using uv sync without --frozen since uv.lock may not exist
+RUN uv sync
 
 COPY . .
 
