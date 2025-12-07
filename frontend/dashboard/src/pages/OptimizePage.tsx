@@ -1,27 +1,29 @@
+import { Card } from '@snack-uikit/card'
+import { Typography } from '@snack-uikit/typography'
 import './OptimizePage.css'
 
 export function OptimizePage() {
   return (
     <div className="optimize-page">
       <div className="page-header">
-        <h1>Test Optimization</h1>
-        <p>Analyze test coverage and find duplicates</p>
+        <Typography variant="h1" size="xl">Test Optimization</Typography>
+        <Typography variant="body" size="m">Analyze test coverage and find duplicates</Typography>
       </div>
 
-      <div className="coming-soon">
+      <Card className="coming-soon">
         <div className="coming-soon-icon">🚀</div>
-        <h2>Coming Soon in v1.1</h2>
-        <p>
+        <Typography variant="h2" size="l">Coming Soon in v1.1</Typography>
+        <Typography variant="body" size="m">
           This feature will allow you to:
-        </p>
+        </Typography>
         <ul className="features-list">
-          <li>Analyze test coverage for your Git repositories</li>
-          <li>Find duplicate tests automatically</li>
-          <li>Get recommendations for test optimization</li>
-          <li>View coverage reports and metrics</li>
-          <li>Integrate with GitLab for automated analysis</li>
+          <li><Typography variant="body" size="m">Analyze test coverage for your Git repositories</Typography></li>
+          <li><Typography variant="body" size="m">Find duplicate tests automatically</Typography></li>
+          <li><Typography variant="body" size="m">Get recommendations for test optimization</Typography></li>
+          <li><Typography variant="body" size="m">View coverage reports and metrics</Typography></li>
+          <li><Typography variant="body" size="m">Integrate with GitLab for automated analysis</Typography></li>
         </ul>
-      </div>
+      </Card>
     </div>
   )
 }

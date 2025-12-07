@@ -3,6 +3,10 @@ import { generateTestCase } from '../api/testGeneration'
 import { parseOpenAPI, ParseOpenAPIResponse } from '../api/parser'
 import { ButtonFilled } from '@snack-uikit/button'
 import { Card } from '@snack-uikit/card'
+import { Typography } from '@snack-uikit/typography'
+// Using basic HTML inputs with snack-uikit styling for now
+// Will update when snack-uikit packages are properly installed
+import { Badge } from '@snack-uikit/badge'
 import './GeneratePage.css'
 
 export function GeneratePage() {
@@ -28,7 +32,6 @@ export function GeneratePage() {
       try {
         const spec = await parseOpenAPI(selectedFile)
         setParsedSpec(spec)
-        // Extract description from info if available
         if (spec.info?.description) {
           setDescription(spec.info.description)
         }
@@ -72,163 +75,165 @@ export function GeneratePage() {
   return (
     <div className="generate-page">
       <div className="page-header">
-        <h1>Generate Test Case</h1>
-        <p>Create test cases from requirements or OpenAPI specifications</p>
+        <Typography variant="h1" size="xl">Generate Test Case</Typography>
+        <Typography variant="body" size="m">
+          Create test cases from requirements or OpenAPI specifications
+        </Typography>
       </div>
 
       <div className="generate-container">
-        <form onSubmit={handleSubmit} className="generate-form">
-          <div className="form-section">
-            <h3>Test Configuration</h3>
-            <div className="form-grid">
-              <div className="form-group">
-                <label htmlFor="testType">Test Type *</label>
-                <select
-                  id="testType"
-                  value={testType}
-                  onChange={(e) => setTestType(e.target.value)}
-                  required
-                >
-                  <option value="manual">Manual Test</option>
-                  <option value="api">API Test</option>
-                  <option value="ui">UI Test</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="priority">Priority</label>
-                <select
-                  id="priority"
-                  value={priority}
-                  onChange={(e) => setPriority(e.target.value)}
-                >
-                  <option value="CRITICAL">Critical</option>
-                  <option value="NORMAL">Normal</option>
-                  <option value="LOW">Low</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="feature">Feature</label>
-                <input
-                  id="feature"
-                  type="text"
-                  value={feature}
-                  onChange={(e) => setFeature(e.target.value)}
-                  placeholder="e.g., User Management"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="story">Story</label>
-                <input
-                  id="story"
-                  type="text"
-                  value={story}
-                  onChange={(e) => setStory(e.target.value)}
-                  placeholder="e.g., User Registration"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="owner">Owner</label>
-                <input
-                  id="owner"
-                  type="text"
-                  value={owner}
-                  onChange={(e) => setOwner(e.target.value)}
-                  placeholder="QA Team"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="jiraLink">JIRA Link</label>
-                <input
-                  id="jiraLink"
-                  type="url"
-                  value={jiraLink}
-                  onChange={(e) => setJiraLink(e.target.value)}
-                  placeholder="https://jira.example.com/TICKET-123"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h3>Input</h3>
-            <div className="form-group">
-              <label htmlFor="file">Upload OpenAPI Specification (Optional)</label>
-              <input
-                id="file"
-                type="file"
-                accept=".yaml,.yml,.json"
-                onChange={handleFileChange}
-                disabled={parsing}
-              />
-              {parsing && <p className="file-info">Parsing OpenAPI file...</p>}
-              {file && !parsing && (
-                <div className="file-info">
-                  <p>✓ Selected: {file.name}</p>
-                  {parsedSpec && (
-                    <p className="spec-info">
-                      Found {parsedSpec.endpoints?.length || 0} endpoints
-                    </p>
-                  )}
+        <Card>
+          <form onSubmit={handleSubmit} className="generate-form">
+            <div className="form-section">
+              <Typography variant="h3" size="m">Test Configuration</Typography>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label htmlFor="testType">Test Type *</label>
+                  <select
+                    id="testType"
+                    value={testType}
+                    onChange={(e) => setTestType(e.target.value)}
+                    required
+                  >
+                    <option value="manual">Manual Test</option>
+                    <option value="api">API Test</option>
+                    <option value="ui">UI Test</option>
+                  </select>
                 </div>
-              )}
+
+                <div className="form-group">
+                  <label htmlFor="priority">Priority</label>
+                  <select
+                    id="priority"
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value)}
+                  >
+                    <option value="CRITICAL">Critical</option>
+                    <option value="NORMAL">Normal</option>
+                    <option value="LOW">Low</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="feature">Feature</label>
+                  <input
+                    id="feature"
+                    type="text"
+                    value={feature}
+                    onChange={(e) => setFeature(e.target.value)}
+                    placeholder="e.g., User Management"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="story">Story</label>
+                  <input
+                    id="story"
+                    type="text"
+                    value={story}
+                    onChange={(e) => setStory(e.target.value)}
+                    placeholder="e.g., User Registration"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="owner">Owner</label>
+                  <input
+                    id="owner"
+                    type="text"
+                    value={owner}
+                    onChange={(e) => setOwner(e.target.value)}
+                    placeholder="QA Team"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="jiraLink">JIRA Link</label>
+                  <input
+                    id="jiraLink"
+                    type="url"
+                    value={jiraLink}
+                    onChange={(e) => setJiraLink(e.target.value)}
+                    placeholder="https://jira.example.com/TICKET-123"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="description">
-                Description / Requirements *
-              </label>
-              <textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={12}
-                placeholder="Enter test case description, requirements, or API endpoint details..."
-                required
-              />
-            </div>
-          </div>
+            <div className="form-section">
+              <Typography variant="h3" size="m">Input</Typography>
+              <div className="form-group">
+                <label htmlFor="file">Upload OpenAPI Specification (Optional)</label>
+                <input
+                  id="file"
+                  type="file"
+                  accept=".yaml,.yml,.json"
+                  onChange={handleFileChange}
+                  disabled={parsing}
+                />
+                {parsing && <Typography variant="body" size="s">Parsing OpenAPI file...</Typography>}
+                {file && !parsing && (
+                  <div className="file-info">
+                    <Typography variant="body" size="s">✓ Selected: {file.name}</Typography>
+                    {parsedSpec && (
+                      <Typography variant="body" size="s">
+                        Found {parsedSpec.endpoints?.length || 0} endpoints
+                      </Typography>
+                    )}
+                  </div>
+                )}
+              </div>
 
-          {error && (
-            <div className="error-message">
-              <strong>Error:</strong> {error}
+              <div className="form-group">
+                <label htmlFor="description">Description / Requirements *</label>
+                <textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={12}
+                  placeholder="Enter test case description, requirements, or API endpoint details..."
+                  required
+                />
+              </div>
             </div>
-          )}
 
-          <ButtonFilled
-            type="submit"
-            label={loading ? 'Generating...' : 'Generate Test Case'}
-            disabled={loading || !description.trim()}
-            loading={loading}
-          />
-        </form>
+            {error && (
+              <Card className="error-card">
+                <Typography variant="body" size="m" color="error">
+                  <strong>Error:</strong> {error}
+                </Typography>
+              </Card>
+            )}
+
+            <ButtonFilled
+              type="submit"
+              label={loading ? 'Generating...' : 'Generate Test Case'}
+              disabled={loading || !description.trim()}
+              loading={loading}
+              size="l"
+            />
+          </form>
+        </Card>
 
         {result && (
-          <div className="result-section">
-            <h3>Generation Result</h3>
-            <Card>
-              <div className="result-header">
-                <span className="status-badge success">Success</span>
-                <span className="task-id">Task ID: {result.task_id}</span>
-              </div>
-              <div className="result-content">
-                <p>
-                  <strong>Status:</strong> {result.status}
-                </p>
-                <p>
-                  <strong>Message:</strong> {result.message}
-                </p>
-                <p className="info-text">
-                  Check the Tasks page to see the generated test case when it's
-                  ready.
-                </p>
-              </div>
-            </Card>
-          </div>
+          <Card className="result-section">
+            <Typography variant="h3" size="m">Generation Result</Typography>
+            <div className="result-header">
+              <Badge label="Success" variant="success" />
+              <Typography variant="body" size="m">Task ID: {result.task_id}</Typography>
+            </div>
+            <div className="result-content">
+              <Typography variant="body" size="m">
+                <strong>Status:</strong> {result.status}
+              </Typography>
+              <Typography variant="body" size="m">
+                <strong>Message:</strong> {result.message}
+              </Typography>
+              <Typography variant="body" size="s" className="info-text">
+                Check the Tasks page to see the generated test case when it's ready.
+              </Typography>
+            </div>
+          </Card>
         )}
       </div>
     </div>

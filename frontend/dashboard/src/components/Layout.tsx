@@ -1,5 +1,9 @@
-import { ReactNode, createContext, useState } from 'react'
+import { ReactNode, createContext, useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useThemeConfig } from '@snack-uikit/utils'
+// @ts-ignore - CSS module import
+import DefaultBrand from '@snack-uikit/figma-tokens/build/css/brand.module.css'
+import { ButtonFilled } from '@snack-uikit/button'
 import './Layout.css'
 
 export enum Theme {
@@ -7,9 +11,9 @@ export enum Theme {
   Dark = 'Dark',
 }
 
-// Temporary theme implementation until snack-uikit packages are properly installed
-const getThemeClassName = (theme: Theme): string => {
-  return theme === Theme.Dark ? 'dark' : 'light'
+const themeMap = {
+  [Theme.Light]: DefaultBrand.light,
+  [Theme.Dark]: DefaultBrand.dark,
 }
 
 type ThemeContextProps = {
@@ -28,9 +32,18 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const location = useLocation()
-  const [theme, setTheme] = useState<Theme>(Theme.Light)
-  const themeClassName = getThemeClassName(theme)
-  const changeTheme = (newTheme: Theme) => setTheme(newTheme)
+  const { theme, themeClassName, changeTheme } = useThemeConfig<Theme>({
+    themeMap,
+    defaultTheme: Theme.Light,
+  })
+
+  // Apply theme class to body
+  useEffect(() => {
+    document.body.className = themeClassName
+    return () => {
+      document.body.className = ''
+    }
+  }, [themeClassName])
 
   const isActive = (path: string) => location.pathname === path
 
@@ -68,6 +81,13 @@ export function Layout({ children }: LayoutProps) {
                 Optimize
               </Link>
             </nav>
+            <div className="theme-toggle">
+              <ButtonFilled
+                label={theme === Theme.Light ? '🌙' : '☀️'}
+                onClick={() => changeTheme(theme === Theme.Light ? Theme.Dark : Theme.Light)}
+                size="s"
+              />
+            </div>
           </div>
         </header>
         <main className="main-content">{children}</main>

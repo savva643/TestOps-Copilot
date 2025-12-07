@@ -40,8 +40,10 @@ services:
     env_file:
       - ./backend/core_agent_service/.env
     environment:
-      - POSTGRES_URL=postgresql://testops:testops_password@postgres:5432/testops_db
-      - REDIS_URL=redis://redis:6379/0
+      - POSTGRES_URL=postgresql://testops:testops_password@testops-postgres:5432/testops_db
+      - REDIS_URL=redis://testops-redis:6379/0
+      - CELERY_BROKER_URL=redis://testops-redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://testops-redis:6379/0
       - CLOUD_RU_LLM_API_KEY=NTZiMjgxNTAtNmVkNi00NzlhLTg4YWUtNGI1MmQ2MzQ0YzBm.72dcf949523da340c0bce16e5ca7a663
     depends_on:
       postgres:
@@ -61,8 +63,10 @@ services:
     container_name: testops-celery-beat
     command: uv run celery -A app.tasks.celery_app beat --loglevel=info
     environment:
-      - POSTGRES_URL=postgresql://testops:testops_password@postgres:5432/testops_db
-      - REDIS_URL=redis://redis:6379/0
+      - POSTGRES_URL=postgresql://testops:testops_password@testops-postgres:5432/testops_db
+      - REDIS_URL=redis://testops-redis:6379/0
+      - CELERY_BROKER_URL=redis://testops-redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://testops-redis:6379/0
     depends_on:
       postgres:
         condition: service_healthy
@@ -84,8 +88,10 @@ services:
     env_file:
       - ./backend/core_agent_service/.env
     environment:
-      - POSTGRES_URL=postgresql://testops:testops_password@postgres:5432/testops_db
-      - REDIS_URL=redis://redis:6379/0
+      - POSTGRES_URL=postgresql://testops:testops_password@testops-postgres:5432/testops_db
+      - REDIS_URL=redis://testops-redis:6379/0
+      - CELERY_BROKER_URL=redis://testops-redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://testops-redis:6379/0
       - CLOUD_RU_LLM_API_KEY=NTZiMjgxNTAtNmVkNi00NzlhLTg4YWUtNGI1MmQ2MzQ0YzBm.72dcf949523da340c0bce16e5ca7a663
       - SPEC_PARSER_URL=http://spec-parser-service:8000
       - CODE_GENERATOR_URL=http://code-generator-service:8000
@@ -107,7 +113,7 @@ services:
     ports:
       - "8002:8000"
     environment:
-      - POSTGRES_URL=postgresql://testops:testops_password@postgres:5432/testops_db
+      - POSTGRES_URL=postgresql://testops:testops_password@testops-postgres:5432/testops_db
     depends_on:
       postgres:
         condition: service_healthy
@@ -124,7 +130,7 @@ services:
     ports:
       - "8003:8000"
     environment:
-      - POSTGRES_URL=postgresql://testops:testops_password@postgres:5432/testops_db
+      - POSTGRES_URL=postgresql://testops:testops_password@testops-postgres:5432/testops_db
     depends_on:
       postgres:
         condition: service_healthy
@@ -141,8 +147,8 @@ services:
     ports:
       - "8004:8000"
     environment:
-      - POSTGRES_URL=postgresql://testops:testops_password@postgres:5432/testops_db
-      - REDIS_URL=redis://redis:6379/0
+      - POSTGRES_URL=postgresql://testops:testops_password@testops-postgres:5432/testops_db
+      - REDIS_URL=redis://testops-redis:6379/0
     depends_on:
       postgres:
         condition: service_healthy

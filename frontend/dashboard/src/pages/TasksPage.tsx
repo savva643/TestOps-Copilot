@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react'
 import { getTaskStatus } from '../api/tasks'
+import { Card } from '@snack-uikit/card'
+import { Typography } from '@snack-uikit/typography'
+import { ButtonFilled } from '@snack-uikit/button'
+// Using basic HTML inputs with snack-uikit styling for now
+import { Badge } from '@snack-uikit/badge'
 import './TasksPage.css'
 
 interface TaskStatus {
@@ -29,7 +34,6 @@ export function TasksPage() {
       const status = await getTaskStatus(taskId)
       setTaskStatus(status)
       
-      // Auto-poll if task is pending
       if (status.status === 'pending') {
         setPolling(true)
       }
@@ -41,7 +45,6 @@ export function TasksPage() {
     }
   }
 
-  // Auto-poll for pending tasks
   useEffect(() => {
     if (!polling || !taskId) return
 
@@ -57,12 +60,12 @@ export function TasksPage() {
         console.error('Polling error:', err)
         setPolling(false)
       }
-    }, 2000) // Poll every 2 seconds
+    }, 2000)
 
     return () => clearInterval(interval)
   }, [polling, taskId])
 
-  const getStatusColor = (status: string) => {
+  const getStatusVariant = (status: string): 'success' | 'error' | 'warning' | 'info' => {
     switch (status) {
       case 'completed':
         return 'success'
@@ -92,12 +95,12 @@ export function TasksPage() {
   return (
     <div className="tasks-page">
       <div className="page-header">
-        <h1>Task Status</h1>
-        <p>Check the status of test generation tasks</p>
+        <Typography variant="h1" size="xl">Task Status</Typography>
+        <Typography variant="body" size="m">Check the status of test generation tasks</Typography>
       </div>
 
       <div className="tasks-container">
-        <div className="task-search-card">
+        <Card>
           <div className="search-form">
             <input
               type="text"
@@ -107,70 +110,60 @@ export function TasksPage() {
               className="task-input"
               onKeyPress={(e) => e.key === 'Enter' && handleCheck()}
             />
-            <button
+            <ButtonFilled
+              label={loading ? 'Checking...' : 'Check Status'}
               onClick={handleCheck}
               disabled={loading || !taskId.trim()}
-              className="check-button"
-            >
-              {loading ? (
-                <>
-                  <span className="spinner"></span>
-                  Checking...
-                </>
-              ) : (
-                'Check Status'
-              )}
-            </button>
+              loading={loading}
+            />
           </div>
 
           {error && (
-            <div className="error-message">
-              <strong>Error:</strong> {error}
-            </div>
+            <Card className="error-card">
+              <Typography variant="body" size="m" color="error">
+                <strong>Error:</strong> {error}
+              </Typography>
+            </Card>
           )}
-        </div>
+        </Card>
 
         {taskStatus && (
-          <div className="task-status-card">
+          <Card>
             <div className="status-header">
-              <h3>Task Status</h3>
-              <span className={`status-badge ${getStatusColor(taskStatus.status)}`}>
-                {taskStatus.status.toUpperCase()}
-              </span>
+              <Typography variant="h3" size="m">Task Status</Typography>
+              <Badge label={taskStatus.status.toUpperCase()} variant={getStatusVariant(taskStatus.status)} />
             </div>
 
             <div className="task-details">
               <div className="detail-row">
-                <strong>Task ID:</strong>
+                <Typography variant="body" size="m"><strong>Task ID:</strong></Typography>
                 <code>{taskStatus.task_id}</code>
               </div>
 
               {taskStatus.status === 'completed' && taskStatus.result && (
                 <>
                   <div className="result-section">
-                    <h4>Generated Test Case</h4>
+                    <Typography variant="h4" size="m">Generated Test Case</Typography>
                     <div className="test-case-info">
                       <div className="info-row">
-                        <span>Type:</span>
-                        <span>{taskStatus.result.test_type || 'N/A'}</span>
+                        <Typography variant="body" size="m">Type:</Typography>
+                        <Typography variant="body" size="m">{taskStatus.result.test_type || 'N/A'}</Typography>
                       </div>
                       <div className="info-row">
-                        <span>Feature:</span>
-                        <span>{taskStatus.result.feature || 'N/A'}</span>
+                        <Typography variant="body" size="m">Feature:</Typography>
+                        <Typography variant="body" size="m">{taskStatus.result.feature || 'N/A'}</Typography>
                       </div>
                       <div className="info-row">
-                        <span>Priority:</span>
-                        <span>{taskStatus.result.priority || 'N/A'}</span>
+                        <Typography variant="body" size="m">Priority:</Typography>
+                        <Typography variant="body" size="m">{taskStatus.result.priority || 'N/A'}</Typography>
                       </div>
                     </div>
 
                     {taskStatus.result.test_case && (
                       <div className="code-preview">
                         <div className="code-header">
-                          <span>Generated Code</span>
-                          <button onClick={downloadCode} className="download-button">
-                            Download
-                          </button>
+                          <Typography variant="body" size="m">Generated Code</Typography>
+                          <ButtonFilled label="Download" onClick={downloadCode} size="s" />
                         </div>
                         <pre className="code-content">
                           {taskStatus.result.test_case}
@@ -182,22 +175,24 @@ export function TasksPage() {
               )}
 
               {taskStatus.status === 'failed' && taskStatus.error && (
-                <div className="error-section">
-                  <strong>Error:</strong>
+                <Card className="error-card">
+                  <Typography variant="body" size="m" color="error">
+                    <strong>Error:</strong>
+                  </Typography>
                   <pre>{taskStatus.error}</pre>
-                </div>
+                </Card>
               )}
 
               {taskStatus.status === 'pending' && (
                 <div className="pending-section">
-                  <p>Task is being processed...</p>
+                  <Typography variant="body" size="m">Task is being processed...</Typography>
                   <div className="progress-bar">
                     <div className="progress-fill"></div>
                   </div>
                 </div>
               )}
             </div>
-          </div>
+          </Card>
         )}
       </div>
     </div>

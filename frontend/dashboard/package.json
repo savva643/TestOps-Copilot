@@ -22,7 +22,14 @@
     "@snack-uikit/button": "*",
     "@snack-uikit/fields": "*",
     "@snack-uikit/typography": "*",
-    "@snack-uikit/card": "*"
+    "@snack-uikit/card": "*",
+    "@snack-uikit/icon-button": "*",
+    "@snack-uikit/select": "*",
+    "@snack-uikit/textarea": "*",
+    "@snack-uikit/file-upload": "*",
+    "@snack-uikit/badge": "*",
+    "@snack-uikit/divider": "*",
+    "@snack-uikit/spinner": "*"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",
