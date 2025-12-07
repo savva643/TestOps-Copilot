@@ -9,8 +9,8 @@ export function HomePage() {
   return (
     <div className="home-page">
       <div className="hero">
-        <Typography purpose="title" size="l">TestOps Copilot</Typography>
-        <Typography purpose="body" size="l" className="subtitle">
+        <Typography family="sans-serif" purpose="title" size="l">TestOps Copilot</Typography>
+        <Typography family="sans-serif" purpose="body" size="l" className="subtitle">
           AI-powered test generation and optimization platform
         </Typography>
         <div className="hero-actions">
@@ -26,8 +26,8 @@ export function HomePage() {
         <Card>
           <div className="feature-card">
             <div className="feature-icon">🧪</div>
-            <Typography purpose="title" size="m">Generate Test Cases</Typography>
-            <Typography purpose="body" size="m">
+            <Typography family="sans-serif" purpose="title" size="m">Generate Test Cases</Typography>
+            <Typography family="sans-serif" purpose="body" size="m">
               Automatically generate comprehensive test cases from requirements
               and specifications using AI
             </Typography>
@@ -37,8 +37,8 @@ export function HomePage() {
         <Card>
           <div className="feature-card">
             <div className="feature-icon">🤖</div>
-            <Typography purpose="title" size="m">Automated Tests</Typography>
-            <Typography purpose="body" size="m">
+            <Typography family="sans-serif" purpose="title" size="m">Automated Tests</Typography>
+            <Typography family="sans-serif" purpose="body" size="m">
               Create automated API and UI tests following best practices with
               Allure TestOps format
             </Typography>
@@ -48,8 +48,8 @@ export function HomePage() {
         <Card>
           <div className="feature-card">
             <div className="feature-icon">📊</div>
-            <Typography purpose="title" size="m">Coverage Analysis</Typography>
-            <Typography purpose="body" size="m">
+            <Typography family="sans-serif" purpose="title" size="m">Coverage Analysis</Typography>
+            <Typography family="sans-serif" purpose="body" size="m">
               Analyze test coverage, identify gaps, and get recommendations for
               improvement
             </Typography>
@@ -59,8 +59,8 @@ export function HomePage() {
         <Card>
           <div className="feature-card">
             <div className="feature-icon">🔍</div>
-            <Typography purpose="title" size="m">Find Duplicates</Typography>
-            <Typography purpose="body" size="m">
+            <Typography family="sans-serif" purpose="title" size="m">Find Duplicates</Typography>
+            <Typography family="sans-serif" purpose="body" size="m">
               Detect duplicate tests and optimize your test suite for better
               efficiency
             </Typography>
@@ -70,8 +70,8 @@ export function HomePage() {
         <Card>
           <div className="feature-card">
             <div className="feature-icon">⚡</div>
-            <Typography purpose="title" size="m">Fast Generation</Typography>
-            <Typography purpose="body" size="m">
+            <Typography family="sans-serif" purpose="title" size="m">Fast Generation</Typography>
+            <Typography family="sans-serif" purpose="body" size="m">
               Generate test cases in seconds with Cloud.ru Evolution Foundation
               Model
             </Typography>
@@ -81,8 +81,8 @@ export function HomePage() {
         <Card>
           <div className="feature-card">
             <div className="feature-icon">🎯</div>
-            <Typography purpose="title" size="m">Standards Compliant</Typography>
-            <Typography purpose="body" size="m">
+            <Typography family="sans-serif" purpose="title" size="m">Standards Compliant</Typography>
+            <Typography family="sans-serif" purpose="body" size="m">
               All generated tests follow AAA pattern and Allure TestOps as Code
               standards
             </Typography>
@@ -93,12 +93,12 @@ export function HomePage() {
       <Divider />
 
       <Card className="quick-start">
-        <Typography purpose="title" size="l">Quick Start</Typography>
+        <Typography family="sans-serif" purpose="title" size="l">Quick Start</Typography>
         <ol>
-          <li><Typography purpose="body" size="m">Go to Generate Tests page</Typography></li>
-          <li><Typography purpose="body" size="m">Upload OpenAPI specification or enter description</Typography></li>
-          <li><Typography purpose="body" size="m">Select test type (Manual, API, or UI)</Typography></li>
-          <li><Typography purpose="body" size="m">Get generated test cases in seconds</Typography></li>
+          <li><Typography family="sans-serif" purpose="body" size="m">Go to Generate Tests page</Typography></li>
+          <li><Typography family="sans-serif" purpose="body" size="m">Upload OpenAPI specification or enter description</Typography></li>
+          <li><Typography family="sans-serif" purpose="body" size="m">Select test type (Manual, API, or UI)</Typography></li>
+          <li><Typography family="sans-serif" purpose="body" size="m">Get generated test cases in seconds</Typography></li>
         </ol>
       </Card>
     </div>
