@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { generateTestCase } from '../api/testGeneration'
-import { parseOpenAPI } from '../api/parser'
+import { parseOpenAPI, ParseOpenAPIResponse } from '../api/parser'
+import { ButtonFilled } from '@snack-uikit/button'
+import { Card } from '@snack-uikit/card'
 import './GeneratePage.css'
 
 export function GeneratePage() {
@@ -15,11 +17,25 @@ export function GeneratePage() {
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [file, setFile] = useState<File | null>(null)
+  const [parsing, setParsing] = useState(false)
+  const [parsedSpec, setParsedSpec] = useState<ParseOpenAPIResponse | null>(null)
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0])
-      // TODO: Parse OpenAPI file and extract description
+      const selectedFile = e.target.files[0]
+      setFile(selectedFile)
+      setParsing(true)
+      try {
+        const spec = await parseOpenAPI(selectedFile)
+        setParsedSpec(spec)
+        if (spec.description) {
+          setDescription(spec.description)
+        }
+      } catch (err) {
+        setError('Failed to parse OpenAPI file')
+      } finally {
+        setParsing(false)
+      }
     }
   }
 
@@ -182,26 +198,18 @@ export function GeneratePage() {
             </div>
           )}
 
-          <button
+          <ButtonFilled
             type="submit"
-            className="submit-button"
+            label={loading ? 'Generating...' : 'Generate Test Case'}
             disabled={loading || !description.trim()}
-          >
-            {loading ? (
-              <>
-                <span className="spinner"></span>
-                Generating...
-              </>
-            ) : (
-              'Generate Test Case'
-            )}
-          </button>
+            loading={loading}
+          />
         </form>
 
         {result && (
           <div className="result-section">
             <h3>Generation Result</h3>
-            <div className="result-card">
+            <Card>
               <div className="result-header">
                 <span className="status-badge success">Success</span>
                 <span className="task-id">Task ID: {result.task_id}</span>
@@ -218,7 +226,7 @@ export function GeneratePage() {
                   ready.
                 </p>
               </div>
-            </div>
+            </Card>
           </div>
         )}
       </div>
