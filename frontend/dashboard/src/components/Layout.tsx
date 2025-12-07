@@ -1,7 +1,5 @@
-import { ReactNode, createContext } from 'react'
+import { ReactNode, createContext, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { useThemeConfig } from '@snack-uikit/utils'
-import DefaultBrand from '@snack-uikit/figma-tokens/build/css/brand.module.css'
 import './Layout.css'
 
 export enum Theme {
@@ -9,9 +7,9 @@ export enum Theme {
   Dark = 'Dark',
 }
 
-const themeMap = {
-  [Theme.Light]: DefaultBrand.light,
-  [Theme.Dark]: DefaultBrand.dark,
+// Temporary theme implementation until snack-uikit packages are properly installed
+const getThemeClassName = (theme: Theme): string => {
+  return theme === Theme.Dark ? 'dark' : 'light'
 }
 
 type ThemeContextProps = {
@@ -30,10 +28,9 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const location = useLocation()
-  const { theme, themeClassName, changeTheme } = useThemeConfig<Theme>({
-    themeMap,
-    defaultTheme: Theme.Light,
-  })
+  const [theme, setTheme] = useState<Theme>(Theme.Light)
+  const themeClassName = getThemeClassName(theme)
+  const changeTheme = (newTheme: Theme) => setTheme(newTheme)
 
   const isActive = (path: string) => location.pathname === path
 
