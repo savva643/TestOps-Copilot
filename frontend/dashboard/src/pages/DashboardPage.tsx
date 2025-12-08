@@ -1,7 +1,6 @@
 import { Card } from '@snack-uikit/card'
 import { Typography } from '@snack-uikit/typography'
 import { ButtonFilled } from '@snack-uikit/button'
-import { Divider } from '@snack-uikit/divider'
 import { Status } from '@snack-uikit/status'
 import './DashboardPage.css'
 
