@@ -1,4 +1,4 @@
-"""API test in Allure TestOps as Code format with AAA pattern."""
+"""Contract-style API test in Allure TestOps as Code format with AAA pattern."""
 
 import allure
 import pytest
@@ -9,25 +9,28 @@ from typing import Dict, Any
 @allure.label("owner", "{{ owner }}")
 @allure.feature("{{ feature }}")
 @allure.story("{{ story }}")
-@allure.suite("api")
-class APITests:
-    """Generated API tests."""
+@allure.suite("contract")
+class ContractAPITests:
+    """Generated contract API tests."""
 
-    @allure.title("API Test: {{ test_case[:50] }}...")
+    @allure.title("Contract Test: {{ test_case[:50] }}...")
     {% if jira_link %}
     @allure.link("{{ jira_link }}", name="JIRA Ticket")
     {% endif %}
     @allure.tag("{{ priority }}")
     @allure.label("priority", "{{ priority }}")
-    def test_api_endpoint(self) -> None:
+    def test_contract_api(self) -> None:
         """
-        API test following AAA pattern.
+        Contract API test following AAA pattern.
         
         {{ test_case }}
         """
         # Arrange
         base_url = "{{ specification.get('base_url', 'https://api.example.com') }}"
-        endpoint = "{{ specification.get('endpoint', '/api/v1/endpoint') }}"
+        endpoint = "{{ specification.get('endpoint', '/api/v1/contract') }}"
+        expected_status = {{ specification.get('expected_status', 200) }}
+        expected_schema = "{{ specification.get('expected_schema', 'contract_schema.json') }}"
+
         headers = {
             "Content-Type": "application/json",
             "Authorization": "Bearer <token>",
@@ -35,19 +38,18 @@ class APITests:
         payload: Dict[str, Any] = {}
 
         # Act
-        with allure.step("Act: отправка запроса"):
-            response = httpx.post(
+        with allure.step("Act: отправка контрактного запроса"):
+            response = httpx.get(
                 f"{base_url}{endpoint}",
                 headers=headers,
-                json=payload,
                 timeout=30.0,
             )
 
         # Assert
         with allure.step("Assert: проверка статуса"):
-            assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+            assert response.status_code == expected_status, f"Expected {expected_status}, got {response.status_code}"
 
-        with allure.step("Assert: проверка тела ответа"):
+        with allure.step("Assert: проверка схемы (контракт)"):
             response_data = response.json()
             assert response_data is not None
             allure.attach(
@@ -55,4 +57,5 @@ class APITests:
                 name="Response Body",
                 attachment_type=allure.attachment_type.JSON,
             )
+            # NOTE: В реальной системе здесь должен быть JSON Schema validator, подключите при необходимости.
 

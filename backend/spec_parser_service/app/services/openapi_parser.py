@@ -2,9 +2,12 @@
 
 import yaml
 import json
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Union
 import structlog
 from prance import ResolvingParser
+from openapi_spec_validator import validate_spec
+from openapi_spec_validator.handlers import UrlHandler
+from openapi_spec_validator.readers import read_from_filename
 
 logger = structlog.get_logger()
 
@@ -32,6 +35,9 @@ class OpenAPIParser:
                 spec_dict = yaml.safe_load(text_content)
             else:
                 spec_dict = json.loads(text_content)
+
+            # Validate spec (schema-level)
+            validate_spec(spec_dict, spec_url_handler=UrlHandler(read_from_filename))
 
             # Resolve references using prance
             parser = ResolvingParser(spec=spec_dict, backend="openapi-spec-validator")
@@ -61,27 +67,111 @@ class OpenAPIParser:
             raise
 
     def _extract_endpoints(self, spec: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Extract endpoints from OpenAPI spec."""
-        endpoints = []
+        """Extract endpoints from OpenAPI spec with merged parameters and normalized bodies."""
+        endpoints: List[Dict[str, Any]] = []
         paths = spec.get("paths", {})
 
         for path, path_item in paths.items():
+            if not isinstance(path_item, dict):
+                continue
+            common_params = path_item.get("parameters", [])
             for method, operation in path_item.items():
-                if method in ["get", "post", "put", "delete", "patch"]:
-                    endpoint = {
-                        "path": path,
-                        "method": method.upper(),
-                        "operation_id": operation.get("operationId"),
-                        "summary": operation.get("summary"),
-                        "description": operation.get("description"),
-                        "parameters": operation.get("parameters", []),
-                        "request_body": operation.get("requestBody"),
-                        "responses": operation.get("responses", {}),
-                        "tags": operation.get("tags", []),
-                    }
-                    endpoints.append(endpoint)
+                if method not in ["get", "post", "put", "delete", "patch", "options", "head"]:
+                    continue
+                if not isinstance(operation, dict):
+                    continue
+
+                merged_params = self._merge_parameters(common_params, operation.get("parameters", []))
+                endpoint = {
+                    "path": path,
+                    "method": method.upper(),
+                    "operation_id": operation.get("operationId"),
+                    "summary": operation.get("summary"),
+                    "description": operation.get("description"),
+                    "parameters": [self._normalize_parameter(p) for p in merged_params],
+                    "request_body": self._extract_request_body(operation.get("requestBody")),
+                    "responses": self._extract_responses(operation.get("responses", {})),
+                    "tags": operation.get("tags", []),
+                }
+                endpoints.append(endpoint)
 
         return endpoints
+
+    def _merge_parameters(self, path_params: List[Dict[str, Any]], op_params: List[Dict[str, Any]]):
+        """Merge path-level and operation-level parameters (operation overrides)."""
+        merged = {(p.get("name"), p.get("in")): p for p in path_params or []}
+        for p in op_params or []:
+            merged[(p.get("name"), p.get("in"))] = p
+        return list(merged.values())
+
+    def _normalize_parameter(self, param: Dict[str, Any]) -> Dict[str, Any]:
+        if not isinstance(param, dict):
+            return param
+        schema = param.get("schema")
+        return {
+            **param,
+            "schema": self._normalize_schema(schema),
+        }
+
+    def _extract_request_body(self, request_body: Dict[str, Any] | None):
+        if not request_body:
+            return None
+        content = request_body.get("content", {})
+        return {
+            "description": request_body.get("description"),
+            "required": request_body.get("required", False),
+            "content": {
+                ctype: {
+                    "schema": self._normalize_schema(media.get("schema")),
+                    "examples": media.get("examples") or media.get("example"),
+                }
+                for ctype, media in content.items()
+            },
+        }
+
+    def _extract_responses(self, responses: Dict[str, Any]):
+        result = []
+        for code, resp in responses.items():
+            content = resp.get("content", {}) if isinstance(resp, dict) else {}
+            result.append(
+                {
+                    "code": code,
+                    "description": resp.get("description") if isinstance(resp, dict) else None,
+                    "content": {
+                        ctype: {
+                            "schema": self._normalize_schema(media.get("schema")),
+                            "examples": media.get("examples") or media.get("example"),
+                        }
+                        for ctype, media in content.items()
+                    },
+                }
+            )
+        return result
+
+    def _normalize_schema(self, schema: Union[Dict[str, Any], None]) -> Union[Dict[str, Any], None]:
+        """Normalize schemas to preserve oneOf/allOf/anyOf structure."""
+        if not schema or not isinstance(schema, dict):
+            return schema
+
+        normalized = dict(schema)
+
+        # Recursively normalize composition keywords
+        for key in ["oneOf", "allOf", "anyOf"]:
+            if key in normalized and isinstance(normalized[key], list):
+                normalized[key] = [self._normalize_schema(s) for s in normalized[key]]
+
+        # Normalize items for arrays
+        if "items" in normalized:
+            normalized["items"] = self._normalize_schema(normalized.get("items"))
+
+        # Normalize properties for objects
+        if "properties" in normalized and isinstance(normalized["properties"], dict):
+            normalized["properties"] = {
+                pname: self._normalize_schema(pschema)
+                for pname, pschema in normalized["properties"].items()
+            }
+
+        return normalized
 
 
 

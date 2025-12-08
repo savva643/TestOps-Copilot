@@ -36,6 +36,7 @@ class TemplateEngine:
         owner: Optional[str] = None,
         jira_link: Optional[str] = None,
         specification: Optional[Dict[str, Any]] = None,
+        strict: bool = False,
     ) -> str:
         """
         Generate code from template.
@@ -56,7 +57,25 @@ class TemplateEngine:
         try:
             # Select template based on test type
             template_name = f"{test_type}_test.j2"
-            
+
+            # Map optional aliases to existing templates
+            aliases = {
+                "contract": "contract_test.j2",
+                "api": "api_test.j2",
+                "ui": "ui_test.j2",
+                "manual": "manual_test.j2",
+            }
+            template_name = aliases.get(test_type, template_name)
+
+            # Strict variants (Приложение 1)
+            if strict:
+                strict_aliases = {
+                    "manual": "manual_test_strict.j2",
+                    "api": "api_test_strict.j2",
+                    "ui": "ui_test_strict.j2",
+                }
+                template_name = strict_aliases.get(test_type, template_name)
+
             # Check if template exists, fallback to manual
             template_path = Path(__file__).parent / "templates" / template_name
             if not template_path.exists():

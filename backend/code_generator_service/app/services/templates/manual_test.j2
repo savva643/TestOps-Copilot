@@ -26,13 +26,16 @@ class ManualTestCases:
         
         {{ test_case }}
         """
-        with allure.step("Step 1: Setup"):
+        # Arrange
+        with allure.step("Arrange: подготовка данных и окружения"):
             pass
 
-        with allure.step("Step 2: Execute test"):
+        # Act
+        with allure.step("Act: выполнение шагов теста"):
             pass
 
-        with allure.step("Step 3: Verify results"):
+        # Assert
+        with allure.step("Assert: проверка ожиданий и результатов"):
             allure.attach.file(
                 "screenshots/test_screenshot.png",
                 name="Test Screenshot",

@@ -1,4 +1,4 @@
-"""UI test in Allure TestOps as Code format with AAA pattern."""
+"""Strict UI test case format (Приложение 1 style) in Allure TestOps as Code."""
 
 import allure
 import pytest
@@ -9,38 +9,33 @@ from playwright.sync_api import Page, expect
 @allure.feature("{{ feature }}")
 @allure.story("{{ story }}")
 @allure.suite("ui")
-class UITests:
-    """Generated UI tests."""
+class UITestsStrict:
+    """Generated UI tests (strict format)."""
 
-    @allure.title("UI Test: {{ test_case[:50] }}...")
+    @allure.title("{{ test_case_title }}")
     {% if jira_link %}
-    @allure.link("{{ jira_link }}", name="JIRA Ticket")
+    @allure.link("{{ jira_link }}", name="jira")
     {% endif %}
     @allure.tag("{{ priority }}")
     @allure.label("priority", "{{ priority }}")
     def test_ui_scenario(self, page: Page) -> None:
         """
-        UI test following AAA pattern.
-        
-        {{ test_case }}
+        {{ test_case_description }}
         """
         # Arrange
         base_url = "{{ specification.get('base_url', 'https://example.com') }}"
-
         with allure.step("Arrange: открыть страницу"):
             page.goto(base_url)
 
         # Act
         with allure.step("Act: взаимодействие с UI"):
-            # Example interactions
-            # page.click("button#submit")
-            # page.fill("input#username", "test_user")
-            pass
+            {% for step in act_steps %}
+            with allure.step("{{ step }}"):
+                pass
+            {% endfor %}
 
         # Assert
         with allure.step("Assert: проверка состояния страницы"):
-            # Example assertions
-            # expect(page.locator("h1")).to_be_visible()
             screenshot = page.screenshot()
             allure.attach(
                 screenshot,

@@ -1,4 +1,4 @@
-"""API test in Allure TestOps as Code format with AAA pattern."""
+"""Strict API test case format (Приложение 1 style) in Allure TestOps as Code."""
 
 import allure
 import pytest
@@ -10,20 +10,18 @@ from typing import Dict, Any
 @allure.feature("{{ feature }}")
 @allure.story("{{ story }}")
 @allure.suite("api")
-class APITests:
-    """Generated API tests."""
+class APITestsStrict:
+    """Generated API tests (strict format)."""
 
-    @allure.title("API Test: {{ test_case[:50] }}...")
+    @allure.title("{{ test_case_title }}")
     {% if jira_link %}
-    @allure.link("{{ jira_link }}", name="JIRA Ticket")
+    @allure.link("{{ jira_link }}", name="jira")
     {% endif %}
     @allure.tag("{{ priority }}")
     @allure.label("priority", "{{ priority }}")
     def test_api_endpoint(self) -> None:
         """
-        API test following AAA pattern.
-        
-        {{ test_case }}
+        {{ test_case_description }}
         """
         # Arrange
         base_url = "{{ specification.get('base_url', 'https://api.example.com') }}"
@@ -32,7 +30,7 @@ class APITests:
             "Content-Type": "application/json",
             "Authorization": "Bearer <token>",
         }
-        payload: Dict[str, Any] = {}
+        payload: Dict[str, Any] = specification.get("payload", {})
 
         # Act
         with allure.step("Act: отправка запроса"):
@@ -45,7 +43,8 @@ class APITests:
 
         # Assert
         with allure.step("Assert: проверка статуса"):
-            assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+            expected_status = specification.get("expected_status", 200)
+            assert response.status_code == expected_status, f"Expected {expected_status}, got {response.status_code}"
 
         with allure.step("Assert: проверка тела ответа"):
             response_data = response.json()
