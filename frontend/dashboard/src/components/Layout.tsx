@@ -1,8 +1,9 @@
-import { ReactNode, createContext, useEffect } from 'react'
+import { ReactNode, createContext } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useThemeConfig } from '@snack-uikit/utils'
 import DefaultBrand from '@snack-uikit/figma-tokens/build/css/brand.module.css'
 import { ButtonFilled } from '@snack-uikit/button'
+import { Tabs } from '@snack-uikit/tabs'
 import './Layout.css'
 
 export enum Theme {
@@ -36,62 +37,44 @@ export function Layout({ children }: LayoutProps) {
     defaultTheme: Theme.Light,
   })
 
-  // Apply theme class to body
-  useEffect(() => {
-    document.body.className = themeClassName
-    return () => {
-      document.body.className = ''
-    }
-  }, [themeClassName])
-
-  const isActive = (path: string) => location.pathname === path
+  const navItems = [
+    { id: 'dashboard', label: 'Дашборд', path: '/' },
+    { id: 'generate', label: 'Генерация', path: '/generate' },
+    { id: 'tasks', label: 'Задачи', path: '/tasks' },
+    { id: 'optimize', label: 'Аналитика', path: '/optimize' },
+  ]
 
   return (
     <ThemeContext.Provider value={{ theme, changeTheme }}>
       <div className={`layout ${themeClassName}`}>
         <header className="header">
-          <div className="header-content">
-            <div className="logo">
-              <h1>TestOps Copilot</h1>
-            </div>
-            <nav className="nav">
-              <Link
-                to="/"
-                className={`nav-link ${isActive('/') ? 'active' : ''}`}
-              >
-                Home
-              </Link>
-              <Link
-                to="/generate"
-                className={`nav-link ${isActive('/generate') ? 'active' : ''}`}
-              >
-                Generate Tests
-              </Link>
-              <Link
-                to="/tasks"
-                className={`nav-link ${isActive('/tasks') ? 'active' : ''}`}
-              >
-                Tasks
-              </Link>
-              <Link
-                to="/optimize"
-                className={`nav-link ${isActive('/optimize') ? 'active' : ''}`}
-              >
-                Optimize
-              </Link>
-            </nav>
-            <div className="theme-toggle">
-              <ButtonFilled
-                label={theme === Theme.Light ? '🌙' : '☀️'}
-                onClick={() => changeTheme(theme === Theme.Light ? Theme.Dark : Theme.Light)}
-                size="s"
-              />
-            </div>
+          <div className="header-left">
+            <div className="logo">TestOps Copilot</div>
+            <Tabs
+              size="s"
+              value={
+                navItems.find((item) => location.pathname.startsWith(item.path))?.id ??
+                navItems[0].id
+              }
+              items={navItems.map((item) => ({
+                id: item.id,
+                label: <Link className="nav-link" to={item.path}>{item.label}</Link>,
+              }))}
+            />
+          </div>
+          <div className="header-actions">
+            <ButtonFilled
+              label={theme === Theme.Light ? 'Тёмная тема' : 'Светлая тема'}
+              onClick={() => changeTheme(theme === Theme.Light ? Theme.Dark : Theme.Light)}
+              size="s"
+            />
           </div>
         </header>
+
         <main className="main-content">{children}</main>
+
         <footer className="footer">
-          <p>TestOps Copilot © 2024 Cloud.ru</p>
+          <p>TestOps Copilot · Cloud.ru · 2025</p>
         </footer>
       </div>
     </ThemeContext.Provider>

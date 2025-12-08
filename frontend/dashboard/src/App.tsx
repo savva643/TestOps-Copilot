@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Layout } from './components/Layout'
-import { HomePage } from './pages/HomePage'
+import { DashboardPage } from './pages/DashboardPage'
 import { GeneratePage } from './pages/GeneratePage'
 import { TasksPage } from './pages/TasksPage'
 import { OptimizePage } from './pages/OptimizePage'
@@ -10,7 +10,7 @@ function App() {
     <BrowserRouter>
       <Layout>
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<DashboardPage />} />
           <Route path="/generate" element={<GeneratePage />} />
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/optimize" element={<OptimizePage />} />
