@@ -3,8 +3,6 @@ import { Typography } from '@snack-uikit/typography'
 import { ButtonFilled } from '@snack-uikit/button'
 import { Divider } from '@snack-uikit/divider'
 import { Status } from '@snack-uikit/status'
-import { Table } from '@snack-uikit/table'
-import { Tabs } from '@snack-uikit/tabs'
 import './DashboardPage.css'
 
 type TaskRow = {
@@ -34,13 +32,6 @@ const stats = [
   { title: 'Ошибки', value: '5', hint: 'требуют внимания' },
 ]
 
-const tabs = [
-  { id: 'overview', label: 'Обзор' },
-  { id: 'generation', label: 'Генерация' },
-  { id: 'analysis', label: 'Аналитика' },
-  { id: 'settings', label: 'Настройки' },
-]
-
 export function DashboardPage() {
   return (
     <div className="dashboard-page">
@@ -57,10 +48,6 @@ export function DashboardPage() {
           <ButtonFilled label="Создать задачу" size="m" />
         </div>
       </div>
-
-      <Tabs items={tabs} value="overview" className="page-tabs" />
-
-      <Divider />
 
       <div className="stats-grid">
         {stats.map((item) => (
@@ -93,24 +80,28 @@ export function DashboardPage() {
           </div>
         </div>
 
-        <Table
-          columns={[
-            { id: 'id', title: 'ID' },
-            { id: 'type', title: 'Тип' },
-            { id: 'status', title: 'Статус' },
-            { id: 'createdAt', title: 'Создано' },
-          ]}
-          data={recentTasks.map((row) => ({
-            ...row,
-            status: (
-              <Status
-                label={row.status.toUpperCase()}
-                appearance={statusAppearanceMap[row.status]}
-                size="s"
-              />
-            ),
-          }))}
-        />
+        <div className="table-wrapper">
+          <div className="table-head">
+            <span>ID</span>
+            <span>Тип</span>
+            <span>Статус</span>
+            <span>Создано</span>
+          </div>
+          {recentTasks.map((row) => (
+            <div key={row.id} className="table-row">
+              <span>{row.id}</span>
+              <span>{row.type}</span>
+              <span>
+                <Status
+                  label={row.status.toUpperCase()}
+                  appearance={statusAppearanceMap[row.status]}
+                  size="s"
+                />
+              </span>
+              <span>{row.createdAt}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom'
 import { useThemeConfig } from '@snack-uikit/utils'
 import DefaultBrand from '@snack-uikit/figma-tokens/build/css/brand.module.css'
 import { ButtonFilled } from '@snack-uikit/button'
-import { Tabs } from '@snack-uikit/tabs'
 import './Layout.css'
 
 export enum Theme {
@@ -49,21 +48,43 @@ export function Layout({ children }: LayoutProps) {
       <div className={`layout ${themeClassName}`}>
         <header className="header">
           <div className="header-left">
-            <div className="logo">TestOps Copilot</div>
-            <Tabs
-              size="s"
-              value={
-                navItems.find((item) => location.pathname.startsWith(item.path))?.id ??
-                navItems[0].id
-              }
-              items={navItems.map((item) => ({
-                id: item.id,
-                label: <Link className="nav-link" to={item.path}>{item.label}</Link>,
-              }))}
-            />
+            <div className="logo">
+              <div className="logo-mark" />
+              <span className="logo-text">TestOps Copilot</span>
+            </div>
+            <nav className="nav-links">
+              {navItems.map((item) => {
+                const active = location.pathname.startsWith(item.path)
+                return (
+                  <Link key={item.id} className={`nav-link ${active ? 'active' : ''}`} to={item.path}>
+                    {item.label}
+                  </Link>
+                )
+              })}
+            </nav>
           </div>
           <div className="header-actions">
+            <button className="ghost-btn search-btn">
+              <span className="icon">🔍</span>
+              <span>Поиск</span>
+            </button>
             <ButtonFilled
+              className="btn-secondary"
+              label="Связаться с нами"
+              size="s"
+            />
+            <ButtonFilled
+              className="btn-primary"
+              label="Войти"
+              size="s"
+            />
+            <ButtonFilled
+              className="btn-secondary"
+              label="Регистрация"
+              size="s"
+            />
+            <ButtonFilled
+              className="btn-secondary"
               label={theme === Theme.Light ? 'Тёмная тема' : 'Светлая тема'}
               onClick={() => changeTheme(theme === Theme.Light ? Theme.Dark : Theme.Light)}
               size="s"

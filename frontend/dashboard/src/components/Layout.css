@@ -6,16 +6,14 @@
 }
 
 .header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px 20px;
-  background: var(--surface-primary, #ffffff);
+  padding: 10px 20px;
+  background: #ffffff;
   border-bottom: 1px solid var(--stroke-primary, #e5e7eb);
+  color: #111827;
 }
 
 .header-left {
@@ -27,16 +25,70 @@
 .logo {
   font-weight: 700;
   font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: url('/logo.png') center/contain no-repeat, #26d07c;
+}
+
+.logo-text {
+  color: #111827;
+}
+
+.nav-links {
+  display: flex;
+  gap: 10px;
 }
 
 .nav-link {
   text-decoration: none;
   color: inherit;
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+.nav-link.active {
+  background: #f2f2f2;
 }
 
 .header-actions {
   display: flex;
   gap: 8px;
+  align-items: center;
+}
+
+.btn-primary {
+  background: #26d07c !important;
+  color: #ffffff !important;
+  border-color: #26d07c !important;
+}
+
+.btn-secondary {
+  background: #383838 !important;
+  color: #ffffff !important;
+  border-color: #383838 !important;
+}
+
+.ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  color: #111827;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+.ghost-btn:hover {
+  background: #f2f2f2;
 }
 
 .main-content {
