@@ -11,6 +11,7 @@
   flex-wrap: nowrap;
   flex-direction: column;
   margin-bottom: 2rem;
+  margin-top: 2rem;
 }
 
 .page-subtitle {
@@ -20,13 +21,22 @@
 
 .page-header h1 {
   font-size: 2.5rem;
-  margin-bottom: 0.5rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
 .page-header p {
+  margin: 0;
   color: var(--text-secondary);
   font-size: 1.1rem;
+}
+
+.form-section h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .generate-container {
@@ -115,6 +125,13 @@
 
 .file-info p {
   margin: 0.25rem 0;
+}
+
+.parsing-status {
+  margin-top: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-style: italic;
 }
 
 .upload-zone {

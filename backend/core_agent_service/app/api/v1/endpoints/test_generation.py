@@ -71,11 +71,14 @@ async def generate_test_case(
         return TestCaseGenerationResponse(
             task_id=task.id,
             status="pending",
-            message="Test case generation task created",
+            message="Задача генерации тест-кейса создана",
         )
     except Exception as e:
-        logger.error("Failed to create test case generation task", error=str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Failed to create test case generation task", error=str(e), exc_info=True)
+        error_msg = str(e)
+        if "generate_test_case" in error_msg.lower():
+            error_msg = "Ошибка создания задачи генерации. Убедитесь, что Celery worker запущен."
+        raise HTTPException(status_code=500, detail=error_msg)
 
 
 

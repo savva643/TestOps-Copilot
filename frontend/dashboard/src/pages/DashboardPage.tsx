@@ -1,5 +1,4 @@
 import { Card } from '@snack-uikit/card'
-import { Typography } from '@snack-uikit/typography'
 import { ButtonFilled } from '@snack-uikit/button'
 import { ButtonOutline } from '@snack-uikit/button'
 import { Status } from '@snack-uikit/status'
@@ -48,12 +47,8 @@ export function DashboardPage() {
     <div className="dashboard-page">
       <div className="page-header">
         <div>
-          <Typography family="sans" purpose="title" size="l" className="page-title">
-            TestOps Copilot — Дашборд
-          </Typography>
-          <Typography family="sans" purpose="body" size="m" className="page-subtitle">
-            Быстрый обзор состояния генерации и оптимизации тестов
-          </Typography>
+          <h1 className="page-title">TestOps Copilot — Дашборд</h1>
+          <p className="page-subtitle">Быстрый обзор состояния генерации и оптимизации тестов</p>
         </div>
         <div className="header-actions">
           <Link to="/generate">
@@ -62,43 +57,37 @@ export function DashboardPage() {
           <Link to="/generate">
             <ButtonFilled label="Сгенерировать тесты" size="m" className="btn-secondary" />
           </Link>
-            <Link to="/tasks">
-              <ButtonOutline label="Перейти к задачам" size="m" appearance="neutral" />
-            </Link>
+          <Link to="/tasks">
+            <ButtonOutline label="Перейти к задачам" size="m" appearance="neutral" />
+          </Link>
         </div>
       </div>
 
       <div className="stats-grid">
         {stats.map((item) => (
           <Card key={item.title} className="stat-card">
-            <Typography family="sans" purpose="title" size="s">
-              {item.title}
-            </Typography>
-            <Typography family="sans" purpose="display" size="l" className="stat-value">
-              {item.value}
-            </Typography>
-            <Typography family="sans" purpose="body" size="s" className="stat-hint">
-              {item.hint}
-            </Typography>
+            <h3>{item.title}</h3>
+            <div className="stat-value">{item.value}</div>
+            <p className="stat-hint">{item.hint}</p>
           </Card>
         ))}
       </div>
 
       <div className="cta-grid">
         <Card className="cta-card">
-          <Typography family="sans" purpose="title" size="m">Начните с загрузки</Typography>
-          <Typography family="sans" purpose="body" size="s" className="cta-hint">
+          <h3>Начните с загрузки</h3>
+          <p className="cta-hint">
             Загрузите OpenAPI/YAML/JSON или текстовое описание — мы разберём и подготовим тесты
-          </Typography>
+          </p>
           <Link to="/generate">
             <ButtonFilled label="Загрузить спецификацию" size="m" className="btn-primary" />
           </Link>
         </Card>
         <Card className="cta-card">
-          <Typography family="sans" purpose="title" size="m">Мои задачи</Typography>
-          <Typography family="sans" purpose="body" size="s" className="cta-hint">
+          <h3>Мои задачи</h3>
+          <p className="cta-hint">
             Следите за прогрессом генерации, смотрите статусы и забирайте готовые артефакты
-          </Typography>
+          </p>
           <Link to="/tasks">
             <ButtonFilled label="Открыть задачи" size="m" className="btn-secondary" />
           </Link>
@@ -108,12 +97,8 @@ export function DashboardPage() {
       <div className="panel">
         <div className="panel-header">
           <div>
-            <Typography family="sans" purpose="title" size="m" className="panel-title">
-              Последние задачи
-            </Typography>
-            <Typography family="sans" purpose="body" size="s" className="panel-hint">
-              Мониторьте статус генерации и скачивайте результаты
-            </Typography>
+            <h3 className="panel-title">Последние задачи</h3>
+            <p className="panel-hint">Мониторьте статус генерации и скачивайте результаты</p>
           </div>
           <div className="panel-actions">
             <ButtonFilled label="Обновить" size="s" appearance="primary" />
@@ -147,12 +132,8 @@ export function DashboardPage() {
       <div className="panel">
         <div className="panel-header">
           <div>
-            <Typography family="sans" purpose="title" size="m" className="panel-title">
-              Мои тест-кейсы
-            </Typography>
-            <Typography family="sans" purpose="body" size="s" className="panel-hint">
-              Скачайте готовые артефакты или перейдите к задачам за свежими результатами
-            </Typography>
+            <h3 className="panel-title">Мои тест-кейсы</h3>
+            <p className="panel-hint">Скачайте готовые артефакты или перейдите к задачам за свежими результатами</p>
           </div>
           <div className="panel-actions">
             <Link to="/tasks">
@@ -186,12 +167,8 @@ export function DashboardPage() {
       <div className="panel">
         <div className="panel-header">
           <div>
-            <Typography family="sans" purpose="title" size="m" className="panel-title">
-              Демо-кейсы (для защиты)
-            </Typography>
-            <Typography family="sans" purpose="body" size="s" className="panel-hint">
-              Готовые наборы: 25–35 ручных + автотесты для UI калькулятора и API Compute
-            </Typography>
+            <h3 className="panel-title">Демо-кейсы (для защиты)</h3>
+            <p className="panel-hint">Готовые наборы: 25–35 ручных + автотесты для UI калькулятора и API Compute</p>
           </div>
         </div>
 
@@ -219,4 +196,3 @@ export function DashboardPage() {
     </div>
   )
 }
-

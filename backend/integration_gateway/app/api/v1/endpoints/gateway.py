@@ -135,9 +135,13 @@ async def parse_openapi_proxy(request: Request):
         )
     except httpx.HTTPStatusError as e:
         logger.error("HTTP error proxying request", status_code=e.response.status_code, error=str(e))
+        try:
+            error_detail = e.response.json().get("detail", str(e))
+        except:
+            error_detail = e.response.text or str(e)
         raise ProxyError(
-            f"Backend service returned error: {e.response.status_code}",
-            details={"service": "spec-parser-service", "status_code": e.response.status_code},
+            f"Ошибка парсинга: {error_detail}",
+            details={"service": "spec-parser-service", "status_code": e.response.status_code, "detail": error_detail},
         )
     except Exception as e:
         logger.error("Unexpected error proxying request", error=str(e), exc_info=True)

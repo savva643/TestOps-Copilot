@@ -96,8 +96,11 @@ async def get_task_status(
 
         return TaskStatusResponse(**response)
     except Exception as e:
-        logger.error("Failed to get task status", task_id=task_id, error=str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Failed to get task status", task_id=task_id, error=str(e), exc_info=True)
+        error_msg = str(e)
+        if "generate_test_case" in error_msg.lower():
+            error_msg = "Задача не найдена. Убедитесь, что ID задачи правильный и Celery worker запущен."
+        raise HTTPException(status_code=500, detail=error_msg)
 
 
 

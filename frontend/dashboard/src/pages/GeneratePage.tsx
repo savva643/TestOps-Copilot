@@ -1,16 +1,14 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { generateTestCase } from '../api/testGeneration'
 import { parseOpenAPI, ParseOpenAPIResponse } from '../api/parser'
 import { ButtonFilled } from '@snack-uikit/button'
 import { Card } from '@snack-uikit/card'
-import { Typography } from '@snack-uikit/typography'
-import { Status } from '@snack-uikit/status'
 import { Alert } from '@snack-uikit/alert'
-import { Divider } from '@snack-uikit/divider'
-import { Link } from 'react-router-dom'
 import './GeneratePage.css'
 
 export function GeneratePage() {
+  const navigate = useNavigate()
   const [description, setDescription] = useState('')
   const [testType, setTestType] = useState('manual')
   const [feature, setFeature] = useState('')
@@ -30,14 +28,25 @@ export function GeneratePage() {
       const selectedFile = e.target.files[0]
       setFile(selectedFile)
       setParsing(true)
+      setError(null)
       try {
         const spec = await parseOpenAPI(selectedFile)
         setParsedSpec(spec)
         if (spec.info?.description) {
           setDescription(spec.info.description)
         }
-      } catch (err) {
-        setError('Failed to parse OpenAPI file')
+        // Формируем описание из эндпоинтов
+        if (spec.endpoints && spec.endpoints.length > 0) {
+          const endpointsDesc = spec.endpoints
+            .map((ep) => `${ep.method} ${ep.path}${ep.summary ? ` - ${ep.summary}` : ''}`)
+            .join('\n')
+          setDescription((prev) => (prev ? `${prev}\n\nЭндпоинты:\n${endpointsDesc}` : `Эндпоинты:\n${endpointsDesc}`))
+        }
+      } catch (err: any) {
+        const errorMsg = err.response?.data?.detail || err.message || 'Не удалось распарсить файл OpenAPI'
+        setError(`Ошибка парсинга: ${errorMsg}`)
+        setFile(null)
+        setParsedSpec(null)
       } finally {
         setParsing(false)
       }
@@ -47,7 +56,7 @@ export function GeneratePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!description.trim()) {
-      setError('Please enter a description')
+      setError('Пожалуйста, введите описание')
       return
     }
 
@@ -66,8 +75,18 @@ export function GeneratePage() {
         jira_link: jiraLink || undefined,
       })
       setResult(response)
+      // Сохраняем task_id в localStorage для истории
+      const taskHistory = JSON.parse(localStorage.getItem('task_history') || '[]')
+      taskHistory.unshift({
+        task_id: response.task_id,
+        status: response.status,
+        created_at: new Date().toISOString(),
+        test_type: testType,
+      })
+      localStorage.setItem('task_history', JSON.stringify(taskHistory.slice(0, 50))) // Храним последние 50
+      navigate('/tasks')
     } catch (err: any) {
-      setError(err.response?.data?.detail || err.message || 'Failed to generate test case')
+      setError(err.response?.data?.detail || err.message || 'Не удалось сгенерировать тест-кейс')
     } finally {
       setLoading(false)
     }
@@ -76,82 +95,78 @@ export function GeneratePage() {
   return (
     <div className="generate-page">
       <div className="page-header">
-        <Typography family="sans" purpose="title" size="l">Generate Test Case</Typography>
-        <Typography family="sans" purpose="body" size="m" className="page-subtitle">
-          Загрузите OpenAPI/YAML/JSON или опишите требования текстом — мы разберём и сгенерируем тесты
-        </Typography>
+        <h1>Генерация тест-кейсов</h1>
+        <p>Загрузите OpenAPI/YAML/JSON или опишите требования текстом — мы разберём и сгенерируем тесты</p>
       </div>
-
-      <Divider />
 
       <div className="generate-container">
         <Card>
           <form onSubmit={handleSubmit} className="generate-form">
             <div className="form-section">
-              <Typography family="sans" purpose="title" size="m">Test Configuration</Typography>
+              <h3>Конфигурация теста</h3>
               <div className="form-grid">
                 <div className="form-group">
-                  <label htmlFor="testType">Test Type *</label>
+                  <label htmlFor="testType">Тип теста *</label>
                   <select
                     id="testType"
                     value={testType}
                     onChange={(e) => setTestType(e.target.value)}
                     required
                   >
-                    <option value="manual">Manual Test</option>
-                    <option value="api">API Test</option>
-                    <option value="ui">UI Test</option>
+                    <option value="manual">Ручной тест</option>
+                    <option value="api">API тест</option>
+                    <option value="ui">UI тест</option>
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="priority">Priority</label>
+                  <label htmlFor="priority">Приоритет</label>
                   <select
                     id="priority"
                     value={priority}
                     onChange={(e) => setPriority(e.target.value)}
                   >
-                    <option value="CRITICAL">Critical</option>
-                    <option value="NORMAL">Normal</option>
-                    <option value="LOW">Low</option>
+                    <option value="CRITICAL">Критический</option>
+                    <option value="NORMAL">Обычный</option>
+                    <option value="LOW">Низкий</option>
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="feature">Feature</label>
+                  <label htmlFor="feature">Фича</label>
                   <input
                     id="feature"
                     type="text"
                     value={feature}
                     onChange={(e) => setFeature(e.target.value)}
-                    placeholder="e.g., User Management"
+                    placeholder="например, Управление пользователями"
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="story">Story</label>
+                  <label htmlFor="story">История</label>
                   <input
                     id="story"
                     type="text"
                     value={story}
                     onChange={(e) => setStory(e.target.value)}
-                    placeholder="e.g., User Registration"
+                    placeholder="например, Регистрация пользователя"
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="owner">Owner</label>
+                  <label htmlFor="owner">Владелец</label>
                   <input
                     id="owner"
                     type="text"
                     value={owner}
                     onChange={(e) => setOwner(e.target.value)}
-                    placeholder="QA Team"
+                    placeholder="QA команда"
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="jiraLink">JIRA Link</label>
+                  <label htmlFor="jiraLink">Ссылка на JIRA</label>
                   <input
                     id="jiraLink"
                     type="url"
@@ -163,12 +178,10 @@ export function GeneratePage() {
               </div>
             </div>
 
-            <Divider />
-
             <div className="form-section">
-              <Typography family="sans" purpose="title" size="m">Input</Typography>
+              <h3>Входные данные</h3>
               <div className="form-group">
-                <label htmlFor="file">Upload OpenAPI Specification (Optional)</label>
+                <label htmlFor="file">Загрузить спецификацию OpenAPI (необязательно)</label>
                 <label className={`upload-zone ${parsing ? 'disabled' : ''}`} htmlFor="file">
                   <div className="upload-content">
                     <span className="upload-icon">📄</span>
@@ -187,26 +200,24 @@ export function GeneratePage() {
                   disabled={parsing}
                   className="hidden-input"
                 />
-                {parsing && <Typography family="sans" purpose="body" size="s">Parsing OpenAPI file...</Typography>}
-                {file && !parsing && (
+                {parsing && <p className="parsing-status">Парсинг файла OpenAPI...</p>}
+                {file && !parsing && parsedSpec && (
                   <div className="file-info">
-                    <Typography family="sans" purpose="body" size="s">✓ Selected: {file.name}</Typography>
-                    {parsedSpec && (
-                      <Typography family="sans" purpose="body" size="s">
-                        Endpoints: {parsedSpec.endpoints?.length || 0} · Schemas: {Object.keys(parsedSpec.schemas || {}).length}
-                      </Typography>
-                    )}
+                    <p>✓ Выбран: {file.name}</p>
+                    <p>
+                      Эндпоинтов: {parsedSpec.endpoints?.length || 0} · Схем: {Object.keys(parsedSpec.schemas || {}).length}
+                    </p>
                   </div>
                 )}
               </div>
 
               <div className="form-group">
-                <label htmlFor="description">Description / Requirements *</label>
+                <label htmlFor="description">Описание / Требования *</label>
                 <textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Enter test case description, requirements, or API endpoint details..."
+                  placeholder="Введите описание тест-кейса, требования или детали API эндпоинта..."
                   rows={12}
                   required
                 />
@@ -214,45 +225,18 @@ export function GeneratePage() {
             </div>
 
             {error && (
-              <Alert appearance="error" title="Error" description={error} />
+              <Alert appearance="error" title="Ошибка" description={error} />
             )}
 
             <ButtonFilled
               type="submit"
-              label={loading ? 'Generating...' : 'Generate Test Case'}
+              label={loading ? 'Генерация...' : 'Сгенерировать тест-кейс'}
               disabled={loading || !description.trim()}
               loading={loading}
               size="l"
             />
           </form>
         </Card>
-
-        {result && (
-          <Card className="result-section">
-            <Typography family="sans" purpose="title" size="m">Generation Result</Typography>
-            <Divider />
-            <div className="result-header">
-              <Status label="Success" appearance="green" />
-              <Typography family="sans" purpose="body" size="m">Task ID: {result.task_id}</Typography>
-            </div>
-            <div className="result-content">
-              <Typography family="sans" purpose="body" size="m">
-                <strong>Status:</strong> {result.status}
-              </Typography>
-              <Typography family="sans" purpose="body" size="m">
-                <strong>Message:</strong> {result.message}
-              </Typography>
-              <Typography family="sans" purpose="body" size="s" className="info-text">
-                Check the Tasks page to see the generated test case when it's ready.
-              </Typography>
-              <div className="result-actions">
-                <Link to="/tasks">
-                  <ButtonFilled label="Перейти к задаче" size="s" />
-                </Link>
-              </div>
-            </div>
-          </Card>
-        )}
       </div>
     </div>
   )

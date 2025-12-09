@@ -10,13 +10,46 @@
 
 .page-header h1 {
   font-size: 2.5rem;
-  margin-bottom: 0.5rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
 .page-header p {
+  margin: 0;
   color: var(--text-secondary);
   font-size: 1.1rem;
+}
+
+.status-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.result-section h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.history-card h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.task-details p {
+  margin: 0.5rem 0;
+  color: var(--text-primary);
+}
+
+.progress-section p {
+  margin: 0;
+  color: var(--text-primary);
 }
 
 .tasks-container {
@@ -35,6 +68,16 @@
 .search-form {
   display: flex;
   gap: 1rem;
+  align-items: flex-end;
+}
+
+.search-form .form-group {
+  flex: 1;
+}
+
+.button-wrapper {
+  display: flex;
+  align-items: flex-end;
 }
 
 .task-input {
@@ -286,9 +329,97 @@
   }
 }
 
+.history-card {
+  margin-top: 1.5rem;
+}
+
+.history-card h3 {
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.history-item {
+  padding: 1rem;
+  border: 1px solid var(--border-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.history-item:hover {
+  background: var(--muted);
+  border-color: var(--accent-primary);
+}
+
+.history-item-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.history-task-id {
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.history-item-meta {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.test-type-badge {
+  padding: 0.25rem 0.5rem;
+  background: var(--surface-secondary);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.progress-section {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--muted);
+  border-radius: 6px;
+}
+
+.progress-message {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.progress-bar {
+  margin-top: 0.75rem;
+  height: 8px;
+  background: var(--surface-secondary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  transition: width 0.3s ease;
+}
+
 @media (max-width: 768px) {
   .search-form {
     flex-direction: column;
+    align-items: stretch;
+  }
+
+  .button-wrapper {
+    width: 100%;
   }
 
   .status-header {

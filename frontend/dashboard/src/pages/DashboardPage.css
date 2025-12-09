@@ -17,6 +17,98 @@
 .page-title {
   display: block;
   margin-bottom: 4px;
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.page-title h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.page-subtitle {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.page-subtitle p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.stat-card h3 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.stat-value {
+  margin-top: 2px;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stat-hint {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.stat-hint p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.cta-card h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cta-hint {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin: 0 0 1rem 0;
+}
+
+.cta-hint p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.panel-title {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.panel-title h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.panel-hint {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.panel-hint p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
 }
 
 .page-subtitle {
