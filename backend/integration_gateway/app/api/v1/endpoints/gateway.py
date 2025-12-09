@@ -1,9 +1,11 @@
 """Gateway endpoints that proxy to internal services."""
 
 from fastapi import APIRouter, Request, HTTPException
-from fastapi.responses import Response
+from fastapi.responses import Response, StreamingResponse
 import httpx
 import structlog
+import io
+import zipfile
 
 from app.core.config import settings
 from app.core.exceptions import ProxyError, ServiceUnavailableError
@@ -234,3 +236,43 @@ async def optimize_coverage_proxy(request: Request):
             details={"service": "test-optimizer-service", "error": str(e)},
         )
 
+
+@router.get("/artifacts/{task_id}")
+async def download_artifacts(task_id: str):
+    """
+    Return ZIP artifacts for a task (placeholder bundling).
+
+    In production, this should fetch artifacts from storage/code-generator service.
+    """
+    try:
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr(
+                "README.txt",
+                (
+                    "TestOps Copilot artifacts\n"
+                    f"Task: {task_id}\n"
+                    "Contents: sample test file and metadata.\n"
+                ),
+            )
+            zf.writestr(
+                "tests/test_sample.py",
+                (
+                    "import pytest\n\n"
+                    "def test_sample():\n"
+                    "    assert True\n"
+                ),
+            )
+            zf.writestr(
+                "metadata.json",
+                '{"task_id": "' + task_id + '", "status": "completed", "note": "placeholder bundle"}',
+            )
+
+        buffer.seek(0)
+        headers = {
+            "Content-Disposition": f'attachment; filename="artifacts_{task_id}.zip"'
+        }
+        return StreamingResponse(buffer, media_type="application/zip", headers=headers)
+    except Exception as e:
+        logger.error("Failed to build artifacts bundle", error=str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to build artifacts bundle")

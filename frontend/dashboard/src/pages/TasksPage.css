@@ -203,6 +203,12 @@
   border-bottom: 1px solid var(--border-primary);
 }
 
+.code-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .download-button {
   padding: 0.5rem 1rem;
   background: #667eea;

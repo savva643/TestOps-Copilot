@@ -7,6 +7,7 @@ import { Typography } from '@snack-uikit/typography'
 import { Status } from '@snack-uikit/status'
 import { Alert } from '@snack-uikit/alert'
 import { Divider } from '@snack-uikit/divider'
+import { Link } from 'react-router-dom'
 import './GeneratePage.css'
 
 export function GeneratePage() {
@@ -76,8 +77,8 @@ export function GeneratePage() {
     <div className="generate-page">
       <div className="page-header">
         <Typography family="sans" purpose="title" size="l">Generate Test Case</Typography>
-        <Typography family="sans" purpose="body" size="m">
-          Create test cases from requirements or OpenAPI specifications
+        <Typography family="sans" purpose="body" size="m" className="page-subtitle">
+          Загрузите OpenAPI/YAML/JSON или опишите требования текстом — мы разберём и сгенерируем тесты
         </Typography>
       </div>
 
@@ -168,12 +169,23 @@ export function GeneratePage() {
               <Typography family="sans" purpose="title" size="m">Input</Typography>
               <div className="form-group">
                 <label htmlFor="file">Upload OpenAPI Specification (Optional)</label>
+                <label className={`upload-zone ${parsing ? 'disabled' : ''}`} htmlFor="file">
+                  <div className="upload-content">
+                    <span className="upload-icon">📄</span>
+                    <div className="upload-text">
+                      <strong>{file ? file.name : 'Перетащите файл или выберите'}</strong>
+                      <span>Поддерживаем .yaml / .yml / .json</span>
+                    </div>
+                    <ButtonFilled label="Выбрать файл" size="s" disabled={parsing} />
+                  </div>
+                </label>
                 <input
                   id="file"
                   type="file"
                   accept=".yaml,.yml,.json"
                   onChange={handleFileChange}
                   disabled={parsing}
+                  className="hidden-input"
                 />
                 {parsing && <Typography family="sans" purpose="body" size="s">Parsing OpenAPI file...</Typography>}
                 {file && !parsing && (
@@ -181,7 +193,7 @@ export function GeneratePage() {
                     <Typography family="sans" purpose="body" size="s">✓ Selected: {file.name}</Typography>
                     {parsedSpec && (
                       <Typography family="sans" purpose="body" size="s">
-                        Found {parsedSpec.endpoints?.length || 0} endpoints
+                        Endpoints: {parsedSpec.endpoints?.length || 0} · Schemas: {Object.keys(parsedSpec.schemas || {}).length}
                       </Typography>
                     )}
                   </div>
@@ -233,6 +245,11 @@ export function GeneratePage() {
               <Typography family="sans" purpose="body" size="s" className="info-text">
                 Check the Tasks page to see the generated test case when it's ready.
               </Typography>
+              <div className="result-actions">
+                <Link to="/tasks">
+                  <ButtonFilled label="Перейти к задаче" size="s" />
+                </Link>
+              </div>
             </div>
           </Card>
         )}

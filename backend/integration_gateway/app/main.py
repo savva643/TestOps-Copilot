@@ -8,7 +8,7 @@ import httpx
 
 from app.core.config import settings
 from app.core.security import verify_api_key
-from app.core.middleware import ErrorHandlingMiddleware, LoggingMiddleware
+from app.core.middleware import ErrorHandlingMiddleware, LoggingMiddleware, RateLimitMiddleware
 from app.api.v1.router import api_router
 
 logger = structlog.get_logger()
@@ -23,6 +23,9 @@ app = FastAPI(
 
 # Error handling middleware (should be first)
 app.add_middleware(ErrorHandlingMiddleware)
+
+# Rate limiting
+app.add_middleware(RateLimitMiddleware)
 
 # Logging middleware
 app.add_middleware(LoggingMiddleware)

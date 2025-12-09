@@ -7,9 +7,12 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.exceptions import TestOpsCopilotError
+from app.core.rate_limiter import RateLimiter
 from app.core.metrics import increment_counter, record_request_time
 
 logger = structlog.get_logger()
+
+_rate_limiter = RateLimiter(max_requests=60, window_seconds=60)
 
 
 class ErrorHandlingMiddleware(BaseHTTPMiddleware):
@@ -96,4 +99,28 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         )
         
         return response
+
+
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    """Simple per-IP rate limiting middleware for gateway."""
+
+    async def dispatch(self, request: Request, call_next):
+        client_ip = request.client.host if request.client else "unknown"
+
+        # Skip health/metrics
+        if request.url.path in ("/health", "/metrics"):
+            return await call_next(request)
+
+        if not _rate_limiter.allow(client_ip):
+            increment_counter("errors_rate_limit", 1)
+            logger.warning("Rate limit exceeded", client_ip=client_ip, path=request.url.path)
+            return JSONResponse(
+                status_code=429,
+                content={
+                    "error": "Rate limit exceeded",
+                    "message": "Too many requests, please try again later",
+                },
+            )
+
+        return await call_next(request)
 

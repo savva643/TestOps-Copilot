@@ -55,7 +55,10 @@ export function Layout({ children }: LayoutProps) {
             </div>
             <nav className="nav-links">
               {navItems.map((item) => {
-                const active = location.pathname.startsWith(item.path)
+                const active =
+                  item.path === '/'
+                    ? location.pathname === '/'
+                    : location.pathname.startsWith(item.path)
                 return (
                   <Link key={item.id} className={`nav-link ${active ? 'active' : ''}`} to={item.path}>
                     {item.label}

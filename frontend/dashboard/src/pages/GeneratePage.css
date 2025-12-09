@@ -8,6 +8,11 @@
   margin-bottom: 2rem;
 }
 
+.page-subtitle {
+  max-width: 780px;
+  margin: 0 auto;
+}
+
 .page-header h1 {
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
@@ -30,6 +35,9 @@
   border-radius: 12px;
   padding: 2rem;
   margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .form-section {
@@ -95,6 +103,47 @@
 
 .file-info p {
   margin: 0.25rem 0;
+}
+
+.upload-zone {
+  display: block;
+  border: 1px dashed var(--border-primary);
+  border-radius: 10px;
+  padding: 16px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.upload-zone:hover {
+  border-color: var(--accent-primary);
+  background: var(--muted);
+}
+
+.upload-zone.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.upload-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-primary);
+}
+
+.upload-icon {
+  font-size: 28px;
+}
+
+.upload-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--text-secondary);
+}
+
+.hidden-input {
+  display: none;
 }
 
 .spec-info {
@@ -209,6 +258,10 @@
   background: var(--muted);
   border-radius: 6px;
   color: var(--text-secondary);
+}
+
+.result-actions {
+  margin-top: 1rem;
 }
 
 @media (max-width: 768px) {

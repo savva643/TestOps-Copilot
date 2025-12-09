@@ -93,6 +93,45 @@ export function TasksPage() {
     URL.revokeObjectURL(url)
   }
 
+  const downloadArtifacts = () => {
+    if (!taskStatus) return
+
+    const metadata = {
+      task_id: taskStatus.task_id,
+      status: taskStatus.status,
+      result: taskStatus.result,
+      error: taskStatus.error,
+    }
+
+    const parts: string[] = []
+    parts.push(`# TestOps Copilot artifacts for task ${taskStatus.task_id}`)
+    parts.push(`Status: ${taskStatus.status}`)
+    if (taskStatus.result?.test_type) parts.push(`Type: ${taskStatus.result.test_type}`)
+    if (taskStatus.result?.feature) parts.push(`Feature: ${taskStatus.result.feature}`)
+    if (taskStatus.result?.priority) parts.push(`Priority: ${taskStatus.result.priority}`)
+    parts.push('')
+    parts.push('--- code start ---')
+    if (taskStatus.result?.test_case) {
+      parts.push(taskStatus.result.test_case)
+    } else {
+      parts.push('No code returned yet.')
+    }
+    parts.push('--- code end ---')
+    parts.push('')
+    parts.push('--- raw metadata ---')
+    parts.push(JSON.stringify(metadata, null, 2))
+
+    const blob = new Blob([parts.join('\n')], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `artifacts_task_${taskStatus.task_id}.txt`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="tasks-page">
       <div className="page-header">
@@ -172,7 +211,10 @@ export function TasksPage() {
                       <div className="code-preview">
                         <div className="code-header">
                           <Typography family="sans" purpose="body" size="m">Generated Code</Typography>
-                          <ButtonFilled label="Download" onClick={downloadCode} size="s" />
+                            <div className="code-actions">
+                              <ButtonFilled label="Скачать код" onClick={downloadCode} size="s" />
+                              <ButtonFilled label="Скачать артефакты" onClick={downloadArtifacts} size="s" appearance="secondary" />
+                            </div>
                         </div>
                         <pre className="code-content">
                           {taskStatus.result.test_case}
