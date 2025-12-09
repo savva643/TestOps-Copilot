@@ -212,8 +212,8 @@ export function TasksPage() {
                         <div className="code-header">
                           <Typography family="sans" purpose="body" size="m">Generated Code</Typography>
                             <div className="code-actions">
-                              <ButtonFilled label="Скачать код" onClick={downloadCode} size="s" />
-                              <ButtonFilled label="Скачать артефакты" onClick={downloadArtifacts} size="s" appearance="secondary" />
+                              <ButtonFilled label="Скачать код" onClick={downloadCode} size="s" appearance="primary" />
+                              <ButtonFilled label="Скачать артефакты" onClick={downloadArtifacts} size="s" appearance="neutral" />
                             </div>
                         </div>
                         <pre className="code-content">

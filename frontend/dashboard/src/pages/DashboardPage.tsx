@@ -1,7 +1,7 @@
 import { Card } from '@snack-uikit/card'
 import { Typography } from '@snack-uikit/typography'
 import { ButtonFilled } from '@snack-uikit/button'
-import { ButtonGhost } from '@snack-uikit/button'
+import { ButtonOutline } from '@snack-uikit/button'
 import { Status } from '@snack-uikit/status'
 import { Link } from 'react-router-dom'
 import './DashboardPage.css'
@@ -62,9 +62,9 @@ export function DashboardPage() {
           <Link to="/generate">
             <ButtonFilled label="Сгенерировать тесты" size="m" className="btn-secondary" />
           </Link>
-          <Link to="/tasks">
-            <ButtonGhost label="Перейти к задачам" size="m" />
-          </Link>
+            <Link to="/tasks">
+              <ButtonOutline label="Перейти к задачам" size="m" appearance="neutral" />
+            </Link>
         </div>
       </div>
 
@@ -176,7 +176,7 @@ export function DashboardPage() {
               <span className="ellipsis">{row.title}</span>
               <span>{row.updated}</span>
               <span className="download-cell">
-                <ButtonGhost label="Скачать" size="s" />
+                <ButtonOutline label="Скачать" size="s" appearance="neutral" />
               </span>
             </div>
           ))}
@@ -210,7 +210,7 @@ export function DashboardPage() {
               <span className="ellipsis">{row.title}</span>
               <span>{row.updated}</span>
               <span className="download-cell">
-                <ButtonGhost label="Скачать" size="s" />
+                <ButtonOutline label="Скачать" size="s" appearance="neutral" />
               </span>
             </div>
           ))}
