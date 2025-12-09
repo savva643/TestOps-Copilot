@@ -127,45 +127,45 @@ def generate_test_case_task(
 
         return result
 
-        except PromptValidationError as e:
-            logger.error("Prompt validation error", task_id=self.request.id, error=str(e))
-            raise TaskError(
-                "Prompt validation failed",
-                details={"task_id": self.request.id, "error": str(e)},
-            )
-        except LLMError as e:
-            logger.error("LLM error", task_id=self.request.id, error=str(e))
-            # Retry on LLM errors
-            if self.request.retries < self.max_retries:
-                logger.info(
-                    "Retrying task after LLM error",
-                    task_id=self.request.id,
-                    retry_count=self.request.retries + 1,
-                )
-                raise self.retry(exc=e)
-            raise TaskError(
-                "Failed to generate test case after retries",
-                details={"task_id": self.request.id, "error": str(e)},
-            )
-        except Exception as e:
-            logger.error(
-                "Failed to generate test case",
+    except PromptValidationError as e:
+        logger.error("Prompt validation error", task_id=self.request.id, error=str(e))
+        raise TaskError(
+            "Prompt validation failed",
+            details={"task_id": self.request.id, "error": str(e)},
+        )
+    except LLMError as e:
+        logger.error("LLM error", task_id=self.request.id, error=str(e))
+        # Retry on LLM errors
+        if self.request.retries < self.max_retries:
+            logger.info(
+                "Retrying task after LLM error",
                 task_id=self.request.id,
-                error=str(e),
-                exc_info=True,
+                retry_count=self.request.retries + 1,
             )
-            # Retry on certain exceptions
-            if self.request.retries < self.max_retries:
-                logger.info(
-                    "Retrying task",
-                    task_id=self.request.id,
-                    retry_count=self.request.retries + 1,
-                )
-                raise self.retry(exc=e)
-            raise TaskError(
-                "Unexpected error during test case generation",
-                details={"task_id": self.request.id, "error": str(e)},
+            raise self.retry(exc=e)
+        raise TaskError(
+            "Failed to generate test case after retries",
+            details={"task_id": self.request.id, "error": str(e)},
+        )
+    except Exception as e:
+        logger.error(
+            "Failed to generate test case",
+            task_id=self.request.id,
+            error=str(e),
+            exc_info=True,
+        )
+        # Retry on certain exceptions
+        if self.request.retries < self.max_retries:
+            logger.info(
+                "Retrying task",
+                task_id=self.request.id,
+                retry_count=self.request.retries + 1,
             )
+            raise self.retry(exc=e)
+        raise TaskError(
+            "Unexpected error during test case generation",
+            details={"task_id": self.request.id, "error": str(e)},
+        )
 
 
 # Register task with celery_app to avoid circular import

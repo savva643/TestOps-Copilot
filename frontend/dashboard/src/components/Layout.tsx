@@ -32,7 +32,6 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const location = useLocation()
-  const navigate = useNavigate()
   const { theme, themeClassName, changeTheme } = useThemeConfig<Theme>({
     themeMap,
     defaultTheme: Theme.Light,
