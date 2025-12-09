@@ -4,6 +4,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { GeneratePage } from './pages/GeneratePage'
 import { TasksPage } from './pages/TasksPage'
 import { OptimizePage } from './pages/OptimizePage'
+import { LoginPage } from './pages/LoginPage'
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/generate" element={<GeneratePage />} />
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/optimize" element={<OptimizePage />} />
+          <Route path="/login" element={<LoginPage />} />
         </Routes>
       </Layout>
     </BrowserRouter>

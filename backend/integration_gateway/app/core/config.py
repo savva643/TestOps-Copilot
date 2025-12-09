@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     SPEC_PARSER_URL: str = "http://localhost:8002"
     CODE_GENERATOR_URL: str = "http://localhost:8003"
     TEST_OPTIMIZER_URL: str = "http://localhost:8004"
+    IAM_AUTH_URL: str = "https://iam.api.cloud.ru/api/v1/auth/token"
 
     # Security
     API_KEY: str = "default-api-key-change-in-production"

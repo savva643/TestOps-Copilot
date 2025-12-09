@@ -72,11 +72,7 @@ export function Layout({ children }: LayoutProps) {
               className="btn-primary"
               label="Войти"
               size="s"
-            />
-            <ButtonFilled
-              className="btn-secondary"
-              label="Регистрация"
-              size="s"
+              href="/login"
             />
             <ButtonFilled
               className="btn-secondary"
