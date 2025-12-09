@@ -9,6 +9,7 @@ from app.services.template_engine import TemplateEngine
 from app.services.code_validator import validate_allure_contract
 from app.services.test_standard_validator import validate_test_standard
 from app.services.llm_enhancer import LLMEnhancer
+from app.core.exceptions import TemplateError, FormattingError
 
 logger = structlog.get_logger()
 
@@ -64,8 +65,12 @@ async def generate_code(request: GenerateCodeRequest):
         
         # Optionally enhance with LLM
         if request.use_llm:
-            enhancer = LLMEnhancer()
-            code = await enhancer.enhance(code, context=request.model_dump())
+            try:
+                enhancer = LLMEnhancer()
+                code = await enhancer.enhance(code, context=request.model_dump())
+            except Exception as e:
+                logger.warning("LLM enhancement failed, using original code", error=str(e))
+                # Continue with original code if LLM enhancement fails
 
         # Format code with black
         formatted_code = await template_engine.format_code(code)
@@ -81,7 +86,10 @@ async def generate_code(request: GenerateCodeRequest):
             validation_issues=validation_issues,
             standard_issues=standard_issues,
         )
+    except (TemplateError, FormattingError) as e:
+        # These exceptions will be handled by ErrorHandlingMiddleware
+        raise
     except Exception as e:
-        logger.error("Failed to generate code", error=str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Unexpected error in generate_code endpoint", error=str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 

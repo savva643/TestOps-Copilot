@@ -7,6 +7,7 @@ import structlog
 
 from app.services.openapi_parser import OpenAPIParser
 from app.services.text_parser import TextParser
+from app.core.exceptions import ParsingError, ValidationError, UnsupportedFormatError
 
 logger = structlog.get_logger()
 
@@ -39,9 +40,12 @@ async def parse_openapi(file: UploadFile = File(...)):
             schemas=result.get("schemas", {}),
             info=result.get("info", {}),
         )
+    except (ParsingError, ValidationError, UnsupportedFormatError) as e:
+        # These exceptions will be handled by ErrorHandlingMiddleware
+        raise
     except Exception as e:
-        logger.error("Failed to parse OpenAPI spec", error=str(e))
-        raise HTTPException(status_code=400, detail=f"Failed to parse OpenAPI: {str(e)}")
+        logger.error("Unexpected error in parse_openapi endpoint", error=str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 @router.post("/text")

@@ -1,5 +1,6 @@
 .tasks-page {
   animation: fadeIn 0.3s ease-in;
+  color: var(--text-primary);
 }
 
 .page-header {
@@ -10,11 +11,11 @@
 .page-header h1 {
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .page-header p {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 1.1rem;
 }
 
@@ -24,8 +25,8 @@
 }
 
 .task-search-card {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
   border-radius: 12px;
   padding: 2rem;
   margin-bottom: 2rem;
@@ -39,22 +40,24 @@
 .task-input {
   flex: 1;
   padding: 0.75rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-primary);
   border-radius: 6px;
   font-size: 1rem;
-  font-family: inherit;
+  font-family: var(--font-family-base);
+  background: var(--surface-primary);
+  color: var(--text-primary);
 }
 
 .task-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(38, 208, 124, 0.16);
 }
 
 .check-button {
   padding: 0.75rem 1.5rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  color: var(--accent-contrast);
   border: none;
   border-radius: 6px;
   font-weight: 600;
@@ -90,8 +93,8 @@
 }
 
 .task-status-card {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
   border-radius: 12px;
   padding: 2rem;
 }
@@ -102,12 +105,12 @@
   align-items: center;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .status-header h3 {
   margin: 0;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .status-badge {
@@ -138,7 +141,7 @@
 }
 
 .task-details {
-  color: #333;
+  color: var(--text-primary);
 }
 
 .detail-row {
@@ -149,7 +152,7 @@
 }
 
 .detail-row code {
-  background: #f5f5f5;
+  background: var(--muted);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-family: monospace;
@@ -159,7 +162,7 @@
 .result-section {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--border-primary);
 }
 
 .result-section h4 {
@@ -168,7 +171,7 @@
 }
 
 .test-case-info {
-  background: #f8f9fa;
+  background: var(--muted);
   border-radius: 6px;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -178,7 +181,7 @@
   display: flex;
   justify-content: space-between;
   padding: 0.5rem 0;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .info-row:last-child {
@@ -186,18 +189,18 @@
 }
 
 .code-preview {
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border-primary);
   border-radius: 6px;
   overflow: hidden;
 }
 
 .code-header {
-  background: #f5f5f5;
+  background: var(--muted);
   padding: 0.75rem 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .download-button {
@@ -217,8 +220,8 @@
 
 .code-content {
   padding: 1rem;
-  background: #282c34;
-  color: #abb2bf;
+  background: var(--code-bg);
+  color: #e5e7eb;
   overflow-x: auto;
   font-family: 'Courier New', monospace;
   font-size: 0.875rem;

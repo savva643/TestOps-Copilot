@@ -8,6 +8,7 @@ from time import time
 from collections import deque
 
 from app.core.config import settings
+from app.core.exceptions import LLMError
 
 logger = structlog.get_logger()
 
@@ -195,7 +196,10 @@ class LLMClient:
             except ValueError as e:
                 # Don't retry on validation errors
                 logger.error("Validation error in LLM response", error=str(e))
-                raise
+                raise LLMError(
+                    "Invalid response from LLM API",
+                    details={"error": str(e)},
+                )
 
             except Exception as e:
                 last_exception = e
@@ -213,8 +217,11 @@ class LLMClient:
 
         # If we get here, all retries failed
         if last_exception:
-            raise last_exception
-        raise Exception("Failed to generate text after all retry attempts")
+            raise LLMError(
+                "Failed to generate text after all retry attempts",
+                details={"error": str(last_exception), "max_retries": self.max_retries},
+            )
+        raise LLMError("Failed to generate text after all retry attempts")
 
     async def close(self):
         """Close the HTTP client."""

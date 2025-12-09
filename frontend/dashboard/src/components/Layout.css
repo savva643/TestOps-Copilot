@@ -2,7 +2,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--surface-secondary, #f7f8fa);
+  background: var(--surface-secondary);
 }
 
 .header {
@@ -11,9 +11,12 @@
   justify-content: space-between;
   gap: 16px;
   padding: 10px 20px;
-  background: #ffffff;
-  border-bottom: 1px solid var(--stroke-primary, #e5e7eb);
-  color: #111827;
+  background: var(--surface-primary);
+  border-bottom: 1px solid var(--border-primary);
+  color: var(--text-primary);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .header-left {
@@ -38,12 +41,13 @@
 }
 
 .logo-text {
-  color: #111827;
+  color: var(--text-primary);
 }
 
 .nav-links {
   display: flex;
   gap: 10px;
+  align-items: center;
 }
 
 .nav-link {
@@ -51,10 +55,11 @@
   color: inherit;
   padding: 8px 10px;
   border-radius: 6px;
+  font-weight: 600;
 }
 
 .nav-link.active {
-  background: #f2f2f2;
+  background: var(--muted);
 }
 
 .header-actions {
@@ -64,42 +69,33 @@
 }
 
 .btn-primary {
-  background: #26d07c !important;
-  color: #ffffff !important;
-  border-color: #26d07c !important;
+  background: var(--accent-primary) !important;
+  color: var(--accent-contrast) !important;
+  border-color: var(--accent-primary) !important;
+  font-weight: 600 !important;
 }
 
 .btn-secondary {
-  background: #383838 !important;
-  color: #ffffff !important;
-  border-color: #383838 !important;
-}
-
-.ghost-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: none;
-  background: transparent;
-  color: #111827;
-  cursor: pointer;
-  padding: 6px 8px;
-  border-radius: 6px;
-}
-
-.ghost-btn:hover {
-  background: #f2f2f2;
+  background: #3b4859 !important;
+  color: var(--accent-contrast) !important;
+  border-color: #3b4859 !important;
+  font-weight: 600 !important;
 }
 
 .main-content {
   flex: 1;
   padding: 16px 20px 32px;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
 }
 
 .footer {
   padding: 12px 20px 20px;
   text-align: center;
-  color: var(--text-secondary, #6b7280);
+  color: var(--text-secondary);
   font-size: 14px;
+  background: var(--surface-primary);
+  border-top: 1px solid var(--border-primary);
 }
 

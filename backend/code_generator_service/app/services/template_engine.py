@@ -5,7 +5,9 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 import subprocess
 import structlog
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader, select_autoescape, TemplateNotFound, TemplateError
+
+from app.core.exceptions import TemplateError, FormattingError
 
 logger = structlog.get_logger()
 
@@ -82,7 +84,13 @@ class TemplateEngine:
                 template_name = "manual_test.j2"
                 test_type = "manual"
 
-            template = self.env.get_template(template_name)
+            try:
+                template = self.env.get_template(template_name)
+            except TemplateNotFound as e:
+                raise TemplateError(
+                    f"Template not found: {template_name}",
+                    details={"template_name": template_name, "test_type": test_type},
+                )
 
             # Prepare context
             context = {
@@ -97,15 +105,26 @@ class TemplateEngine:
             }
 
             # Generate code
-            code = template.render(**context)
+            try:
+                code = template.render(**context)
+            except TemplateError as e:
+                raise TemplateError(
+                    "Failed to render template",
+                    details={"template_name": template_name, "error": str(e)},
+                )
 
             logger.info("Code generated successfully", test_type=test_type)
 
             return code
 
-        except Exception as e:
-            logger.error("Failed to generate code", error=str(e))
+        except TemplateError:
             raise
+        except Exception as e:
+            logger.error("Unexpected error generating code", error=str(e), exc_info=True)
+            raise TemplateError(
+                "Unexpected error during code generation",
+                details={"test_type": test_type, "error": str(e)},
+            )
 
     async def format_code(self, code: str) -> str:
         """
@@ -129,10 +148,16 @@ class TemplateEngine:
             if result.returncode == 0:
                 return result.stdout
             else:
-                # If black fails, return original code
-                logger.warning("Black formatting failed, returning original code")
+                # If black fails, log warning but return original code (non-critical)
+                logger.warning(
+                    "Black formatting failed, returning original code",
+                    error=result.stderr,
+                )
                 return code
 
+        except FileNotFoundError:
+            logger.warning("Black formatter not found, returning original code")
+            return code
         except Exception as e:
             logger.warning("Failed to format code with black", error=str(e))
             return code

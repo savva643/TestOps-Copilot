@@ -4,13 +4,9 @@ from typing import Optional, Dict, Any
 import structlog
 import re
 
+from app.core.exceptions import PromptValidationError
+
 logger = structlog.get_logger()
-
-
-class PromptValidationError(Exception):
-    """Exception raised when prompt validation fails."""
-
-    pass
 
 
 class PromptEngineer:

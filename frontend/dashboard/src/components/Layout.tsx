@@ -35,6 +35,7 @@ export function Layout({ children }: LayoutProps) {
     themeMap,
     defaultTheme: Theme.Light,
   })
+  const themeModifier = theme === Theme.Dark ? 'theme-dark' : 'theme-light'
 
   const navItems = [
     { id: 'dashboard', label: 'Дашборд', path: '/' },
@@ -45,7 +46,7 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <ThemeContext.Provider value={{ theme, changeTheme }}>
-      <div className={`layout ${themeClassName}`}>
+      <div className={`layout ${themeClassName} ${themeModifier}`}>
         <header className="header">
           <div className="header-left">
             <div className="logo">
@@ -64,15 +65,6 @@ export function Layout({ children }: LayoutProps) {
             </nav>
           </div>
           <div className="header-actions">
-            <button className="ghost-btn search-btn">
-              <span className="icon">🔍</span>
-              <span>Поиск</span>
-            </button>
-            <ButtonFilled
-              className="btn-secondary"
-              label="Связаться с нами"
-              size="s"
-            />
             <ButtonFilled
               className="btn-primary"
               label="Войти"

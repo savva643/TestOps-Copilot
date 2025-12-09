@@ -9,6 +9,8 @@ from openapi_spec_validator import validate_spec
 from openapi_spec_validator.handlers import UrlHandler
 from openapi_spec_validator.readers import read_from_filename
 
+from app.core.exceptions import ParsingError, ValidationError, UnsupportedFormatError
+
 logger = structlog.get_logger()
 
 
@@ -28,20 +30,49 @@ class OpenAPIParser:
         """
         try:
             # Decode content
-            text_content = content.decode("utf-8")
+            try:
+                text_content = content.decode("utf-8")
+            except UnicodeDecodeError as e:
+                raise ParsingError(
+                    "Failed to decode file content as UTF-8",
+                    details={"filename": filename, "error": str(e)},
+                )
 
             # Parse YAML or JSON
-            if filename.endswith(".yaml") or filename.endswith(".yml"):
-                spec_dict = yaml.safe_load(text_content)
-            else:
-                spec_dict = json.loads(text_content)
+            try:
+                if filename.endswith(".yaml") or filename.endswith(".yml"):
+                    spec_dict = yaml.safe_load(text_content)
+                elif filename.endswith(".json"):
+                    spec_dict = json.loads(text_content)
+                else:
+                    raise UnsupportedFormatError(
+                        "Unsupported file format. Expected .yaml, .yml, or .json",
+                        details={"filename": filename},
+                    )
+            except (yaml.YAMLError, json.JSONDecodeError) as e:
+                raise ParsingError(
+                    "Failed to parse file as YAML or JSON",
+                    details={"filename": filename, "error": str(e)},
+                )
 
             # Validate spec (schema-level)
-            validate_spec(spec_dict, spec_url_handler=UrlHandler(read_from_filename))
+            try:
+                validate_spec(spec_dict, spec_url_handler=UrlHandler(read_from_filename))
+            except Exception as e:
+                raise ValidationError(
+                    "OpenAPI specification validation failed",
+                    details={"filename": filename, "error": str(e)},
+                )
 
             # Resolve references using prance
-            parser = ResolvingParser(spec=spec_dict, backend="openapi-spec-validator")
-            resolved_spec = parser.specification
+            try:
+                parser = ResolvingParser(spec=spec_dict, backend="openapi-spec-validator")
+                resolved_spec = parser.specification
+            except Exception as e:
+                raise ParsingError(
+                    "Failed to resolve OpenAPI references",
+                    details={"filename": filename, "error": str(e)},
+                )
 
             # Extract endpoints
             endpoints = self._extract_endpoints(resolved_spec)
@@ -62,9 +93,14 @@ class OpenAPIParser:
 
             return result
 
-        except Exception as e:
-            logger.error("Failed to parse OpenAPI spec", error=str(e))
+        except (ParsingError, ValidationError, UnsupportedFormatError):
             raise
+        except Exception as e:
+            logger.error("Unexpected error parsing OpenAPI spec", error=str(e), exc_info=True)
+            raise ParsingError(
+                "Unexpected error during parsing",
+                details={"filename": filename, "error": str(e)},
+            )
 
     def _extract_endpoints(self, spec: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Extract endpoints from OpenAPI spec with merged parameters and normalized bodies."""

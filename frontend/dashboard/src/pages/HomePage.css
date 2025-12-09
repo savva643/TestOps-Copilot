@@ -17,6 +17,7 @@
   text-align: center;
   padding: 3rem 0;
   margin-bottom: 3rem;
+  color: var(--text-primary);
 }
 
 .hero h1 {
@@ -31,8 +32,8 @@
 
 .subtitle {
   font-size: 1.25rem;
-  color: #666;
-  max-width: 600px;
+  color: var(--text-secondary);
+  max-width: 640px;
   margin: 0 auto;
 }
 
@@ -41,11 +42,12 @@
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 2rem;
   margin-bottom: 3rem;
+  align-items: stretch;
 }
 
 .feature-card {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
   border-radius: 12px;
   padding: 2rem;
   text-align: center;
@@ -54,7 +56,7 @@
 
 .feature-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .feature-icon {
@@ -65,24 +67,25 @@
 .feature-card h3 {
   font-size: 1.25rem;
   margin-bottom: 0.5rem;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .feature-card p {
-  color: #666;
+  color: var(--text-secondary);
   line-height: 1.6;
 }
 
 .quick-start {
-  background: #f8f9fa;
+  background: var(--muted);
   border-radius: 12px;
   padding: 2rem;
   margin-top: 3rem;
+  border: 1px solid var(--border-primary);
 }
 
 .quick-start h2 {
   margin-bottom: 1rem;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .quick-start ol {
@@ -90,7 +93,7 @@
   margin: 0 auto;
   text-align: left;
   line-height: 2;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .quick-start li {
