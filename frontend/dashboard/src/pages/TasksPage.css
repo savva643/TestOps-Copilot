@@ -43,7 +43,9 @@
   border: 1px solid var(--border-primary);
   border-radius: 6px;
   font-size: 1rem;
-  font-family: var(--font-family-base);
+  font-family: 'SB Sans Interface', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
   background: var(--surface-primary);
   color: var(--text-primary);
 }

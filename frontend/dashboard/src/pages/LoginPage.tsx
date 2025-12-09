@@ -70,7 +70,7 @@ export function LoginPage() {
             </div>
 
             <div className="vertical-gap">
-              <Typography family="monospace" purpose="body" size="s" className="token-block">
+              <Typography family="sans" purpose="body" size="s" className="token-block">
 {`curl --location 'https://iam.api.cloud.ru/api/v1/auth/token' \\
   --header 'Content-Type: application/json' \\
   --output token.json \\
