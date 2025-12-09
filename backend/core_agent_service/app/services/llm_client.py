@@ -52,21 +52,23 @@ class RateLimiter:
 class LLMClient:
     """Client for interacting with Cloud.ru Evolution Foundation Model API."""
 
-    def __init__(self, max_retries: int = 3, retry_delay: float = 1.0):
+    def __init__(self, api_key: str | None = None, max_retries: int = 3, retry_delay: float = 1.0):
         """
         Initialize LLM client.
 
         Args:
+            api_key: API key for LLM (if None, uses settings)
             max_retries: Maximum number of retry attempts
             retry_delay: Initial delay between retries in seconds
         """
-        self.api_key = settings.CLOUD_RU_LLM_API_KEY
+        self.api_key = api_key or settings.CLOUD_RU_LLM_API_KEY
         self.api_url = settings.CLOUD_RU_LLM_API_URL
+        self.model = settings.CLOUD_RU_LLM_MODEL
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.rate_limiter = RateLimiter(max_requests=10, time_window=60)
         self.client = httpx.AsyncClient(
-            timeout=30.0,
+            timeout=60.0,
             headers={
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json",
@@ -105,18 +107,21 @@ class LLMClient:
         for attempt in range(1, self.max_retries + 1):
             try:
                 payload = {
-                    "model": "evolution-foundation",
+                    "model": self.model,
                     "messages": [
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt},
                     ],
                     "temperature": temperature,
                     "max_tokens": max_tokens,
+                    "presence_penalty": 0,
+                    "top_p": 0.95,
                 }
 
                 logger.info(
                     "Sending request to LLM API",
                     api_url=self.api_url,
+                    model=self.model,
                     attempt=attempt,
                     max_retries=self.max_retries,
                 )

@@ -1,8 +1,9 @@
-import { ReactNode, createContext } from 'react'
+import { ReactNode, createContext, useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useThemeConfig } from '@snack-uikit/utils'
 import DefaultBrand from '@snack-uikit/figma-tokens/build/css/brand.module.css'
 import { ButtonFilled } from '@snack-uikit/button'
+import { getStoredCredentials } from '../api/auth'
 import './Layout.css'
 
 export enum Theme {
@@ -31,11 +32,22 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const location = useLocation()
+  const navigate = useNavigate()
   const { theme, themeClassName, changeTheme } = useThemeConfig<Theme>({
     themeMap,
     defaultTheme: Theme.Light,
   })
   const themeModifier = theme === Theme.Dark ? 'theme-dark' : 'theme-light'
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  useEffect(() => {
+    const credentials = getStoredCredentials()
+    if (credentials) {
+      setIsAuthenticated(true)
+    } else {
+      setIsAuthenticated(false)
+    }
+  }, [location.pathname])
 
   const navItems = [
     { id: 'dashboard', label: 'Дашборд', path: '/' },
@@ -68,12 +80,21 @@ export function Layout({ children }: LayoutProps) {
             </nav>
           </div>
           <div className="header-actions">
-            <ButtonFilled
-              className="btn-primary"
-              label="Войти"
-              size="s"
-              href="/login"
-            />
+            {isAuthenticated ? (
+              <ButtonFilled
+                className="btn-primary"
+                label="Профиль"
+                size="s"
+                href="/login"
+              />
+            ) : (
+              <ButtonFilled
+                className="btn-primary"
+                label="Войти"
+                size="s"
+                href="/login"
+              />
+            )}
             <ButtonFilled
               className="btn-secondary"
               label={theme === Theme.Light ? 'Тёмная тема' : 'Светлая тема'}

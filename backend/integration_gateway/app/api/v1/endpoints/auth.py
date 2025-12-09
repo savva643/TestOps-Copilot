@@ -14,6 +14,7 @@ router = APIRouter()
 class TokenRequest(BaseModel):
     keyId: str
     secret: str
+    llmApiKey: str | None = None
 
 
 @router.post("/auth/token")

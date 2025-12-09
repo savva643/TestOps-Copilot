@@ -1,6 +1,6 @@
 """Test generation endpoints."""
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel
 from typing import Optional
 import structlog
@@ -37,6 +37,7 @@ class TestCaseGenerationResponse(BaseModel):
 @router.post("/test-case", response_model=TestCaseGenerationResponse)
 async def generate_test_case(
     request: TestCaseGenerationRequest,
+    http_request: Request,
     api_key: str = Depends(verify_api_key),
 ):
     """
@@ -45,6 +46,9 @@ async def generate_test_case(
     This endpoint accepts a description and generates a structured test case
     using the Cloud.ru Evolution Foundation Model.
     """
+    # Get LLM API key from header if provided
+    llm_api_key = http_request.headers.get("X-LLM-API-Key")
+    
     try:
         # Create async task
         task = generate_test_case_task.delay(
@@ -55,6 +59,7 @@ async def generate_test_case(
             priority=request.priority,
             owner=request.owner,
             jira_link=request.jira_link,
+            llm_api_key=llm_api_key,
         )
 
         logger.info(

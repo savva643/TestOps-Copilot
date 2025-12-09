@@ -42,6 +42,7 @@ def generate_test_case_task(
     priority: str = "NORMAL",
     owner: Optional[str] = None,
     jira_link: Optional[str] = None,
+    llm_api_key: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Generate a test case using LLM.
@@ -59,8 +60,8 @@ def generate_test_case_task(
         # Update progress: 0% - Starting
         self.update_progress(0, 100, "Initializing...")
 
-        # Initialize LLM client
-        llm_client = LLMClient()
+        # Initialize LLM client with API key if provided
+        llm_client = LLMClient(api_key=llm_api_key)
 
         # Update progress: 20% - Validating and preparing prompts
         self.update_progress(20, 100, "Validating inputs and preparing prompts...")

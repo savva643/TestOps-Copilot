@@ -19,7 +19,8 @@ class Settings(BaseSettings):
 
     # LLM API
     CLOUD_RU_LLM_API_KEY: str = ""
-    CLOUD_RU_LLM_API_URL: str = "https://api.cloud.ru/v1/evolution/foundation"
+    CLOUD_RU_LLM_API_URL: str = "https://foundation-models.api.cloud.ru/v1"
+    CLOUD_RU_LLM_MODEL: str = "openai/gpt-oss-120b"
 
     # External services
     SPEC_PARSER_URL: str = "http://localhost:8002"

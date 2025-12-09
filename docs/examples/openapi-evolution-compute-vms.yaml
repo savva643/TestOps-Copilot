@@ -1,0 +1,200 @@
+openapi: 3.0.3
+info:
+  title: Evolution Compute VMs API
+  version: 1.0.0
+  description: API для управления виртуальными машинами в Cloud.ru Evolution
+
+servers:
+  - url: https://api.cloud.ru/v1
+    description: Production server
+
+paths:
+  /vms:
+    get:
+      summary: Получить список виртуальных машин
+      operationId: listVMs
+      tags:
+        - VMs
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+          description: Максимальное количество VM для возврата
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Смещение для пагинации
+      responses:
+        '200':
+          description: Список виртуальных машин
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VMListResponse'
+        '400':
+          description: Неверный запрос
+        '401':
+          description: Не авторизован
+    
+    post:
+      summary: Создать виртуальную машину
+      operationId: createVM
+      tags:
+        - VMs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VMCreateRequest'
+      responses:
+        '201':
+          description: VM успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VM'
+        '400':
+          description: Неверный запрос
+        '401':
+          description: Не авторизован
+        '409':
+          description: VM с таким именем уже существует
+
+  /vms/{vmId}:
+    get:
+      summary: Получить информацию о виртуальной машине
+      operationId: getVM
+      tags:
+        - VMs
+      parameters:
+        - name: vmId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID виртуальной машины
+      responses:
+        '200':
+          description: Информация о VM
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VM'
+        '404':
+          description: VM не найдена
+        '401':
+          description: Не авторизован
+    
+    delete:
+      summary: Удалить виртуальную машину
+      operationId: deleteVM
+      tags:
+        - VMs
+      parameters:
+        - name: vmId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID виртуальной машины
+      responses:
+        '204':
+          description: VM успешно удалена
+        '404':
+          description: VM не найдена
+        '401':
+          description: Не авторизован
+
+components:
+  schemas:
+    VM:
+      type: object
+      required:
+        - id
+        - name
+        - status
+        - flavor
+        - image
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID виртуальной машины
+        name:
+          type: string
+          description: Имя виртуальной машины
+          example: "my-vm"
+        status:
+          type: string
+          enum: [creating, running, stopped, deleting, error]
+          description: Текущий статус VM
+        flavor:
+          type: string
+          description: Конфигурация VM
+          example: "small"
+        image:
+          type: string
+          description: Образ операционной системы
+          example: "ubuntu-20.04"
+        createdAt:
+          type: string
+          format: date-time
+          description: Дата создания
+        updatedAt:
+          type: string
+          format: date-time
+          description: Дата последнего обновления
+    
+    VMCreateRequest:
+      type: object
+      required:
+        - name
+        - flavor
+        - image
+      properties:
+        name:
+          type: string
+          description: Имя виртуальной машины
+          example: "my-vm"
+        flavor:
+          type: string
+          description: Конфигурация VM
+          example: "small"
+        image:
+          type: string
+          description: Образ операционной системы
+          example: "ubuntu-20.04"
+    
+    VMListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/VM'
+        total:
+          type: integer
+          description: Общее количество VM
+        limit:
+          type: integer
+          description: Лимит на страницу
+        offset:
+          type: integer
+          description: Смещение
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - BearerAuth: []
+
