@@ -6,8 +6,6 @@ from typing import Dict, Any, List, Union
 import structlog
 from prance import ResolvingParser
 from openapi_spec_validator import validate_spec
-from openapi_spec_validator.handlers import UrlHandler
-from openapi_spec_validator.readers import read_from_filename
 
 from app.core.exceptions import ParsingError, ValidationError, UnsupportedFormatError
 
@@ -57,7 +55,7 @@ class OpenAPIParser:
 
             # Validate spec (schema-level)
             try:
-                validate_spec(spec_dict, spec_url_handler=UrlHandler(read_from_filename))
+                validate_spec(spec_dict)
             except Exception as e:
                 raise ValidationError(
                     "OpenAPI specification validation failed",

@@ -16,6 +16,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - testops-network
 
   redis:
     image: redis:7-alpine
@@ -29,6 +31,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - testops-network
 
   # Celery Worker
   celery-worker:
