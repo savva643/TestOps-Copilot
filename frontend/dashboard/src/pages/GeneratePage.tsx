@@ -112,7 +112,7 @@ export function GeneratePage() {
         <Card>
           <form onSubmit={handleSubmit} className="generate-form">
             <div className="form-section">
-              <h3>Конфигурация теста</h3>
+              <h3 style="font-family: sans-serif;">Конфигурация теста</h3>
               <div className="form-grid">
                 <div className="form-group">
                   <label htmlFor="testType">Тип теста *</label>
