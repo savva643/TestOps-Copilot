@@ -34,7 +34,6 @@ export function TasksPage() {
   const [listLoading, setListLoading] = useState(false)
   const credentials = useMemo(() => getStoredCredentials(), [])
   const ownerId = credentials?.keyId
-  const [onlyMine, setOnlyMine] = useState<boolean>(Boolean(ownerId))
   const pageSize = 10
 
   useEffect(() => {
@@ -47,7 +46,7 @@ export function TasksPage() {
 
   useEffect(() => {
     fetchTasks()
-  }, [tasksPage, onlyMine, ownerId])
+  }, [tasksPage, ownerId])
 
   const handleCheck = async (idToCheck?: string) => {
     const id = idToCheck ?? taskId
@@ -75,7 +74,12 @@ export function TasksPage() {
       }
     } catch (err: any) {
       const errorMsg = err.response?.data?.detail || err.message || 'Не удалось получить статус задачи'
-      setError(errorMsg)
+      // Если 404 или похожая ошибка, показываем сообщение о несуществующей задаче
+      if (err.response?.status === 404 || errorMsg.toLowerCase().includes('not found') || errorMsg.toLowerCase().includes('не найдена')) {
+        setError('Задача с таким ID не найдена в базе данных')
+      } else {
+        setError(errorMsg)
+      }
       setTaskStatus(null)
       setPolling(false)
     } finally {
@@ -90,9 +94,7 @@ export function TasksPage() {
         page: tasksPage,
         page_size: pageSize,
       }
-      if (onlyMine && ownerId) {
-        params.owner_id = ownerId
-      }
+      // Поиск по owner_id только если указан в поиске
       const response = await getTasks(params)
       setTasks(response.items)
       setTotalTasks(response.total)
@@ -266,21 +268,8 @@ export function TasksPage() {
         {tasks.length > 0 && (
           <Card className="history-card">
             <div className="history-header">
-              <h3>{onlyMine ? 'Мои задачи' : 'Все задачи'}</h3>
+              <h3>Все задачи</h3>
               <div className="history-actions">
-                {ownerId && (
-                  <label className="checkbox">
-                    <input
-                      type="checkbox"
-                      checked={onlyMine}
-                      onChange={(e) => {
-                        setTasksPage(1)
-                        setOnlyMine(e.target.checked)
-                      }}
-                    />
-                    <span>Показывать только мои (по ключу)</span>
-                  </label>
-                )}
                 <div className="pagination">
                   <ButtonFilled
                     label="Назад"

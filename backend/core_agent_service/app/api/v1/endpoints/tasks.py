@@ -108,7 +108,14 @@ async def get_task_status(
     try:
         task = celery_app.AsyncResult(task_id)
 
+        # Проверяем, существует ли задача в БД
+        db_record = db.get(TaskRecord, task_id)
+        
         if task.state == "PENDING":
+            # Если задача в PENDING и нет записи в БД, значит задача не существует
+            if not db_record:
+                raise HTTPException(status_code=404, detail="Задача с таким ID не найдена в базе данных")
+            
             response = {
                 "task_id": task_id,
                 "status": "pending",

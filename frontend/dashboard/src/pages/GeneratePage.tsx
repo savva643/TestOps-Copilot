@@ -50,6 +50,8 @@ export function GeneratePage() {
         setParsing(false)
       }
     }
+    // Сбрасываем значение input, чтобы можно было выбрать тот же файл снова
+    e.target.value = ''
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -59,12 +61,31 @@ export function GeneratePage() {
       return
     }
 
+    // Для UI тестов не требуется OpenAPI файл
+    if (testType === 'ui' && file) {
+      setFile(null)
+      setParsedSpec(null)
+    }
+
     setLoading(true)
     setError(null)
 
     try {
+      // Формируем описание с учетом типа теста
+      let finalDescription = description
+      
+      // Для API тестов добавляем информацию из OpenAPI если есть
+      if (testType === 'api' && parsedSpec) {
+        if (parsedSpec.endpoints && parsedSpec.endpoints.length > 0) {
+          const endpointsInfo = parsedSpec.endpoints
+            .map((ep) => `- ${ep.method} ${ep.path}${ep.summary ? `: ${ep.summary}` : ''}`)
+            .join('\n')
+          finalDescription = `${description}\n\nAPI Endpoints:\n${endpointsInfo}`
+        }
+      }
+
       const response = await generateTestCase({
-        description,
+        description: finalDescription,
         test_type: testType,
         feature: feature || undefined,
         story: story || undefined,
@@ -98,7 +119,15 @@ export function GeneratePage() {
                   <select
                     id="testType"
                     value={testType}
-                    onChange={(e) => setTestType(e.target.value)}
+                    onChange={(e) => {
+                      const newType = e.target.value
+                      setTestType(newType)
+                      // Очищаем файл при смене типа теста с API на другой
+                      if (newType !== 'api' && file) {
+                        setFile(null)
+                        setParsedSpec(null)
+                      }
+                    }}
                     required
                   >
                     <option value="manual">Ручной тест</option>
@@ -168,36 +197,43 @@ export function GeneratePage() {
 
             <div className="form-section">
               <h3>Входные данные</h3>
-              <div className="form-group">
-                <label htmlFor="file">Загрузить спецификацию OpenAPI (необязательно)</label>
-                <label className={`upload-zone ${parsing ? 'disabled' : ''}`} htmlFor="file">
-                  <div className="upload-content">
-                    <span className="upload-icon">📄</span>
-                    <div className="upload-text">
-                      <strong>{file ? file.name : 'Перетащите файл или выберите'}</strong>
-                      <span>Поддерживаем .yaml / .yml / .json</span>
+              {testType === 'api' && (
+                <div className="form-group">
+                  <label htmlFor="file">Загрузить спецификацию OpenAPI (необязательно)</label>
+                  <div className={`upload-zone ${parsing ? 'disabled' : ''}`} onClick={() => {
+                    if (!parsing) {
+                      const fileInput = document.getElementById('file') as HTMLInputElement
+                      fileInput?.click()
+                    }
+                  }}>
+                    <div className="upload-content">
+                      <span className="upload-icon">📄</span>
+                      <div className="upload-text">
+                        <strong>{file ? file.name : 'Перетащите файл или выберите'}</strong>
+                        <span>Поддерживаем .yaml / .yml / .json</span>
+                      </div>
+                      <ButtonFilled label="Выбрать файл" size="s" disabled={parsing} />
                     </div>
-                    <ButtonFilled label="Выбрать файл" size="s" disabled={parsing} />
                   </div>
-                </label>
-                <input
-                  id="file"
-                  type="file"
-                  accept=".yaml,.yml,.json"
-                  onChange={handleFileChange}
-                  disabled={parsing}
-                  className="hidden-input"
-                />
-                {parsing && <p className="parsing-status">Парсинг файла OpenAPI...</p>}
-                {file && !parsing && parsedSpec && (
-                  <div className="file-info">
-                    <p>✓ Выбран: {file.name}</p>
-                    <p>
-                      Эндпоинтов: {parsedSpec.endpoints?.length || 0} · Схем: {Object.keys(parsedSpec.schemas || {}).length}
-                    </p>
-                  </div>
-                )}
-              </div>
+                  <input
+                    id="file"
+                    type="file"
+                    accept=".yaml,.yml,.json"
+                    onChange={handleFileChange}
+                    disabled={parsing}
+                    className="hidden-input"
+                  />
+                  {parsing && <p className="parsing-status">Парсинг файла OpenAPI...</p>}
+                  {file && !parsing && parsedSpec && (
+                    <div className="file-info">
+                      <p>✓ Выбран: {file.name}</p>
+                      <p>
+                        Эндпоинтов: {parsedSpec.endpoints?.length || 0} · Схем: {Object.keys(parsedSpec.schemas || {}).length}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="form-group">
                 <label htmlFor="description">Описание / Требования *</label>
