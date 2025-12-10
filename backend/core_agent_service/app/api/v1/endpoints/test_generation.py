@@ -8,6 +8,9 @@ import structlog
 from app.core.security import verify_api_key
 from app.services.llm_client import LLMClient
 from app.tasks.test_generation import generate_test_case_task
+from app.db import get_db
+from app.models import TaskRecord
+from sqlalchemy.orm import Session
 
 logger = structlog.get_logger()
 
@@ -39,6 +42,7 @@ async def generate_test_case(
     request: TestCaseGenerationRequest,
     http_request: Request,
     api_key: str = Depends(verify_api_key),
+    db: Session = Depends(get_db),
 ):
     """
     Generate a test case based on description.
@@ -61,6 +65,36 @@ async def generate_test_case(
             jira_link=request.jira_link,
             llm_api_key=llm_api_key,
         )
+
+        # Persist task metadata for history & UI
+        requester_id = http_request.headers.get("X-Key-Id")
+        existing = db.get(TaskRecord, task.id)
+        if existing:
+            existing.update_status(status="pending")
+            existing.description = request.description
+            existing.test_type = request.test_type
+            existing.feature = request.feature
+            existing.story = request.story
+            existing.priority = request.priority
+            existing.owner = request.owner
+            existing.owner_id = requester_id or existing.owner_id
+            existing.jira_link = request.jira_link
+        else:
+            db.add(
+                TaskRecord(
+                    task_id=task.id,
+                    status="pending",
+                    description=request.description,
+                    test_type=request.test_type,
+                    feature=request.feature,
+                    story=request.story,
+                    priority=request.priority,
+                    owner=request.owner,
+                    owner_id=requester_id,
+                    jira_link=request.jira_link,
+                )
+            )
+        db.commit()
 
         logger.info(
             "Test case generation task created",

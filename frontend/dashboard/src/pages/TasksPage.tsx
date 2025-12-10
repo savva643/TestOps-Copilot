@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
-import { getTaskStatus } from '../api/tasks'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { getTaskStatus, getTasks, TaskListItem } from '../api/tasks'
 import { Card } from '@snack-uikit/card'
 import { ButtonFilled } from '@snack-uikit/button'
 import { Status } from '@snack-uikit/status'
@@ -19,29 +20,37 @@ interface TaskStatus {
   }
 }
 
-interface TaskHistoryItem {
-  task_id: string
-  status: string
-  created_at: string
-  test_type?: string
-}
-
 export function TasksPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [taskId, setTaskId] = useState('')
   const [taskStatus, setTaskStatus] = useState<TaskStatus | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [polling, setPolling] = useState(false)
-  const [taskHistory, setTaskHistory] = useState<TaskHistoryItem[]>([])
+  const [tasks, setTasks] = useState<TaskListItem[]>([])
+  const [tasksPage, setTasksPage] = useState(1)
+  const [totalTasks, setTotalTasks] = useState(0)
+  const [listLoading, setListLoading] = useState(false)
+  const credentials = useMemo(() => getStoredCredentials(), [])
+  const ownerId = credentials?.keyId
+  const [onlyMine, setOnlyMine] = useState<boolean>(Boolean(ownerId))
+  const pageSize = 10
 
   useEffect(() => {
-    // Загружаем историю задач из localStorage
-    const history = JSON.parse(localStorage.getItem('task_history') || '[]')
-    setTaskHistory(history)
+    const paramTaskId = searchParams.get('taskId')
+    if (paramTaskId) {
+      setTaskId(paramTaskId)
+      handleCheck(paramTaskId)
+    }
   }, [])
 
-  const handleCheck = async () => {
-    if (!taskId.trim()) {
+  useEffect(() => {
+    fetchTasks()
+  }, [tasksPage, onlyMine, ownerId])
+
+  const handleCheck = async (idToCheck?: string) => {
+    const id = idToCheck ?? taskId
+    if (!id.trim()) {
       setError('Пожалуйста, введите ID задачи')
       return
     }
@@ -50,7 +59,12 @@ export function TasksPage() {
     setError(null)
 
     try {
-      const status = await getTaskStatus(taskId)
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev)
+        next.set('taskId', id)
+        return next
+      })
+      const status = await getTaskStatus(id)
       setTaskStatus(status)
       
       if (status.status === 'pending' || status.status === 'in_progress' || status.status === 'PENDING' || status.status === 'PROGRESS') {
@@ -68,6 +82,27 @@ export function TasksPage() {
     }
   }
 
+  const fetchTasks = async () => {
+    try {
+      setListLoading(true)
+      const params: { page: number; page_size: number; owner_id?: string } = {
+        page: tasksPage,
+        page_size: pageSize,
+      }
+      if (onlyMine && ownerId) {
+        params.owner_id = ownerId
+      }
+      const response = await getTasks(params)
+      setTasks(response.items)
+      setTotalTasks(response.total)
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.detail || err.message || 'Не удалось загрузить список задач'
+      setError(errorMsg)
+    } finally {
+      setListLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (!polling || !taskId) return
 
@@ -78,13 +113,7 @@ export function TasksPage() {
 
         if (status.status !== 'pending' && status.status !== 'in_progress' && status.status !== 'PENDING' && status.status !== 'PROGRESS') {
           setPolling(false)
-          // Обновляем историю
-          const history = JSON.parse(localStorage.getItem('task_history') || '[]')
-          const updatedHistory = history.map((item: TaskHistoryItem) =>
-            item.task_id === taskId ? { ...item, status: status.status } : item
-          )
-          localStorage.setItem('task_history', JSON.stringify(updatedHistory))
-          setTaskHistory(updatedHistory)
+          fetchTasks()
         }
       } catch (err) {
         console.error('Ошибка опроса:', err)
@@ -187,8 +216,10 @@ export function TasksPage() {
 
   const handleHistoryClick = (historyTaskId: string) => {
     setTaskId(historyTaskId)
-    handleCheck()
+    handleCheck(historyTaskId)
   }
+
+  const totalPages = Math.max(1, Math.ceil(totalTasks / pageSize))
 
   return (
     <div className="tasks-page">
@@ -230,11 +261,45 @@ export function TasksPage() {
           )}
         </Card>
 
-        {taskHistory.length > 0 && (
+        {tasks.length > 0 && (
           <Card className="history-card">
-            <h3>История задач</h3>
+            <div className="history-header">
+              <h3>{onlyMine ? 'Мои задачи' : 'Все задачи'}</h3>
+              <div className="history-actions">
+                {ownerId && (
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={onlyMine}
+                      onChange={(e) => {
+                        setTasksPage(1)
+                        setOnlyMine(e.target.checked)
+                      }}
+                    />
+                    <span>Показывать только мои (по ключу)</span>
+                  </label>
+                )}
+                <div className="pagination">
+                  <ButtonFilled
+                    label="Назад"
+                    size="s"
+                    disabled={tasksPage === 1 || listLoading}
+                    onClick={() => setTasksPage((p) => Math.max(1, p - 1))}
+                  />
+                  <span className="pagination-info">
+                    Страница {tasksPage} из {totalPages}
+                  </span>
+                  <ButtonFilled
+                    label="Вперёд"
+                    size="s"
+                    disabled={tasksPage >= totalPages || listLoading}
+                    onClick={() => setTasksPage((p) => p + 1)}
+                  />
+                </div>
+              </div>
+            </div>
             <div className="history-list">
-              {taskHistory.map((item) => (
+              {tasks.map((item) => (
                 <div
                   key={item.task_id}
                   className="history-item"
@@ -249,12 +314,14 @@ export function TasksPage() {
                     />
                   </div>
                   <div className="history-item-meta">
-                    <span>{new Date(item.created_at).toLocaleString('ru-RU')}</span>
+                    <span>{item.created_at ? new Date(item.created_at).toLocaleString('ru-RU') : '—'}</span>
                     {item.test_type && <span className="test-type-badge">{item.test_type}</span>}
                   </div>
                 </div>
               ))}
             </div>
+            {listLoading && <p className="loading-inline">Загрузка списка задач...</p>}
+            {!listLoading && tasks.length === 0 && <p>Задач пока нет.</p>}
           </Card>
         )}
 

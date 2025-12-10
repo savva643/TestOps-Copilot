@@ -7,6 +7,7 @@ import structlog
 from app.core.config import settings
 from app.core.middleware import ErrorHandlingMiddleware, LoggingMiddleware
 from app.api.v1.router import api_router
+from app.db import init_db
 
 logger = structlog.get_logger()
 
@@ -54,6 +55,7 @@ async def get_metrics():
 async def startup_event():
     """Startup event handler."""
     logger.info("Core Agent Service starting up")
+    init_db()
 
 
 @app.on_event("shutdown")

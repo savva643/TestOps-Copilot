@@ -17,7 +17,6 @@ export function GeneratePage() {
   const [owner, setOwner] = useState('')
   const [jiraLink, setJiraLink] = useState('')
   const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [file, setFile] = useState<File | null>(null)
   const [parsing, setParsing] = useState(false)
@@ -62,7 +61,6 @@ export function GeneratePage() {
 
     setLoading(true)
     setError(null)
-    setResult(null)
 
     try {
       const response = await generateTestCase({
@@ -74,17 +72,7 @@ export function GeneratePage() {
         owner: owner || undefined,
         jira_link: jiraLink || undefined,
       })
-      setResult(response)
-      // Сохраняем task_id в localStorage для истории
-      const taskHistory = JSON.parse(localStorage.getItem('task_history') || '[]')
-      taskHistory.unshift({
-        task_id: response.task_id,
-        status: response.status,
-        created_at: new Date().toISOString(),
-        test_type: testType,
-      })
-      localStorage.setItem('task_history', JSON.stringify(taskHistory.slice(0, 50))) // Храним последние 50
-      navigate('/tasks')
+      navigate(`/tasks?taskId=${response.task_id}`)
     } catch (err: any) {
       setError(err.response?.data?.detail || err.message || 'Не удалось сгенерировать тест-кейс')
     } finally {

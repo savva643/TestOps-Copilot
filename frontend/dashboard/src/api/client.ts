@@ -19,6 +19,10 @@ export function createApiClient(): AxiosInstance {
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
       }
+      const credentials = await import('./auth').then((mod) => mod.getStoredCredentials())
+      if (credentials?.keyId) {
+        config.headers['X-Key-Id'] = credentials.keyId
+      }
       const llmApiKey = getStoredLlmApiKey()
       if (llmApiKey) {
         config.headers['X-LLM-API-Key'] = llmApiKey

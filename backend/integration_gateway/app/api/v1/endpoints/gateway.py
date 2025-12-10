@@ -102,6 +102,49 @@ async def get_task_status_proxy(task_id: str, request: Request):
         )
 
 
+@router.get("/tasks")
+async def list_tasks_proxy(request: Request):
+    """Proxy task list to core-agent-service."""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{settings.CORE_AGENT_URL}/api/v1/tasks",
+                headers=dict(request.headers),
+                params=request.query_params,
+                timeout=10.0,
+            )
+
+            return Response(
+                content=response.content,
+                status_code=response.status_code,
+                headers=dict(response.headers),
+            )
+    except httpx.TimeoutException as e:
+        logger.error("Timeout proxying request", error=str(e))
+        raise ServiceUnavailableError(
+            "Backend service timeout",
+            details={"service": "core-agent-service", "error": str(e)},
+        )
+    except httpx.ConnectError as e:
+        logger.error("Connection error proxying request", error=str(e))
+        raise ServiceUnavailableError(
+            "Backend service unavailable",
+            details={"service": "core-agent-service", "error": str(e)},
+        )
+    except httpx.HTTPStatusError as e:
+        logger.error("HTTP error proxying request", status_code=e.response.status_code, error=str(e))
+        raise ProxyError(
+            f"Backend service returned error: {e.response.status_code}",
+            details={"service": "core-agent-service", "status_code": e.response.status_code},
+        )
+    except Exception as e:
+        logger.error("Unexpected error proxying request", error=str(e), exc_info=True)
+        raise ProxyError(
+            "Failed to proxy request",
+            details={"service": "core-agent-service", "error": str(e)},
+        )
+
+
 @router.post("/parse/openapi")
 async def parse_openapi_proxy(request: Request):
     """Proxy to spec-parser-service."""
