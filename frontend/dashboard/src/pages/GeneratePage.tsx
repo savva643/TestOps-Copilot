@@ -200,19 +200,32 @@ export function GeneratePage() {
               {testType === 'api' && (
                 <div className="form-group">
                   <label htmlFor="file">Загрузить спецификацию OpenAPI (необязательно)</label>
-                  <div className={`upload-zone ${parsing ? 'disabled' : ''}`} onClick={() => {
-                    if (!parsing) {
-                      const fileInput = document.getElementById('file') as HTMLInputElement
-                      fileInput?.click()
-                    }
-                  }}>
-                    <div className="upload-content">
-                      <span className="upload-icon">📄</span>
-                      <div className="upload-text">
-                        <strong>{file ? file.name : 'Перетащите файл или выберите'}</strong>
-                        <span>Поддерживаем .yaml / .yml / .json</span>
+                  <div className={`upload-zone ${parsing ? 'disabled' : ''}`}>
+                    <div className="upload-content" onClick={() => {
+                      if (!parsing) {
+                        const fileInput = document.getElementById('file') as HTMLInputElement
+                        fileInput?.click()
+                      }
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span className="upload-icon">📄</span>
+                        <div className="upload-text">
+                          <strong>{file ? file.name : 'Перетащите файл или выберите'}</strong>
+                          <span>Поддерживаем .yaml / .yml / .json</span>
+                        </div>
                       </div>
-                      <ButtonFilled label="Выбрать файл" size="s" disabled={parsing} />
+                      <ButtonFilled 
+                        label="Выбрать файл" 
+                        size="s" 
+                        disabled={parsing}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (!parsing) {
+                            const fileInput = document.getElementById('file') as HTMLInputElement
+                            fileInput?.click()
+                          }
+                        }}
+                      />
                     </div>
                   </div>
                   <input

@@ -65,13 +65,9 @@ export function TasksPage() {
         return next
       })
       const status = await getTaskStatus(id)
-      setTaskStatus(status)
       
-      if (status.status === 'pending' || status.status === 'in_progress' || status.status === 'PENDING' || status.status === 'PROGRESS') {
-        setPolling(true)
-      } else {
-        setPolling(false)
-      }
+      // Если задача существует, перенаправляем на страницу деталей задачи
+      navigate(`/tasks/${id}`)
     } catch (err: any) {
       const errorMsg = err.response?.data?.detail || err.message || 'Не удалось получить статус задачи'
       // Если 404 или похожая ошибка, показываем сообщение о несуществующей задаче
@@ -256,6 +252,8 @@ export function TasksPage() {
                 onClick={() => handleCheck()}
                 disabled={loading || !taskId.trim()}
                 loading={loading}
+                size="l"
+                className="check-status-button"
               />
             </div>
           </div>

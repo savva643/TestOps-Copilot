@@ -80,9 +80,27 @@
   align-items: flex-end;
 }
 
+/* Стили для кнопки "Проверить статус" */
+.check-status-button,
 .button-wrapper button,
-.button-wrapper [class*="button"] {
-  height: 46px;
+.button-wrapper a,
+.button-wrapper > * {
+  height: 46px !important;
+  min-height: 46px !important;
+  box-sizing: border-box;
+}
+
+/* Специфичные стили для кнопки из snack-uikit */
+.button-wrapper button[class*="Button"],
+.button-wrapper a[class*="Button"],
+.button-wrapper [class*="ButtonFilled"],
+.button-wrapper [class*="button-filled"] {
+  height: 46px !important;
+  min-height: 46px !important;
+  padding: 0 1.5rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .task-input {
