@@ -91,7 +91,10 @@ export function TasksPage() {
         page: tasksPage,
         page_size: pageSize,
       }
-      // Поиск по owner_id только если указан в поиске
+      // Всегда фильтруем по owner_id текущего пользователя
+      if (ownerId) {
+        params.owner_id = ownerId
+      }
       const response = await getTasks(params)
       setTasks(response.items)
       setTotalTasks(response.total)
@@ -267,7 +270,7 @@ export function TasksPage() {
         {tasks.length > 0 && (
           <Card className="history-card">
             <div className="history-header">
-              <h3>Все задачи</h3>
+              <h3>Мои задачи</h3>
               <div className="history-actions">
                 <div className="pagination">
                   <ButtonFilled

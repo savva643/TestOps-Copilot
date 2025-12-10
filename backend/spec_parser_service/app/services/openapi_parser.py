@@ -63,8 +63,11 @@ class OpenAPIParser:
                 )
 
             # Resolve references using prance
+            # Use spec_string instead of spec to avoid URL conflict
             try:
-                parser = ResolvingParser(spec=spec_dict, backend="openapi-spec-validator")
+                # Convert dict back to YAML string for prance
+                spec_string = yaml.dump(spec_dict, default_flow_style=False, allow_unicode=True)
+                parser = ResolvingParser(spec_string=spec_string, backend="openapi-spec-validator")
                 resolved_spec = parser.specification
             except Exception as e:
                 raise ParsingError(
