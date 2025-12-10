@@ -175,7 +175,7 @@ async def get_task_status(
         raise HTTPException(status_code=500, detail=error_msg)
 
 
-@router.get("/", response_model=TaskListResponse)
+@router.get("", response_model=TaskListResponse)
 async def list_tasks(
     api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db),
