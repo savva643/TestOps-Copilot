@@ -28,10 +28,21 @@ celery_app.conf.update(
     # Retry on failure
     task_default_retry_delay=60,  # 1 minute
     task_max_retries=3,
+    # Explicitly include task modules
+    include=['app.tasks.test_generation'],
 )
 
 # Auto-discover tasks to avoid circular imports
 celery_app.autodiscover_tasks(['app.tasks'], force=True)
+
+# Explicitly import tasks module after autodiscover to ensure registration
+# This ensures the task decorator runs and registers the task
+try:
+    # Import after celery_app is created to avoid circular imports
+    import app.tasks.test_generation  # noqa: F401
+    logger.info("Successfully imported test_generation module")
+except ImportError as e:
+    logger.warning("Failed to import test_generation module", error=str(e))
 
 
 @task_prerun.connect

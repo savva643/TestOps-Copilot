@@ -172,6 +172,8 @@ def generate_test_case_task(
 # Import here after function definition
 from app.tasks.celery_app import celery_app
 
+# Register the task with Celery
+# Using explicit name to ensure it's registered correctly
 generate_test_case_task = celery_app.task(
     name="generate_test_case",
     bind=True,
@@ -179,4 +181,13 @@ generate_test_case_task = celery_app.task(
     max_retries=3,
     default_retry_delay=60,
 )(generate_test_case_task)
+
+# Verify task is registered
+if hasattr(celery_app, 'tasks') and 'generate_test_case' in celery_app.tasks:
+    logger.info("Task 'generate_test_case' successfully registered")
+else:
+    logger.warning("Task 'generate_test_case' may not be registered correctly")
+
+# Export the registered task
+__all__ = ["generate_test_case_task"]
 
