@@ -72,7 +72,7 @@ export function GeneratePage() {
         owner: owner || undefined,
         jira_link: jiraLink || undefined,
       })
-      navigate(`/tasks?taskId=${response.task_id}`)
+      navigate(`/tasks/${response.task_id}`)
     } catch (err: any) {
       setError(err.response?.data?.detail || err.message || 'Не удалось сгенерировать тест-кейс')
     } finally {

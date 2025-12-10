@@ -1,11 +1,12 @@
 """Gateway endpoints that proxy to internal services."""
 
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response, StreamingResponse
 import httpx
 import structlog
 import io
 import zipfile
+import asyncio
 
 from app.core.config import settings
 from app.core.exceptions import ProxyError, ServiceUnavailableError
@@ -100,6 +101,43 @@ async def get_task_status_proxy(task_id: str, request: Request):
             "Failed to proxy request",
             details={"service": "core-agent-service", "error": str(e)},
         )
+
+
+@router.websocket("/tasks/ws/{task_id}")
+async def task_status_ws(task_id: str, websocket: WebSocket):
+    """WebSocket that streams task status by polling core-agent-service."""
+    api_key = websocket.headers.get("x-api-key") or websocket.query_params.get("api_key")
+    if api_key != settings.API_KEY:
+        await websocket.close(code=4401)
+        return
+
+    await websocket.accept()
+    try:
+        async with httpx.AsyncClient() as client:
+            while True:
+                resp = await client.get(
+                    f"{settings.CORE_AGENT_URL}/api/v1/tasks/{task_id}",
+                    headers={"X-API-Key": settings.API_KEY},
+                    timeout=10.0,
+                )
+                await websocket.send_text(resp.text)
+
+                data = resp.json()
+                status = data.get("status", "").upper()
+                if status not in ["PENDING", "PROGRESS", "IN_PROGRESS"]:
+                    break
+
+                await asyncio.sleep(1.0)
+    except WebSocketDisconnect:
+        logger.info("Task WS disconnected", task_id=task_id)
+    except Exception as e:
+        logger.error("Task WS error", task_id=task_id, error=str(e), exc_info=True)
+        try:
+            await websocket.send_text('{"error":"websocket_error"}')
+        except Exception:
+            pass
+    finally:
+        await websocket.close()
 
 
 @router.get("/tasks")

@@ -7,6 +7,15 @@ export async function getTaskStatus(taskId: string) {
   return response.data
 }
 
+export function getTasksWebSocketUrl(taskId: string) {
+  const base = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+  const apiKey = import.meta.env.VITE_API_KEY || 'testops-copilot-api-key-2024'
+  const wsBase = base.replace(/^http/, 'ws')
+  const url = new URL(`${wsBase}/api/v1/tasks/ws/${taskId}`)
+  url.searchParams.set('api_key', apiKey)
+  return url.toString()
+}
+
 export interface TaskListItem {
   task_id: string
   status: string

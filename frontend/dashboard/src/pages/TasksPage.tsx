@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getTaskStatus, getTasks, TaskListItem } from '../api/tasks'
 import { Card } from '@snack-uikit/card'
 import { ButtonFilled } from '@snack-uikit/button'
@@ -22,6 +22,7 @@ interface TaskStatus {
 
 export function TasksPage() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [taskId, setTaskId] = useState('')
   const [taskStatus, setTaskStatus] = useState<TaskStatus | null>(null)
   const [loading, setLoading] = useState(false)
@@ -217,6 +218,7 @@ export function TasksPage() {
   const handleHistoryClick = (historyTaskId: string) => {
     setTaskId(historyTaskId)
     handleCheck(historyTaskId)
+    navigate(`/tasks/${historyTaskId}`)
   }
 
   const totalPages = Math.max(1, Math.ceil(totalTasks / pageSize))
@@ -249,7 +251,7 @@ export function TasksPage() {
             <div className="button-wrapper">
               <ButtonFilled
                 label={loading ? 'Проверка...' : 'Проверить статус'}
-                onClick={handleCheck}
+                onClick={() => handleCheck()}
                 disabled={loading || !taskId.trim()}
                 loading={loading}
               />
