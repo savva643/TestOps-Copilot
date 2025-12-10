@@ -272,7 +272,7 @@ export function TaskDetailsPage() {
           )}
 
           <div className="history-actions" style={{ marginTop: '1rem' }}>
-            <ButtonFilled label="К списку задач" appearance="secondary" onClick={() => navigate('/tasks')} />
+            <ButtonFilled label="К списку задач" appearance="neutral" onClick={() => navigate('/tasks')} />
           </div>
         </Card>
       </div>
