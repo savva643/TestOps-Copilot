@@ -3,6 +3,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel
 from typing import Optional, Any, List
+from datetime import datetime
 import structlog
 
 from app.core.security import verify_api_key
@@ -41,8 +42,8 @@ class TaskListItem(BaseModel):
 
     task_id: str
     status: str
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     test_type: Optional[str] = None
     owner: Optional[str] = None
     owner_id: Optional[str] = None
