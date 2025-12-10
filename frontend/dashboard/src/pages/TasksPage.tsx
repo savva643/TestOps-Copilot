@@ -64,7 +64,8 @@ export function TasksPage() {
         next.set('taskId', id)
         return next
       })
-      const status = await getTaskStatus(id)
+      // Проверяем, что задача существует (если не существует, будет выброшена ошибка)
+      await getTaskStatus(id)
       
       // Если задача существует, перенаправляем на страницу деталей задачи
       navigate(`/tasks/${id}`)
