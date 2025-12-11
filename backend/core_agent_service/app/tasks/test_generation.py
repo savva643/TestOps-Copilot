@@ -93,12 +93,40 @@ def generate_test_case_task(
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
 
+        def is_code_output(txt: str) -> bool:
+            stripped = txt.lstrip()
+            return stripped.startswith("import ") or stripped.startswith("from ")
+
+        # Первичная генерация
         generated_text = loop.run_until_complete(
             llm_client.generate(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
             )
         )
+
+        # Для API/UI требуем сразу код. Если пришёл текст без кода — пробуем ещё раз с усиленным запросом.
+        if test_type in ["api", "ui"] and not is_code_output(generated_text):
+            logger.warning(
+                "LLM returned non-code response for code test; retrying with stricter prompt",
+                task_id=self.request.id,
+            )
+            strict_user_prompt = (
+                user_prompt
+                + "\n\nВерни только готовый Python-код. Начни ответ со строки import или from. Без текста и пояснений."
+            )
+            generated_text = loop.run_until_complete(
+                llm_client.generate(
+                    system_prompt=system_prompt,
+                    user_prompt=strict_user_prompt,
+                )
+            )
+
+            if not is_code_output(generated_text):
+                raise LLMError(
+                    "Invalid response from LLM API",
+                    details={"reason": "expected code starting with import/from"},
+                )
 
         # Update progress: 80% - Processing result
         self.update_progress(80, 100, "Processing generated test case...")
