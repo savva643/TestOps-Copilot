@@ -97,6 +97,14 @@ def generate_test_case_task(
             stripped = txt.lstrip()
             return stripped.startswith("import ") or stripped.startswith("from ")
 
+        def extract_first_code_block(txt: str) -> str:
+            """Возвращает текст, начиная с первой строки import/from, если она есть."""
+            lines = txt.splitlines()
+            for i, line in enumerate(lines):
+                if line.lstrip().startswith(("import ", "from ")):
+                    return "\n".join(lines[i:]).strip()
+            return txt.strip()
+
         # Первичная генерация
         generated_text = loop.run_until_complete(
             llm_client.generate(
@@ -105,28 +113,37 @@ def generate_test_case_task(
             )
         )
 
-        # Для API/UI требуем сразу код. Если пришёл текст без кода — пробуем ещё раз с усиленным запросом.
-        if test_type in ["api", "ui"] and not is_code_output(generated_text):
-            logger.warning(
-                "LLM returned non-code response for code test; retrying with stricter prompt",
-                task_id=self.request.id,
-            )
-            strict_user_prompt = (
-                user_prompt
-                + "\n\nВерни только готовый Python-код. Начни ответ со строки import или from. Без текста и пояснений."
-            )
-            generated_text = loop.run_until_complete(
-                llm_client.generate(
-                    system_prompt=system_prompt,
-                    user_prompt=strict_user_prompt,
-                )
-            )
-
+        # Для API/UI требуем код. Если пришёл текст без кода — обрезаем до первого import/from; если всё равно нет — повторяем с усилением.
+        if test_type in ["api", "ui"]:
             if not is_code_output(generated_text):
-                raise LLMError(
-                    "Invalid response from LLM API",
-                    details={"reason": "expected code starting with import/from"},
-                )
+                trimmed = extract_first_code_block(generated_text)
+                if is_code_output(trimmed):
+                    generated_text = trimmed
+                else:
+                    logger.warning(
+                        "LLM returned non-code response for code test; retrying with stricter prompt",
+                        task_id=self.request.id,
+                    )
+                    strict_user_prompt = (
+                        user_prompt
+                        + "\n\nВерни только готовый Python-код. Начни ответ со строки import или from. Без текста и пояснений."
+                    )
+                    generated_text = loop.run_until_complete(
+                        llm_client.generate(
+                            system_prompt=system_prompt,
+                            user_prompt=strict_user_prompt,
+                        )
+                    )
+
+                    if not is_code_output(generated_text):
+                        trimmed_retry = extract_first_code_block(generated_text)
+                        if is_code_output(trimmed_retry):
+                            generated_text = trimmed_retry
+                        else:
+                            raise LLMError(
+                                "Invalid response from LLM API",
+                                details={"reason": "expected code starting with import/from"},
+                            )
 
         # Update progress: 80% - Processing result
         self.update_progress(80, 100, "Processing generated test case...")
