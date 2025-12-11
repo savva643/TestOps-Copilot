@@ -205,8 +205,11 @@ def generate_test_case_task(
                 )
                 # Пробуем ещё раз с более строгим промптом
                 strict_user_prompt = (
-                    user_prompt
-                    + "\n\nВажно: оберни код в markdown блоки ```python ... ``` или верни чистый код, начинающийся с import/from."
+                    "СТРОГОЕ ТРЕБОВАНИЕ: Твой ответ ДОЛЖЕН начинаться СРАЗУ с ```python (без единого символа перед ним). "
+                    "ЗАПРЕЩЕНО писать: 'We need to...', 'Let's create...', 'I'll generate...', 'Here is...'. "
+                    "ЗАПРЕЩЕНО писать планы действий или описания. "
+                    "Пиши ТОЛЬКО готовый код на Python внутри блока ```python ... ```.\n\n"
+                    + user_prompt
                 )
                 generated_text = loop.run_until_complete(
                     llm_client.generate(

@@ -85,19 +85,63 @@ class PromptEngineer:
 - Всё на русском, без лишних пояснений."""
 
         elif test_type == "api":
-            system_prompt = """Ты — опытный QA-инженер по API. Генерируй Python-код тестов с пояснениями.
+            system_prompt = """Ты — генератор Python-кода тестов. Твоя ЕДИНСТВЕННАЯ задача — вернуть готовый код.
 
-Требования к ответу:
-- Код на Python оборачивай в markdown блоки ```python ... ```.
-- Можешь добавлять пояснения перед/между блоками кода на русском языке.
-- Если генерируешь несколько тестов, можешь разделить их на блоки с пояснениями.
-- pytest + httpx (асинхронный клиент/фикстуры), Allure аннотации (@allure.feature, @allure.story, @allure.title, @allure.severity, @allure.label("owner", ...)).
-- Строгая структура AAA (Arrange-Act-Assert) в каждом тесте.
-- Проверяй статус-код и ключевые поля тела ответа.
-- Добавляй позитивные и негативные сценарии: валидный запрос, невалидные данные (400), отсутствующий ресурс (404), нет/невалидный токен (401/403).
-- Авторизация: Bearer <token> в заголовке Authorization, если требуется.
-- Все названия, строки и комментарии — на русском языке.
-- Объедини несколько тестов в одном файле, тесты — отдельные функции."""
+СТРОГО ЗАПРЕЩЕНО:
+- Писать текстовые пояснения типа "We need to produce...", "Let's create...", "I'll generate..."
+- Писать планы действий или описания того, что ты собираешься сделать
+- Начинать ответ с английского текста
+
+ОБЯЗАТЕЛЬНО:
+- Твой ответ ДОЛЖЕН начинаться СРАЗУ с ```python (без пробелов и текста перед ним)
+- Внутри блока — полный готовый код на Python
+- Закрой блок ```
+- Если нужно несколько файлов — используй несколько блоков ```python ... ```
+
+Формат ответа (СТРОГО):
+```python
+import pytest
+import httpx
+import allure
+# ... остальной код ...
+```
+
+Требования к коду:
+- pytest + httpx AsyncClient (фикстуры для клиента)
+- Allure аннотации: @allure.feature(), @allure.story(), @allure.title(), @allure.severity(), @allure.label("owner", ...)
+- Структура AAA (Arrange-Act-Assert) в каждом тесте
+- Проверка статус-кодов и полей ответа
+- Позитивные и негативные сценарии (200, 400, 401, 403, 404)
+- Авторизация через Bearer token в заголовке Authorization
+- Все названия тестов, строки, комментарии — на русском языке
+- Несколько тестов в одном файле — отдельные функции
+
+ПРИМЕР ПРАВИЛЬНОГО ОТВЕТА:
+```python
+import pytest
+import httpx
+import allure
+
+BASE_URL = "http://api.example.com"
+
+@pytest.fixture
+async def client():
+    async with httpx.AsyncClient(base_url=BASE_URL) as ac:
+        yield ac
+
+@allure.feature("Виртуальные машины")
+@allure.story("Получение списка")
+@allure.title("Получить список ВМ - успешный запрос")
+@pytest.mark.asyncio
+async def test_get_vms_success(client):
+    # Arrange
+    # Act
+    response = await client.get("/vms")
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+```"""
 
         else:  # UI
             system_prompt = """Ты — опытный QA-инженер по UI/E2E. Генерируй Python-код тестов с пояснениями.
@@ -127,19 +171,23 @@ class PromptEngineer:
         if story:
             user_prompt_parts.append(f"Story: {story}")
 
-        user_prompt_parts.append(
-            "\n\nВерни результат с учетом:"
-        )
         if test_type in ["api", "ui"]:
-            user_prompt_parts.append("- Код на Python оборачивай в markdown блоки ```python ... ```")
-            user_prompt_parts.append("- Можешь добавлять пояснения перед/между блоками кода")
-            user_prompt_parts.append("- Если генерируешь несколько тестов, можешь разделить их на блоки с пояснениями")
+            user_prompt_parts.append("\n\nСТРОГОЕ ТРЕБОВАНИЕ:")
+            user_prompt_parts.append("Начни ответ СРАЗУ с ```python (без единого символа перед ним)")
+            user_prompt_parts.append("НЕ пиши: 'We need to...', 'Let's create...', 'I'll generate...'")
+            user_prompt_parts.append("НЕ пиши планы или описания — пиши ТОЛЬКО готовый код")
+            user_prompt_parts.append("Если нужно несколько файлов — используй несколько блоков ```python ... ```")
+            user_prompt_parts.append("\nТребования к коду:")
+            user_prompt_parts.append("- Полный готовый код с импортами, фикстурами, тестами")
+            user_prompt_parts.append("- Структура AAA в каждом тесте")
+            user_prompt_parts.append("- Позитивные и негативные сценарии")
+            user_prompt_parts.append("- Все на русском языке")
         else:
-            user_prompt_parts.append("- Структурированный текст кейсов")
-        user_prompt_parts.append("- Нумерованные шаги (AAA в коде или шагах)")
-        user_prompt_parts.append("- Необходимые тестовые данные")
-        user_prompt_parts.append("- Ожидаемые результаты и проверки")
-        user_prompt_parts.append("- Отдельные негативные сценарии и граничные случаи")
+            user_prompt_parts.append("\n\nВерни структурированный текст кейсов:")
+            user_prompt_parts.append("- Нумерованные шаги")
+            user_prompt_parts.append("- Необходимые тестовые данные")
+            user_prompt_parts.append("- Ожидаемые результаты и проверки")
+            user_prompt_parts.append("- Отдельные негативные сценарии и граничные случаи")
 
         user_prompt = "\n".join(user_prompt_parts)
 

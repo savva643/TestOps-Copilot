@@ -76,3 +76,5 @@ if "choices" in data and len(data["choices"]) > 0:
 else:
     print("Нет choices в ответе!")
 
+
+
