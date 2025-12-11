@@ -146,6 +146,17 @@ class LLMClient:
                     content = message.get("content")
                     if isinstance(content, str):
                         return content.strip()
+                    # Some providers return a single dict with text payload
+                    if isinstance(content, dict):
+                        text_obj = content.get("text")
+                        if isinstance(text_obj, dict):
+                            return str(text_obj.get("value", "")).strip()
+                        if isinstance(text_obj, str):
+                            return text_obj.strip()
+                        # direct value fallback
+                        value = content.get("value")
+                        if isinstance(value, str):
+                            return value.strip()
                     # Some providers wrap text in a list with {text: {value: ...}}
                     if isinstance(content, list):
                         parts = []
