@@ -8,6 +8,12 @@ import { Alert } from '@snack-uikit/alert'
 import { getStoredCredentials } from '../api/auth'
 import './TasksPage.css'
 
+interface TestFile {
+  description: string | null
+  code: string
+  filename: string
+}
+
 interface TaskStatus {
   task_id: string
   status: string
@@ -164,18 +170,82 @@ export function TasksPage() {
     }
   }
 
-  const downloadCode = () => {
-    if (!taskStatus?.result?.test_case) return
+  // Получаем структуру файлов из результата
+  const getTestFiles = (): TestFile[] => {
+    if (!taskStatus?.result?.test_case) return []
+    
+    const testCase = taskStatus.result.test_case
+    
+    // Если это новая структура с файлами
+    if (typeof testCase === 'object' && testCase.files && Array.isArray(testCase.files)) {
+      return testCase.files as TestFile[]
+    }
+    
+    // Если это старая структура (строка) - преобразуем
+    if (typeof testCase === 'string') {
+      return [{ description: null, code: testCase, filename: 'test.py' }]
+    }
+    
+    return []
+  }
 
-    const blob = new Blob([taskStatus.result.test_case], { type: 'text/plain' })
+  const downloadFile = (file: TestFile) => {
+    const blob = new Blob([file.code], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `test_case_${taskId}.py`
+    a.download = file.filename
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
+  }
+
+  const downloadAllAsZip = async () => {
+    const files = getTestFiles()
+    if (files.length === 0) return
+
+    try {
+      const JSZip = (await import('jszip')).default
+      const zip = new JSZip()
+      
+      files.forEach((file: TestFile) => {
+        zip.file(file.filename, file.code)
+      })
+      
+      const readmeParts: string[] = []
+      readmeParts.push('# TestOps Copilot - Сгенерированные тесты\n')
+      readmeParts.push(`Задача: ${taskStatus?.task_id}\n`)
+      readmeParts.push(`Тип: ${taskStatus?.result?.test_type || 'N/A'}\n`)
+      readmeParts.push(`Приоритет: ${taskStatus?.result?.priority || 'N/A'}\n`)
+      readmeParts.push('\n## Файлы:\n')
+      
+      files.forEach((file: TestFile) => {
+        readmeParts.push(`\n### ${file.filename}\n`)
+        if (file.description) {
+          readmeParts.push(file.description)
+          readmeParts.push('\n')
+        }
+      })
+      
+      zip.file('README.md', readmeParts.join('\n'))
+      
+      const content = await zip.generateAsync({ type: 'blob' })
+      const url = URL.createObjectURL(content)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `testops_tests_${taskStatus?.task_id}.zip`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Ошибка создания архива:', error)
+      alert('Архивация недоступна. Скачиваю файлы по отдельности...')
+      files.forEach((file: TestFile, index: number) => {
+        setTimeout(() => downloadFile(file), index * 200)
+      })
+    }
   }
 
   const downloadArtifacts = () => {
@@ -207,7 +277,7 @@ export function TasksPage() {
     // Обрабатываем новую структуру с файлами
     const files = getTestFiles()
     if (files.length > 0) {
-      files.forEach((file, index) => {
+      files.forEach((file: TestFile, index: number) => {
         parts.push(`--- файл ${index + 1}: ${file.filename} ---`)
         if (file.description) {
           parts.push(`Описание:\n${file.description}\n`)
@@ -419,7 +489,7 @@ export function TasksPage() {
                             </div>
                           </div>
                           
-                          {files.map((file, index) => (
+                          {files.map((file: TestFile, index: number) => (
                             <div key={index} className="code-preview" style={{ marginBottom: '1.5rem' }}>
                               <div className="code-header">
                                 <span>
