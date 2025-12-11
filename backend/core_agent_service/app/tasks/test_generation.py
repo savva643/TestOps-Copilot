@@ -93,30 +93,89 @@ def generate_test_case_task(
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
 
-        def extract_code_blocks_from_markdown(txt: str) -> list[str]:
-            """Извлекает все блоки кода из markdown (```python ... ```)."""
+        def extract_code_blocks_from_markdown(txt: str) -> list[dict]:
+            """Извлекает все блоки кода из markdown с описаниями перед ними.
+            
+            Returns:
+                List of dicts: [{"description": "...", "code": "..."}, ...]
+            """
             import re
             # Ищем все блоки кода: ```python ... ``` или ``` ... ```
             pattern = r'```(?:python)?\s*\n(.*?)\n```'
-            matches = re.findall(pattern, txt, re.DOTALL)
-            return [match.strip() for match in matches if match.strip()]
+            code_matches = list(re.finditer(pattern, txt, re.DOTALL))
+            
+            files = []
+            last_end = 0
+            
+            for i, match in enumerate(code_matches):
+                # Текст перед этим блоком кода - описание
+                description_start = last_end
+                description_end = match.start()
+                description = txt[description_start:description_end].strip()
+                
+                code = match.group(1).strip()
+                
+                files.append({
+                    "description": description if description else None,
+                    "code": code,
+                    "filename": f"test_{i+1}.py" if len(code_matches) > 1 else "test.py"
+                })
+                
+                last_end = match.end()
+            
+            # Если есть текст после последнего блока кода
+            if last_end < len(txt):
+                remaining = txt[last_end:].strip()
+                if remaining:
+                    # Если это не код, добавляем как описание к последнему файлу
+                    if files:
+                        if files[-1]["description"]:
+                            files[-1]["description"] += "\n\n" + remaining
+                        else:
+                            files[-1]["description"] = remaining
+            
+            return files
 
-        def extract_code_from_text(txt: str) -> str:
-            """Извлекает код из текста: сначала из markdown блоков, потом ищет import/from."""
+        def extract_code_from_text(txt: str) -> dict:
+            """Извлекает код из текста: структурированный ответ с файлами и описаниями."""
             # Пробуем извлечь из markdown блоков
-            code_blocks = extract_code_blocks_from_markdown(txt)
-            if code_blocks:
-                # Объединяем все блоки кода
-                return "\n\n".join(code_blocks)
+            files = extract_code_blocks_from_markdown(txt)
+            if files:
+                return {
+                    "files": files,
+                    "raw_response": txt  # Сохраняем оригинальный ответ
+                }
             
             # Если нет markdown блоков, ищем код, начинающийся с import/from
             lines = txt.splitlines()
+            code_start_idx = None
             for i, line in enumerate(lines):
                 stripped_line = line.lstrip()
                 if stripped_line.startswith("import ") or stripped_line.startswith("from "):
-                    return "\n".join(lines[i:]).strip()
+                    code_start_idx = i
+                    break
             
-            return txt.strip()
+            if code_start_idx is not None:
+                description = "\n".join(lines[:code_start_idx]).strip() if code_start_idx > 0 else None
+                code = "\n".join(lines[code_start_idx:]).strip()
+                return {
+                    "files": [{
+                        "description": description,
+                        "code": code,
+                        "filename": "test.py"
+                    }],
+                    "raw_response": txt
+                }
+            
+            # Если код не найден, возвращаем весь текст как один файл
+            return {
+                "files": [{
+                    "description": None,
+                    "code": txt.strip(),
+                    "filename": "test.py"
+                }],
+                "raw_response": txt
+            }
 
         def has_code(txt: str) -> bool:
             """Проверяет, есть ли в тексте код (markdown блоки или import/from)."""
@@ -162,15 +221,26 @@ def generate_test_case_task(
                         details={"reason": "expected code in markdown blocks or starting with import/from"},
                     )
             
-            # Извлекаем код из ответа (может быть несколько блоков)
-            extracted_code = extract_code_from_text(generated_text)
-            if extracted_code:
-                generated_text = extracted_code
+            # Извлекаем код из ответа (может быть несколько файлов)
+            extracted = extract_code_from_text(generated_text)
+            if extracted and extracted.get("files"):
                 logger.info(
-                    "Extracted code from LLM response",
+                    "Extracted code files from LLM response",
                     task_id=self.request.id,
-                    code_length=len(extracted_code),
+                    files_count=len(extracted["files"]),
                 )
+                # Сохраняем структурированный ответ
+                generated_text = extracted
+            else:
+                # Fallback: сохраняем как один файл
+                generated_text = {
+                    "files": [{
+                        "description": None,
+                        "code": generated_text,
+                        "filename": "test.py"
+                    }],
+                    "raw_response": generated_text
+                }
 
         # Update progress: 80% - Processing result
         self.update_progress(80, 100, "Processing generated test case...")
@@ -181,8 +251,22 @@ def generate_test_case_task(
         # Формируем полный промпт для сохранения в артефактах
         full_prompt = f"System Prompt:\n{system_prompt}\n\nUser Prompt:\n{user_prompt}"
         
+        # Если generated_text - это dict с файлами, сохраняем как есть
+        # Если это строка (для manual тестов), преобразуем в структуру
+        if isinstance(generated_text, str):
+            test_case_data = {
+                "files": [{
+                    "description": None,
+                    "code": generated_text,
+                    "filename": "test_case.txt"
+                }],
+                "raw_response": generated_text
+            }
+        else:
+            test_case_data = generated_text
+        
         result = {
-            "test_case": generated_text,
+            "test_case": test_case_data,
             "test_type": test_type,
             "feature": feature,
             "story": story,

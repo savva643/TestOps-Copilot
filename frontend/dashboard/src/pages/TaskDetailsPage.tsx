@@ -144,17 +144,85 @@ export function TaskDetailsPage() {
     }
   }, [taskStatus?.status])
 
-  const downloadCode = () => {
-    if (!taskStatus?.result?.test_case) return
-    const blob = new Blob([taskStatus.result.test_case], { type: 'text/plain' })
+  // Получаем структуру файлов из результата
+  const getTestFiles = () => {
+    if (!taskStatus?.result?.test_case) return []
+    
+    const testCase = taskStatus.result.test_case
+    
+    // Если это новая структура с файлами
+    if (typeof testCase === 'object' && testCase.files && Array.isArray(testCase.files)) {
+      return testCase.files
+    }
+    
+    // Если это старая структура (строка) - преобразуем
+    if (typeof testCase === 'string') {
+      return [{ description: null, code: testCase, filename: 'test.py' }]
+    }
+    
+    return []
+  }
+
+  const downloadFile = (file: { code: string; filename: string }) => {
+    const blob = new Blob([file.code], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `test_case_${taskId}.py`
+    a.download = file.filename
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
+  }
+
+  const downloadAllAsZip = async () => {
+    const files = getTestFiles()
+    if (files.length === 0) return
+
+    try {
+      // Динамический импорт JSZip
+      const JSZip = (await import('jszip')).default
+      const zip = new JSZip()
+      
+      files.forEach((file) => {
+        zip.file(file.filename, file.code)
+      })
+      
+      // Добавляем README с описаниями
+      const readmeParts: string[] = []
+      readmeParts.push('# TestOps Copilot - Сгенерированные тесты\n')
+      readmeParts.push(`Задача: ${taskId}\n`)
+      readmeParts.push(`Тип: ${taskStatus?.result?.test_type || 'N/A'}\n`)
+      readmeParts.push(`Приоритет: ${taskStatus?.result?.priority || 'N/A'}\n`)
+      readmeParts.push('\n## Файлы:\n')
+      
+      files.forEach((file) => {
+        readmeParts.push(`\n### ${file.filename}\n`)
+        if (file.description) {
+          readmeParts.push(file.description)
+          readmeParts.push('\n')
+        }
+      })
+      
+      zip.file('README.md', readmeParts.join('\n'))
+      
+      const content = await zip.generateAsync({ type: 'blob' })
+      const url = URL.createObjectURL(content)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `testops_tests_${taskId}.zip`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      // Если JSZip не доступен, скачиваем все файлы по отдельности
+      console.error('Ошибка создания архива:', error)
+      alert('Архивация недоступна. Скачиваю файлы по отдельности...')
+      files.forEach((file, index) => {
+        setTimeout(() => downloadFile(file), index * 200)
+      })
+    }
   }
 
   const downloadArtifacts = () => {
@@ -183,13 +251,30 @@ export function TaskDetailsPage() {
       parts.push('')
     }
     
-    parts.push('--- начало кода ---')
-    if (taskStatus.result?.test_case) {
-      parts.push(taskStatus.result.test_case)
+    // Обрабатываем новую структуру с файлами
+    const files = getTestFiles()
+    if (files.length > 0) {
+      files.forEach((file, index) => {
+        parts.push(`--- файл ${index + 1}: ${file.filename} ---`)
+        if (file.description) {
+          parts.push(`Описание:\n${file.description}\n`)
+        }
+        parts.push('Код:')
+        parts.push(file.code)
+        parts.push(`--- конец файла ${index + 1} ---\n`)
+      })
+    } else if (taskStatus.result?.test_case) {
+      // Fallback для старой структуры
+      parts.push('--- начало кода ---')
+      if (typeof taskStatus.result.test_case === 'string') {
+        parts.push(taskStatus.result.test_case)
+      } else {
+        parts.push(JSON.stringify(taskStatus.result.test_case, null, 2))
+      }
+      parts.push('--- конец кода ---')
     } else {
       parts.push('Код ещё не готов.')
     }
-    parts.push('--- конец кода ---')
     parts.push('')
     parts.push('--- сырые метаданные ---')
     parts.push(JSON.stringify(metadata, null, 2))
@@ -265,18 +350,57 @@ export function TaskDetailsPage() {
                 </div>
               </div>
 
-              {taskStatus.result.test_case && (
-                <div className="code-preview">
-                  <div className="code-header">
-                    <span>Сгенерированный код</span>
-                    <div className="code-actions">
-                      <ButtonFilled label="Скачать код" onClick={downloadCode} size="s" appearance="primary" />
-                      <ButtonFilled label="Скачать артефакты" onClick={downloadArtifacts} size="s" appearance="neutral" />
+              {(() => {
+                const files = getTestFiles()
+                if (files.length === 0) return null
+                
+                return (
+                  <div className="test-files-section">
+                    <div className="code-header" style={{ marginBottom: '1rem' }}>
+                      <span>Сгенерированные файлы ({files.length})</span>
+                      <div className="code-actions">
+                        <ButtonFilled 
+                          label="Скачать архив (ZIP)" 
+                          onClick={downloadAllAsZip} 
+                          size="s" 
+                          appearance="primary" 
+                        />
+                        <ButtonFilled 
+                          label="Скачать артефакты" 
+                          onClick={downloadArtifacts} 
+                          size="s" 
+                          appearance="neutral" 
+                        />
+                      </div>
                     </div>
+                    
+                    {files.map((file, index) => (
+                      <div key={index} className="code-preview" style={{ marginBottom: '1.5rem' }}>
+                        <div className="code-header">
+                          <span>
+                            <strong>{file.filename}</strong>
+                            {file.description && <span style={{ marginLeft: '0.5rem', fontSize: '0.875rem', color: '#666' }}>с описанием</span>}
+                          </span>
+                          <div className="code-actions">
+                            <ButtonFilled 
+                              label="Скачать файл" 
+                              onClick={() => downloadFile(file)} 
+                              size="s" 
+                              appearance="neutral" 
+                            />
+                          </div>
+                        </div>
+                        {file.description && (
+                          <div style={{ padding: '0.75rem', background: '#f5f5f5', borderRadius: '4px', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+                            {file.description}
+                          </div>
+                        )}
+                        <pre className="code-content">{file.code}</pre>
+                      </div>
+                    ))}
                   </div>
-                  <pre className="code-content">{taskStatus.result.test_case}</pre>
-                </div>
-              )}
+                )
+              })()}
             </div>
           )}
 

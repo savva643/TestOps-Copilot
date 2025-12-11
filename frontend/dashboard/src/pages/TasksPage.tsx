@@ -204,13 +204,30 @@ export function TasksPage() {
       parts.push('')
     }
     
-    parts.push('--- начало кода ---')
-    if (taskStatus.result?.test_case) {
-      parts.push(taskStatus.result.test_case)
+    // Обрабатываем новую структуру с файлами
+    const files = getTestFiles()
+    if (files.length > 0) {
+      files.forEach((file, index) => {
+        parts.push(`--- файл ${index + 1}: ${file.filename} ---`)
+        if (file.description) {
+          parts.push(`Описание:\n${file.description}\n`)
+        }
+        parts.push('Код:')
+        parts.push(file.code)
+        parts.push(`--- конец файла ${index + 1} ---\n`)
+      })
+    } else if (taskStatus.result?.test_case) {
+      // Fallback для старой структуры
+      parts.push('--- начало кода ---')
+      if (typeof taskStatus.result.test_case === 'string') {
+        parts.push(taskStatus.result.test_case)
+      } else {
+        parts.push(JSON.stringify(taskStatus.result.test_case, null, 2))
+      }
+      parts.push('--- конец кода ---')
     } else {
       parts.push('Код ещё не готов.')
     }
-    parts.push('--- конец кода ---')
     parts.push('')
     parts.push('--- сырые метаданные ---')
     parts.push(JSON.stringify(metadata, null, 2))
@@ -378,20 +395,57 @@ export function TasksPage() {
                       </div>
                     </div>
 
-                    {taskStatus.result.test_case && (
-                      <div className="code-preview">
-                        <div className="code-header">
-                          <span>Сгенерированный код</span>
-                          <div className="code-actions">
-                            <ButtonFilled label="Скачать код" onClick={downloadCode} size="s" appearance="primary" />
-                            <ButtonFilled label="Скачать артефакты" onClick={downloadArtifacts} size="s" appearance="neutral" />
+                    {(() => {
+                      const files = getTestFiles()
+                      if (files.length === 0) return null
+                      
+                      return (
+                        <div className="test-files-section">
+                          <div className="code-header" style={{ marginBottom: '1rem' }}>
+                            <span>Сгенерированные файлы ({files.length})</span>
+                            <div className="code-actions">
+                              <ButtonFilled 
+                                label="Скачать архив (ZIP)" 
+                                onClick={downloadAllAsZip} 
+                                size="s" 
+                                appearance="primary" 
+                              />
+                              <ButtonFilled 
+                                label="Скачать артефакты" 
+                                onClick={downloadArtifacts} 
+                                size="s" 
+                                appearance="neutral" 
+                              />
+                            </div>
                           </div>
+                          
+                          {files.map((file, index) => (
+                            <div key={index} className="code-preview" style={{ marginBottom: '1.5rem' }}>
+                              <div className="code-header">
+                                <span>
+                                  <strong>{file.filename}</strong>
+                                  {file.description && <span style={{ marginLeft: '0.5rem', fontSize: '0.875rem', color: '#666' }}>с описанием</span>}
+                                </span>
+                                <div className="code-actions">
+                                  <ButtonFilled 
+                                    label="Скачать файл" 
+                                    onClick={() => downloadFile(file)} 
+                                    size="s" 
+                                    appearance="neutral" 
+                                  />
+                                </div>
+                              </div>
+                              {file.description && (
+                                <div style={{ padding: '0.75rem', background: '#f5f5f5', borderRadius: '4px', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+                                  {file.description}
+                                </div>
+                              )}
+                              <pre className="code-content">{file.code}</pre>
+                            </div>
+                          ))}
                         </div>
-                        <pre className="code-content">
-                          {taskStatus.result.test_case}
-                        </pre>
-                      </div>
-                    )}
+                      )
+                    })()}
                   </div>
                 </>
               )}
