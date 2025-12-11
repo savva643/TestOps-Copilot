@@ -521,8 +521,7 @@ import pytest
 
         # Для API/UI тестов код уже сгенерирован в двухэтапном подходе выше
         # Для manual тестов обрабатываем ответ
-        if test_type == "manual":
-
+        
         # Update progress: 80% - Processing result
         self.update_progress(80, 100, "Processing generated test case...")
 
