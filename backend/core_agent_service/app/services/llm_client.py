@@ -133,15 +133,45 @@ class LLMClient:
                 response.raise_for_status()
 
                 result = response.json()
-                
+
                 # Validate response structure
-                if "choices" not in result or not result["choices"]:
+                choices = result.get("choices")
+                if not choices:
                     raise ValueError("Invalid API response: missing choices")
 
-                generated_text = result.get("choices", [{}])[0].get("message", {}).get("content", "")
-                
+                def extract_content(choice: dict) -> str:
+                    """Handle multiple response layouts from provider."""
+                    # OpenAI-compatible shape
+                    message = choice.get("message") or {}
+                    content = message.get("content")
+                    if isinstance(content, str):
+                        return content.strip()
+                    # Some providers wrap text in a list with {text: {value: ...}}
+                    if isinstance(content, list):
+                        parts = []
+                        for item in content:
+                            if isinstance(item, dict):
+                                text_obj = item.get("text")
+                                if isinstance(text_obj, dict):
+                                    parts.append(str(text_obj.get("value", "")).strip())
+                                elif isinstance(text_obj, str):
+                                    parts.append(text_obj.strip())
+                            elif isinstance(item, str):
+                                parts.append(item.strip())
+                        return "\n".join([p for p in parts if p])
+                    # Legacy completion shape
+                    text_fallback = choice.get("text")
+                    if isinstance(text_fallback, str):
+                        return text_fallback.strip()
+                    return ""
+
+                generated_text = extract_content(choices[0])
+
                 if not generated_text:
-                    raise ValueError("Empty response from LLM API")
+                    # Include a small snippet of the raw payload for debugging
+                    raise ValueError(
+                        f"Empty response from LLM API (raw snippet: {str(result)[:200]})"
+                    )
 
                 logger.info(
                     "LLM response received",
