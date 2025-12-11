@@ -283,6 +283,47 @@ def generate_test_case_task(
                 "raw_response": txt
             }
 
+        def is_valid_python_code(code: str) -> bool:
+            """Проверяет, является ли текст валидным Python кодом, а не объяснениями."""
+            if not code or len(code.strip()) < 20:
+                return False
+            
+            code_lower = code.lower()
+            
+            # Проверяем наличие обязательных Python конструкций
+            has_import = 'import ' in code or 'from ' in code
+            has_def_or_class = 'def ' in code or 'class ' in code or '@' in code
+            has_pytest_markers = '@pytest' in code or '@allure' in code
+            
+            # Проверяем, что это не просто объяснения на английском
+            # Если текст начинается с "we need", "let's", "i'll" и т.д. - это не код
+            explanation_starters = [
+                'we need', 'we must', 'we should', 'let\'s', 'let us',
+                'i\'ll', 'i will', 'i need', 'i must', 'here is',
+                'this is', 'the code', 'the test', 'will produce',
+                'should output', 'must include', 'need to'
+            ]
+            first_lines = '\n'.join(code.splitlines()[:3]).lower()
+            if any(first_lines.startswith(starter) for starter in explanation_starters):
+                return False
+            
+            # Если есть import/from И (def/class/@pytest/@allure), то это код
+            if has_import and (has_def_or_class or has_pytest_markers):
+                return True
+            
+            # Если есть def или class с правильным синтаксисом
+            if has_def_or_class:
+                # Проверяем, что после def/class идет имя функции/класса
+                import re
+                if re.search(r'\bdef\s+\w+', code) or re.search(r'\bclass\s+\w+', code):
+                    return True
+            
+            # Если есть декораторы pytest/allure
+            if has_pytest_markers:
+                return True
+            
+            return False
+
         def has_code(txt: str) -> bool:
             """Проверяет, есть ли в тексте код (markdown блоки или import/from).
             
@@ -290,15 +331,23 @@ def generate_test_case_task(
             """
             # Сначала проверяем наличие блоков кода в markdown
             code_blocks = extract_code_blocks_from_markdown(txt)
-            if code_blocks and any(block.get("code") and len(block["code"].strip()) > 10 for block in code_blocks):
-                return True
+            if code_blocks:
+                # Проверяем, что извлеченный код действительно валидный Python код
+                for block in code_blocks:
+                    code = block.get("code", "")
+                    if code and is_valid_python_code(code):
+                        return True
             
             # Ищем import/from в любой строке, не только в начале
             lines = txt.splitlines()
             for line in lines:
                 stripped = line.lstrip()
                 if stripped.startswith("import ") or stripped.startswith("from "):
-                    return True
+                    # Проверяем, что дальше есть реальный код
+                    code_start = txt.find(line)
+                    code_snippet = txt[code_start:code_start+500]  # Берем следующий фрагмент
+                    if is_valid_python_code(code_snippet):
+                        return True
             
             # Также проверяем наличие ключевых слов Python (но не в markdown заголовках)
             python_keywords = ['def ', 'class ', '@pytest', '@allure', 'async def', 'assert ']
@@ -315,7 +364,10 @@ def generate_test_case_task(
                         line_start += 1
                     line_before_keyword = txt[line_start:keyword_pos].strip()
                     if not line_before_keyword.startswith('#'):
-                        return True
+                        # Проверяем валидность кода вокруг ключевого слова
+                        code_snippet = txt[max(0, keyword_pos-100):keyword_pos+500]
+                        if is_valid_python_code(code_snippet):
+                            return True
             return False
 
         # Первичная генерация
@@ -341,15 +393,29 @@ def generate_test_case_task(
             # Это нормальный формат ответа ИИ - markdown с объяснениями и кодом
             extracted = extract_code_from_text(generated_text)
             
-            # Проверяем, что извлеченный код валидный
+            # Проверяем, что извлеченный код валидный Python код, а не объяснения
             has_valid_code = False
             if extracted and extracted.get("files") and len(extracted["files"]) > 0:
-                # Проверяем, что извлеченный код не пустой
-                valid_files = [f for f in extracted["files"] if f.get("code") and len(f["code"].strip()) > 50]
+                # Проверяем, что извлеченный код не пустой И является валидным Python кодом
+                valid_files = []
+                for f in extracted["files"]:
+                    code = f.get("code", "")
+                    if code and len(code.strip()) > 50:
+                        # ВАЖНО: проверяем, что это реальный Python код, а не объяснения
+                        if is_valid_python_code(code):
+                            valid_files.append(f)
+                        else:
+                            logger.warning(
+                                "Extracted text is not valid Python code (looks like explanations)",
+                                task_id=self.request.id,
+                                filename=f.get("filename", "unknown"),
+                                code_preview=code[:200],
+                            )
+                
                 if valid_files:
                     has_valid_code = True
                     logger.info(
-                        "Extracted code files from LLM response",
+                        "Extracted valid code files from LLM response",
                         task_id=self.request.id,
                         files_count=len(valid_files),
                         has_descriptions=any(f.get("description") for f in valid_files),
@@ -359,26 +425,38 @@ def generate_test_case_task(
                     generated_text = extracted
                 else:
                     logger.warning(
-                        "Extracted files are empty or too short",
+                        "Extracted files are empty, too short, or not valid Python code",
                         task_id=self.request.id,
                         extracted_files_count=len(extracted.get("files", [])),
                     )
             
-            # Если код не найден, проверяем более строго и пробуем повторный запрос
+            # Если код не найден или не валидный, проверяем более строго и пробуем повторный запрос
             if not has_valid_code:
+                original_text = generated_text if isinstance(generated_text, str) else str(generated_text)
+                
                 # Проверяем через has_code (может найти код, который не извлекся)
-                if not has_code(generated_text if isinstance(generated_text, str) else str(generated_text)):
+                if not has_code(original_text):
                     logger.warning(
-                        "LLM response doesn't contain code blocks or import statements",
+                        "LLM response doesn't contain valid Python code (contains explanations instead)",
                         task_id=self.request.id,
                         preview=preview,
                     )
                     # Пробуем ещё раз с более строгим промптом
                     strict_user_prompt = (
-                        "СТРОГОЕ ТРЕБОВАНИЕ: Твой ответ ДОЛЖЕН начинаться СРАЗУ с ```python (без единого символа перед ним). "
-                        "ЗАПРЕЩЕНО писать: 'We need to...', 'Let's create...', 'I'll generate...', 'Here is...'. "
-                        "ЗАПРЕЩЕНО писать планы действий или описания. "
-                        "Пиши ТОЛЬКО готовый код на Python внутри блока ```python ... ```.\n\n"
+                        "КРИТИЧЕСКИ ВАЖНО: Твой ответ ДОЛЖЕН начинаться СРАЗУ с ```python (без единого символа перед ним).\n"
+                        "ЗАПРЕЩЕНО писать:\n"
+                        "- 'We need to...', 'We must...', 'We should...'\n"
+                        "- 'Let's create...', 'Let us...'\n"
+                        "- 'I'll generate...', 'I will...', 'I need...'\n"
+                        "- 'Here is...', 'This is...', 'The code...'\n"
+                        "- 'Will produce...', 'Should output...', 'Must include...'\n"
+                        "- Любые планы действий или описания того, что ты собираешься сделать\n\n"
+                        "ТВОЙ ОТВЕТ ДОЛЖЕН БЫТЬ ТОЛЬКО:\n"
+                        "```python\n"
+                        "import pytest\n"
+                        "# ... готовый код ...\n"
+                        "```\n\n"
+                        "НИКАКИХ объяснений перед блоком кода. НИКАКИХ планов. ТОЛЬКО КОД.\n\n"
                         + user_prompt
                     )
                     generated_text = loop.run_until_complete(
@@ -391,44 +469,57 @@ def generate_test_case_task(
                     # Извлекаем код из повторного ответа
                     extracted = extract_code_from_text(generated_text)
                     if extracted and extracted.get("files") and len(extracted["files"]) > 0:
-                        valid_files = [f for f in extracted["files"] if f.get("code") and len(f["code"].strip()) > 50]
+                        # Проверяем валидность кода
+                        valid_files = []
+                        for f in extracted["files"]:
+                            code = f.get("code", "")
+                            if code and len(code.strip()) > 50 and is_valid_python_code(code):
+                                valid_files.append(f)
+                        
                         if valid_files:
                             extracted["files"] = valid_files
                             generated_text = extracted
                             has_valid_code = True
+                            logger.info(
+                                "Successfully extracted valid code after retry",
+                                task_id=self.request.id,
+                                files_count=len(valid_files),
+                            )
                     
                     # Проверяем снова
-                    if not has_valid_code and not has_code(generated_text if isinstance(generated_text, str) else str(generated_text)):
-                        # Логируем полный ответ для отладки
-                        logger.error(
-                            "LLM still doesn't return code after retry",
-                            task_id=self.request.id,
-                            response_preview=str(generated_text)[:1000] if isinstance(generated_text, str) else str(generated_text)[:1000],
-                        )
-                        raise LLMError(
-                            "Invalid response from LLM API",
-                            details={
-                                "reason": "expected code in markdown blocks or starting with import/from",
-                                "response_preview": str(generated_text)[:500] if isinstance(generated_text, str) else str(generated_text)[:500]
-                            },
-                        )
+                    if not has_valid_code:
+                        retry_text = generated_text if isinstance(generated_text, str) else str(generated_text)
+                        if not has_code(retry_text):
+                            # Логируем полный ответ для отладки
+                            logger.error(
+                                "LLM still doesn't return valid Python code after retry",
+                                task_id=self.request.id,
+                                response_preview=retry_text[:1000],
+                            )
+                            raise LLMError(
+                                "Invalid response from LLM API",
+                                details={
+                                    "reason": "LLM returned explanations instead of Python code",
+                                    "response_preview": retry_text[:500],
+                                    "note": "The response should start with ```python and contain actual Python code, not explanations"
+                                },
+                            )
             
-            # Если после всех проверок код не извлечен, используем fallback
+            # Если после всех проверок код не извлечен, НЕ используем fallback с текстом
+            # Вместо этого выбрасываем ошибку, так как это означает, что ИИ не вернул код
             if not has_valid_code or not isinstance(generated_text, dict):
-                logger.warning(
-                    "Failed to extract code files, using fallback",
+                logger.error(
+                    "Failed to extract valid Python code from LLM response",
                     task_id=self.request.id,
+                    response_type=type(generated_text).__name__,
                 )
-                # Fallback: сохраняем как один файл
-                original_text = generated_text if isinstance(generated_text, str) else str(generated_text)
-                generated_text = {
-                    "files": [{
-                        "description": None,
-                        "code": original_text,
-                        "filename": "test.py"
-                    }],
-                    "raw_response": original_text
-                }
+                raise LLMError(
+                    "Failed to extract valid Python code",
+                    details={
+                        "reason": "Extracted text is not valid Python code",
+                        "note": "The LLM response should contain Python code in markdown blocks (```python ... ```)"
+                    },
+                )
 
         # Update progress: 80% - Processing result
         self.update_progress(80, 100, "Processing generated test case...")
