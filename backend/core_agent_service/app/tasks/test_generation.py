@@ -94,6 +94,7 @@ def generate_test_case_task(
             asyncio.set_event_loop(loop)
 
         def is_code_output(txt: str) -> bool:
+            """Проверяет, начинается ли текст с import/from (любого модуля)."""
             stripped = txt.lstrip()
             return stripped.startswith("import ") or stripped.startswith("from ")
 
@@ -101,7 +102,8 @@ def generate_test_case_task(
             """Возвращает текст, начиная с первой строки import/from, если она есть."""
             lines = txt.splitlines()
             for i, line in enumerate(lines):
-                if line.lstrip().startswith(("import ", "from ")):
+                stripped_line = line.lstrip()
+                if stripped_line.startswith("import ") or stripped_line.startswith("from "):
                     return "\n".join(lines[i:]).strip()
             return txt.strip()
 
@@ -116,8 +118,20 @@ def generate_test_case_task(
         # Для API/UI требуем код. Если пришёл текст без кода — обрезаем до первого import/from; если всё равно нет — повторяем с усилением.
         if test_type in ["api", "ui"]:
             if not is_code_output(generated_text):
+                # Логируем первые 200 символов для отладки
+                preview = generated_text[:200].replace("\n", "\\n")
+                logger.warning(
+                    "LLM response doesn't start with import/from",
+                    task_id=self.request.id,
+                    preview=preview,
+                )
                 trimmed = extract_first_code_block(generated_text)
                 if is_code_output(trimmed):
+                    logger.info(
+                        "Found code block after trimming",
+                        task_id=self.request.id,
+                        trimmed_preview=trimmed[:100].replace("\n", "\\n"),
+                    )
                     generated_text = trimmed
                 else:
                     logger.warning(

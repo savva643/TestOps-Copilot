@@ -89,6 +89,7 @@ class PromptEngineer:
 
 Требования к ответу:
 - Только код на Python, без пояснений, без Markdown, без обратных кавычек.
+- Ответ обязан начинаться со строки `import ` (любой модуль) или `from ... import ...`.
 - pytest + httpx (асинхронный клиент/фикстуры), Allure аннотации (@allure.feature, @allure.story, @allure.title, @allure.severity, @allure.label("owner", ...)).
 - Строгая структура AAA (Arrange-Act-Assert) в каждом тесте.
 - Проверяй статус-код и ключевые поля тела ответа.
@@ -134,7 +135,7 @@ class PromptEngineer:
         user_prompt_parts.append("- Ожидаемые результаты и проверки")
         user_prompt_parts.append("- Отдельные негативные сценарии и граничные случаи")
         if test_type in ["api", "ui"]:
-            user_prompt_parts.append("- Начни ответ с import/from, без преамбулы, без Markdown")
+            user_prompt_parts.append("- Ответ строго начинается с import (любой модуль) или from ... import ..., без преамбулы, без Markdown")
 
         user_prompt = "\n".join(user_prompt_parts)
 
