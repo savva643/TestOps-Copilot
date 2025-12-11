@@ -278,11 +278,17 @@ def generate_test_case_task(
         # Если generated_text - это dict с файлами, сохраняем как есть
         # Если это строка (для manual тестов), преобразуем в структуру
         if isinstance(generated_text, str):
+            # Для manual тестов генерируем имя файла с ID из текста или используем дефолтное
+            import re
+            tc_id_match = re.search(r'\*\*ID:\*\*\s*(TC-\d+)', generated_text)
+            tc_id = tc_id_match.group(1) if tc_id_match else "TC-001"
+            filename = f"manual_test_case_{tc_id}.txt"
+            
             test_case_data = {
                 "files": [{
                     "description": None,
                     "code": generated_text,
-                    "filename": "test_case.txt"
+                    "filename": filename
                 }],
                 "raw_response": generated_text
             }

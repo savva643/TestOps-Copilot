@@ -86,16 +86,48 @@ class PromptEngineer:
 
         # Optimized system prompts for different test types
         if test_type == "manual":
-            system_prompt = """Ты — опытный QA-инженер по ручному тестированию.
+            system_prompt = """Ты — опытный QA-инженер по ручному тестированию. Твоя задача — создать структурированный тест-кейс для ручного выполнения.
 
-Требования к ответу (только текст, без кода, без Markdown-разметки):
-- Один или несколько тест-кейсов с чёткими заголовками.
-- Предусловия / подготовка данных.
-- Нумерованные шаги (каждый шаг + ожидаемый результат).
-- Тестовые данные для шагов.
-- Позитивные, негативные и граничные сценарии.
-- Постусловия/очистка, если нужна.
-- Всё на русском, без лишних пояснений."""
+Требования к ответу (текст в формате Markdown):
+- Структурированный тест-кейс с четкими разделами
+- Используй Markdown форматирование (заголовки, таблицы, списки)
+- Всё на русском языке
+
+ОБЯЗАТЕЛЬНАЯ СТРУКТУРА:
+
+# ТЕСТ-КЕЙС: [Название сценария]
+
+**ID:** TC-001 (или другой уникальный ID)
+**Приоритет:** CRITICAL | NORMAL | LOW
+**Feature:** [Название фичи, если указано]
+**Story:** [Название истории, если указано]
+**Владелец:** [owner из запроса]
+
+## 1. ПРЕДУСЛОВИЯ
+- [Список условий, которые должны быть выполнены перед тестом]
+
+## 2. ТЕСТОВЫЕ ДАННЫЕ
+- [Данные, которые будут использоваться в тесте]
+
+## 3. ШАГИ ТЕСТИРОВАНИЯ (позитивный сценарий)
+
+| № | Действие (ACT) | Ожидаемый результат (ASSERT) |
+|---|----------------|------------------------------|
+| 1 | [Действие] | [Ожидаемый результат] |
+| 2 | [Действие] | [Ожидаемый результат] |
+
+## 4. НЕГАТИВНЫЕ / ГРАНИЧНЫЕ СЦЕНАРИИ
+- **ГС-1 (Граничный):** [Описание]. *Ожидаемо:* [Результат]
+- **НС-1 (Негативный):** [Описание]. *Ожидаемо:* [Результат]
+
+## 5. ПОСТУСЛОВИЯ
+- [Действия для очистки после теста]
+
+ВАЖНО:
+- Используй таблицу для шагов тестирования
+- Каждый шаг должен иметь четкое действие и ожидаемый результат
+- Включи негативные и граничные сценарии
+- Всё на русском языке"""
 
         elif test_type == "api":
             system_prompt = """Ты — генератор Python-кода тестов в формате Allure TestOps as Code. Твоя задача — вернуть готовый код.
@@ -187,7 +219,12 @@ async def test_example_success(client):
 ```"""
 
         else:  # UI
-            system_prompt = """Ты — генератор Python-кода UI тестов в формате Allure TestOps as Code.
+            system_prompt = """Ты — генератор Python-кода UI тестов в формате Allure TestOps as Code. Твоя ЕДИНСТВЕННАЯ задача — вернуть готовый код.
+
+СТРОГО ЗАПРЕЩЕНО:
+- Писать текстовые пояснения типа "We need to produce...", "Let's create...", "I'll generate..."
+- Писать планы действий или описания того, что ты собираешься сделать
+- Начинать ответ с английского текста
 
 ОБЯЗАТЕЛЬНО:
 - Твой ответ ДОЛЖЕН начинаться СРАЗУ с ```python (без пробелов и текста перед ним)
@@ -196,21 +233,82 @@ async def test_example_success(client):
 - Если нужно несколько файлов — используй несколько блоков ```python ... ```
 - Можешь добавлять пояснения МЕЖДУ блоками кода (перед следующим блоком ```python)
 
+Формат ответа (СТРОГО):
+```python
+import pytest
+from playwright.sync_api import Page, expect
+import allure
+# ... код ...
+```
+
 Требования к коду (формат Allure TestOps as Code):
 - pytest + Playwright для браузерной автоматизации
 - ОБЯЗАТЕЛЬНЫЕ Allure декораторы в каждом тесте:
   * @allure.label("owner", owner) - owner из запроса
   * @allure.feature(feature) - feature из запроса (если указан)
-  * @allure.story(story) - story из запроса (если указан)
+  * @allure.story(story) - story из запроса (если указано)
   * @allure.suite("ui") - всегда "ui" для UI тестов
-  * @allure.tag(priority) - приоритет: "CRITICAL", "NORMAL" или "LOW"
-  * @allure.label("priority", priority) - дублирование приоритета
+  * @allure.tag(priority) - приоритет: "CRITICAL", "NORMAL" или "LOW" (НЕ severity!)
+  * @allure.label("priority", priority) - дублирование приоритета в label
   * @allure.title("Название теста") - краткое название теста
   * @allure.link(jira_link, name="JIRA") - если есть jira_link
+- Используй классы для группировки тестов (class TestFeatureName)
+- Используй фикстуры @pytest.fixture для setup/teardown
+- Используй allure.step() для группировки шагов внутри теста
 - Структура AAA (Arrange-Act-Assert) с комментариями # Arrange, # Act, # Assert
-- Используй явные селекторы (id/data-testid), ожидания, скриншот при ошибке
+- Используй явные селекторы (id/data-testid), ожидания через expect()
+- Делай скриншоты и вложения через allure.attach()
 - Позитивные и негативные сценарии, граничные случаи
-- Всё на русском (названия тестов, строки, аннотации)."""
+- Всё на русском (названия тестов, строки, комментарии, docstrings)
+
+ПРИМЕР ПРАВИЛЬНОГО ОТВЕТА:
+```python
+import pytest
+from playwright.sync_api import Page, expect
+import allure
+
+@allure.label("owner", "qa-team")
+@allure.feature("Price Calculator")
+@allure.story("Динамический расчет цены")
+@allure.suite("ui")
+@allure.tag("NORMAL")
+@allure.label("priority", "NORMAL")
+
+class TestPriceCalculatorDynamicPrice:
+    
+    @pytest.fixture(scope="function", autouse=True)
+    def setup(self, page: Page):
+        """Предусловия: открыть калькулятор."""
+        page.goto("https://cloud.ru/calculator")
+        expect(page.locator('[data-testid="calculator-title"]')).toBeVisible()
+        yield
+    
+    @allure.title("Изменение vCPU должно пересчитывать цену")
+    def test_change_vcpu_updates_price(self, page: Page):
+        """Позитивный сценарий: изменение vCPU динамически меняет цену."""
+        with allure.step("1. Добавить сервис Compute"):
+            add_service_button = page.locator('[data-testid="btn-add-service"]')
+            add_service_button.click()
+            compute_card = page.locator('[data-testid="product-card-compute"]')
+            compute_card.click()
+        
+        with allure.step("2. Изменить vCPU и проверить цену"):
+            vcpu_slider = page.locator('[data-testid="slider-vcpu"]')
+            initial_price = page.locator('[data-testid="total-price"]').text_content()
+            vcpu_slider.fill("4")
+            page.wait_for_timeout(500)
+            new_price = page.locator('[data-testid="total-price"]').text_content()
+            assert new_price != initial_price, f"Цена не изменилась"
+        
+        with allure.step("3. Прикрепить скриншот"):
+            allure.attach(
+                page.screenshot(),
+                name="calculator_configuration",
+                attachment_type=allure.attachment_type.PNG
+            )
+```
+
+Примечание: Фикстура `page` предоставляется плагином pytest-playwright автоматически. Используй классы для группировки тестов и allure.step() для шагов."""
 
         # Clean and optimize description
         description = description.strip()
@@ -253,15 +351,26 @@ async def test_example_success(client):
             
             user_prompt_parts.append("\nТребования к коду:")
             user_prompt_parts.append("- Полный готовый код с импортами, фикстурами, тестами")
+            user_prompt_parts.append("- Используй классы для группировки тестов (class TestFeatureName)")
+            user_prompt_parts.append("- Используй фикстуры @pytest.fixture для setup/teardown")
+            user_prompt_parts.append("- Используй allure.step() для группировки шагов внутри теста")
             user_prompt_parts.append("- Структура AAA в каждом тесте с комментариями # Arrange, # Act, # Assert")
+            user_prompt_parts.append("- Делай скриншоты через allure.attach() для важных проверок")
             user_prompt_parts.append("- Позитивные и негативные сценарии")
-            user_prompt_parts.append("- Все на русском языке")
-        else:
-            user_prompt_parts.append("\n\nВерни структурированный текст кейсов:")
-            user_prompt_parts.append("- Нумерованные шаги")
-            user_prompt_parts.append("- Необходимые тестовые данные")
-            user_prompt_parts.append("- Ожидаемые результаты и проверки")
-            user_prompt_parts.append("- Отдельные негативные сценарии и граничные случаи")
+            user_prompt_parts.append("- Все на русском языке (названия, комментарии, docstrings)")
+        else:  # manual
+            user_prompt_parts.append("\n\nВерни структурированный тест-кейс в формате Markdown:")
+            user_prompt_parts.append("- Заголовок: # ТЕСТ-КЕЙС: [Название]")
+            user_prompt_parts.append("- Метаданные: ID, Приоритет, Feature, Story, Владелец")
+            user_prompt_parts.append("- Раздел 1: ПРЕДУСЛОВИЯ (список условий)")
+            user_prompt_parts.append("- Раздел 2: ТЕСТОВЫЕ ДАННЫЕ (данные для теста)")
+            user_prompt_parts.append("- Раздел 3: ШАГИ ТЕСТИРОВАНИЯ (таблица с колонками: №, Действие, Ожидаемый результат)")
+            user_prompt_parts.append("- Раздел 4: НЕГАТИВНЫЕ / ГРАНИЧНЫЕ СЦЕНАРИИ (список с ГС-1, НС-1 и т.д.)")
+            user_prompt_parts.append("- Раздел 5: ПОСТУСЛОВИЯ (действия для очистки)")
+            if priority:
+                user_prompt_parts.append(f"\nПриоритет теста: {priority}")
+            if owner:
+                user_prompt_parts.append(f"Владелец теста: {owner}")
 
         user_prompt = "\n".join(user_prompt_parts)
 
