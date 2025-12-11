@@ -62,6 +62,68 @@ class TaskListResponse(BaseModel):
     page_size: int
 
 
+def _safe_extract_error(task_info: Any) -> str:
+    """Safely extract error message from Celery task info."""
+    if task_info is None:
+        return "Unknown error"
+    
+    # If it's already a string, return it
+    if isinstance(task_info, str):
+        return task_info
+    
+    # If it's an exception object, extract the message
+    if isinstance(task_info, Exception):
+        error_msg = str(task_info)
+        # If it has a message attribute, use it
+        if hasattr(task_info, 'message'):
+            error_msg = task_info.message
+        # If it has details, include them
+        if hasattr(task_info, 'details') and task_info.details:
+            details_str = str(task_info.details)
+            if details_str:
+                error_msg = f"{error_msg}: {details_str}"
+        return error_msg
+    
+    # If it's a dict, try to extract error information
+    if isinstance(task_info, dict):
+        # Celery sometimes stores exception info in a dict
+        if 'exc_type' in task_info and 'exc_message' in task_info:
+            exc_type = task_info.get('exc_type', 'UnknownError')
+            exc_message = task_info.get('exc_message', '')
+            return f"{exc_type}: {exc_message}"
+        # Or it might have an 'error' key
+        if 'error' in task_info:
+            return _safe_extract_error(task_info['error'])
+        # Or just convert the whole dict to string
+        return str(task_info)
+    
+    # For any other type, convert to string
+    try:
+        return str(task_info)
+    except Exception:
+        return "Unable to extract error message"
+
+
+def _safe_serialize_result(result: Any) -> Optional[Any]:
+    """Safely serialize task result, converting any exception objects to strings."""
+    if result is None:
+        return None
+    
+    # If result contains exception objects, convert them
+    if isinstance(result, Exception):
+        return _safe_extract_error(result)
+    
+    if isinstance(result, dict):
+        # Recursively check dict values
+        return {k: _safe_serialize_result(v) for k, v in result.items()}
+    
+    if isinstance(result, (list, tuple)):
+        # Recursively check list items
+        return [_safe_serialize_result(item) for item in result]
+    
+    return result
+
+
 def _upsert_task_record(
     db: Session,
     response: dict,
@@ -139,10 +201,12 @@ async def get_task_status(
                 },
             }
         elif task.state == "SUCCESS":
+            # Safely serialize result to ensure no exception objects
+            safe_result = _safe_serialize_result(task.result)
             response = {
                 "task_id": task_id,
                 "status": "completed",
-                "result": task.result,
+                "result": safe_result,
                 "error": None,
                 "progress": {
                     "current": 100,
@@ -152,18 +216,22 @@ async def get_task_status(
                 },
             }
         elif task.state == "FAILURE":
+            # Safely extract error message from task.info
+            error_message = _safe_extract_error(task.info)
             response = {
                 "task_id": task_id,
                 "status": "failed",
                 "result": None,
-                "error": str(task.info),
+                "error": error_message,
                 "progress": None,
             }
         else:
+            # Safely serialize result for other states
+            safe_result = _safe_serialize_result(task.result) if task.result else None
             response = {
                 "task_id": task_id,
                 "status": task.state.lower(),
-                "result": task.result if task.result else None,
+                "result": safe_result,
                 "error": None,
                 "progress": None,
             }
