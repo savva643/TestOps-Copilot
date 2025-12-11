@@ -50,9 +50,9 @@ test-python:
     - postgres:15-alpine
     - redis:7-alpine
   variables:
-    POSTGRES_DB: testops_test
+    POSTGRES_DB: testops_db
     POSTGRES_USER: testops
-    POSTGRES_PASSWORD: testops_test
+    POSTGRES_PASSWORD: testops_password
     REDIS_URL: redis://redis:6379/0
   before_script:
     - pip install pytest pytest-cov

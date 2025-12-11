@@ -25,6 +25,8 @@ export function TaskDetailsPage() {
   const [taskStatus, setTaskStatus] = useState<TaskStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [connecting, setConnecting] = useState(false)
+  const [progressVisible, setProgressVisible] = useState(true)
+  const [progressFading, setProgressFading] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
 
   const isTerminal = (status?: string) => {
@@ -130,6 +132,18 @@ export function TaskDetailsPage() {
     }
   }, [taskId])
 
+  // Smoothly hide progress widget when задача завершается
+  useEffect(() => {
+    if (isTerminal(taskStatus?.status)) {
+      setProgressFading(true)
+      const timer = setTimeout(() => setProgressVisible(false), 600)
+      return () => clearTimeout(timer)
+    } else {
+      setProgressVisible(true)
+      setProgressFading(false)
+    }
+  }, [taskStatus?.status])
+
   const downloadCode = () => {
     if (!taskStatus?.result?.test_case) return
     const blob = new Blob([taskStatus.result.test_case], { type: 'text/plain' })
@@ -206,8 +220,8 @@ export function TaskDetailsPage() {
 
           {error && <Alert appearance="error" title="Ошибка" description={error} />}
 
-          {taskStatus?.progress && (
-            <div className="progress-section">
+          {taskStatus?.progress && progressVisible && (
+            <div className={`progress-section ${progressFading ? 'fade-out' : ''}`}>
               <p>
                 Прогресс: {taskStatus.progress.current} / {taskStatus.progress.total} (
                 {Math.round((taskStatus.progress.current / taskStatus.progress.total) * 100)}%)

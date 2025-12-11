@@ -73,82 +73,47 @@ class PromptEngineer:
 
         # Optimized system prompts for different test types
         if test_type == "manual":
-            system_prompt = """You are an expert QA engineer specializing in creating comprehensive manual test cases.
+            system_prompt = """Ты — опытный QA-инженер по ручному тестированию.
 
-Your task is to generate well-structured, detailed manual test cases based on requirements.
-
-Requirements:
-1. Break down the requirement into clear, numbered test steps
-2. Each step should be specific and actionable
-3. Identify required test data for each step
-4. Specify expected results clearly
-5. Consider positive, negative, and edge case scenarios
-6. Include preconditions and postconditions
-7. Format output as structured text that can be easily converted to Allure TestOps format
-
-Output format:
-- Test Case Title: [Clear, descriptive title]
-- Preconditions: [What needs to be set up]
-- Test Steps:
-  1. [Step description]
-     Expected: [Expected result]
-  2. [Step description]
-     Expected: [Expected result]
-- Test Data: [Required data]
-- Postconditions: [Cleanup if needed]"""
+Требования к ответу (только текст, без кода, без Markdown-разметки):
+- Один или несколько тест-кейсов с чёткими заголовками.
+- Предусловия / подготовка данных.
+- Нумерованные шаги (каждый шаг + ожидаемый результат).
+- Тестовые данные для шагов.
+- Позитивные, негативные и граничные сценарии.
+- Постусловия/очистка, если нужна.
+- Всё на русском, без лишних пояснений."""
 
         elif test_type == "api":
-            system_prompt = """You are an expert QA engineer specializing in API testing.
+            system_prompt = """Ты — опытный QA-инженер по API. Верни только готовый Python-код тестов.
 
-Your task is to generate comprehensive API test cases following best practices.
-
-Requirements:
-1. Follow AAA pattern (Arrange-Act-Assert) structure
-2. Include endpoint URL, HTTP method, and request details
-3. Specify request headers, body, and parameters
-4. Define expected response status codes
-5. Validate response schema and data
-6. Include error handling scenarios
-7. Consider authentication requirements
-8. Format for pytest + httpx with Allure annotations
-
-Output format:
-- Test Case Title: [API endpoint test]
-- Endpoint: [HTTP method] [URL]
-- Request: [Headers, body, parameters]
-- Expected Response: [Status code, schema]
-- Test Steps: [Arrange, Act, Assert breakdown]"""
+Требования к ответу:
+- Только код на Python, без пояснений, без Markdown, без обратных кавычек.
+- pytest + httpx (асинхронный клиент/фикстуры), Allure аннотации (@allure.feature, @allure.story, @allure.title, @allure.severity, @allure.label("owner", ...)).
+- Строгая структура AAA (Arrange-Act-Assert) в каждом тесте.
+- Проверяй статус-код и ключевые поля тела ответа.
+- Добавляй позитивные и негативные сценарии: валидный запрос, невалидные данные (400), отсутствующий ресурс (404), нет/невалидный токен (401/403).
+- Авторизация: Bearer <token> в заголовке Authorization, если требуется.
+- Все названия, строки и комментарии — на русском языке.
+- Объедини несколько тестов в одном файле, тесты — отдельные функции."""
 
         else:  # UI
-            system_prompt = """You are an expert QA engineer specializing in UI/E2E testing.
+            system_prompt = """Ты — опытный QA-инженер по UI/E2E. Верни только готовый код на Python.
 
-Your task is to generate comprehensive UI test cases for web applications.
-
-Requirements:
-1. Follow AAA pattern (Arrange-Act-Assert)
-2. Include page navigation and element interactions
-3. Specify UI elements with selectors (ID, class, data attributes)
-4. Include wait conditions and timeouts
-5. Consider different screen sizes and browsers
-6. Include screenshot capture points
-7. Format for pytest + Playwright with Allure annotations
-
-Output format:
-- Test Case Title: [UI test scenario]
-- Page/URL: [Starting page]
-- Test Steps:
-  1. Navigate to [page]
-  2. Click on [element]
-  3. Fill [field] with [value]
-  4. Verify [expected state]
-- Screenshots: [When to capture]"""
+Требования к ответу:
+- Только код на Python, без Markdown и без комментариев-пояснений.
+- pytest + Playwright, аннотации Allure (@allure.feature, @allure.story, @allure.title, @allure.severity, @allure.label("owner", ...)).
+- Строгая структура AAA в тестах.
+- Используй явные селекторы (id/data-testid), ожидания, скриншот при ошибке по необходимости.
+- Позитивные и негативные сценарии, граничные случаи.
+- Всё на русском (названия тестов, строки, аннотации)."""
 
         # Clean and optimize description
         description = description.strip()
         
         # Build optimized user prompt
         user_prompt_parts = [
-            f"Generate a comprehensive {test_type} test case based on the following requirements:",
+            f"Сгенерируй подробные {test_type} тесты на основе требований ниже.",
             "",
             description,
         ]
@@ -159,12 +124,14 @@ Output format:
             user_prompt_parts.append(f"Story: {story}")
 
         user_prompt_parts.append(
-            "\n\nProvide a detailed, well-structured test case with:"
+            "\n\nВерни строго (без Markdown) подходящий результат с учетом:"
         )
-        user_prompt_parts.append("- Clear, numbered test steps")
-        user_prompt_parts.append("- Required test data")
-        user_prompt_parts.append("- Expected results for each step")
-        user_prompt_parts.append("- Edge cases and error scenarios")
+        user_prompt_parts.append("- Если тест_type=api/ui — только готовый Python-код тестов")
+        user_prompt_parts.append("- Если тест_type=manual — структурированный текст кейсов")
+        user_prompt_parts.append("- Нумерованные шаги (AAA в коде или шагах)")
+        user_prompt_parts.append("- Необходимые тестовые данные")
+        user_prompt_parts.append("- Ожидаемые результаты и проверки")
+        user_prompt_parts.append("- Отдельные негативные сценарии и граничные случаи")
 
         user_prompt = "\n".join(user_prompt_parts)
 
