@@ -275,6 +275,110 @@ def generate_test_case_task(
         # Формируем полный промпт для сохранения в артефактах
         full_prompt = f"System Prompt:\n{system_prompt}\n\nUser Prompt:\n{user_prompt}"
         
+        def generate_explanation_md(
+            test_type: str,
+            feature: Optional[str],
+            story: Optional[str],
+            files: list,
+            validation_result: Optional[dict] = None
+        ) -> str:
+            """Генерирует markdown файл с объяснениями фич и типов проверок."""
+            lines = []
+            lines.append("# Объяснение тестов и проверок\n")
+            lines.append(f"**Тип теста:** {test_type.upper()}\n")
+            
+            if feature:
+                lines.append(f"**Фича:** {feature}\n")
+            if story:
+                lines.append(f"**История:** {story}\n")
+            
+            lines.append("\n## Описание функциональности\n")
+            if feature:
+                lines.append(f"Тесты проверяют функциональность **{feature}**.")
+            if story:
+                lines.append(f"Основной фокус: **{story}**.")
+            lines.append("\nТесты автоматизируют проверку корректной работы функциональности и обработку различных сценариев.\n")
+            
+            lines.append("\n## Типы проверок\n")
+            if test_type == "api":
+                lines.append("### API Тесты\n")
+                lines.append("Тесты проверяют:\n")
+                lines.append("- **Корректность HTTP запросов** - правильность формирования запросов, заголовков, тела")
+                lines.append("- **Валидацию ответов** - статус коды, структура данных, типы полей")
+                lines.append("- **Обработку ошибок** - корректная обработка 4xx/5xx ошибок")
+                lines.append("- **Граничные случаи** - пустые значения, максимальные длины, специальные символы")
+                lines.append("- **Бизнес-логику** - корректность расчетов, валидаций, состояний")
+                lines.append("\n### Структура тестов\n")
+                lines.append("- **Arrange (Подготовка)** - настройка тестовых данных, заголовков, параметров")
+                lines.append("- **Act (Действие)** - выполнение HTTP запроса (GET, POST, PUT, DELETE и т.д.)")
+                lines.append("- **Assert (Проверка)** - валидация статус кода, структуры ответа, значений полей")
+            elif test_type == "ui":
+                lines.append("### UI Тесты\n")
+                lines.append("Тесты проверяют:\n")
+                lines.append("- **Отображение элементов** - видимость, доступность, корректное позиционирование")
+                lines.append("- **Интерактивность** - клики, ввод данных, навигация")
+                lines.append("- **Валидацию форм** - проверка полей ввода, сообщений об ошибках")
+                lines.append("- **Состояния интерфейса** - загрузка, ошибки, успешные операции")
+                lines.append("- **Адаптивность** - корректное отображение на разных разрешениях")
+                lines.append("\n### Структура тестов\n")
+                lines.append("- **Arrange (Подготовка)** - открытие страницы, настройка начального состояния")
+                lines.append("- **Act (Действие)** - взаимодействие с элементами (клики, ввод, навигация)")
+                lines.append("- **Assert (Проверка)** - проверка видимости элементов, текста, состояний")
+            
+            lines.append("\n## Структура кода\n")
+            lines.append("### Файлы тестов\n")
+            for i, file in enumerate(files, 1):
+                filename = file.get("filename", f"test_{i}.py")
+                lines.append(f"\n#### {filename}\n")
+                if file.get("description"):
+                    lines.append(f"{file['description']}\n")
+                else:
+                    lines.append(f"Содержит тесты для проверки функциональности.\n")
+            
+            lines.append("\n### Используемые библиотеки\n")
+            if test_type == "api":
+                lines.append("- **pytest** - фреймворк для тестирования")
+                lines.append("- **httpx** или **aiohttp** - для выполнения HTTP запросов")
+                lines.append("- **allure-pytest** - для интеграции с Allure TestOps")
+                lines.append("- **pydantic** - для валидации данных (если используется)")
+            elif test_type == "ui":
+                lines.append("- **pytest** - фреймворк для тестирования")
+                lines.append("- **playwright** - для автоматизации браузера")
+                lines.append("- **allure-pytest** - для интеграции с Allure TestOps")
+            
+            lines.append("\n### Allure декораторы\n")
+            lines.append("Каждый тест использует следующие декораторы Allure:\n")
+            lines.append("- `@allure.label(\"owner\", ...)` - владелец теста")
+            if feature:
+                lines.append(f"- `@allure.feature(\"{feature}\")` - функциональность")
+            if story:
+                lines.append(f"- `@allure.story(\"{story}\")` - история")
+            lines.append(f"- `@allure.suite(\"{test_type}\")` - тип теста")
+            lines.append("- `@allure.tag(...)` - приоритет теста")
+            lines.append("- `@allure.title(...)` - название теста")
+            lines.append("- `@allure.step(...)` - шаги внутри теста")
+            
+            if validation_result:
+                lines.append("\n## Результаты валидации\n")
+                is_valid = validation_result.get("is_valid", False)
+                score = validation_result.get("score", 0)
+                lines.append(f"- **Валидность:** {'✓ Валидный' if is_valid else '✗ Требует доработки'}\n")
+                lines.append(f"- **Оценка:** {score}/100\n")
+                errors = validation_result.get("errors", [])
+                if errors:
+                    lines.append(f"- **Найдено проблем:** {len(errors)}\n")
+                    lines.append("\n### Рекомендации по улучшению:\n")
+                    for error in errors[:5]:  # Показываем первые 5 ошибок
+                        lines.append(f"- {error}\n")
+            
+            lines.append("\n## Как использовать\n")
+            lines.append("1. Установите зависимости: `pip install -r requirements.txt`")
+            lines.append("2. Настройте конфигурацию (URL, токены и т.д.)")
+            lines.append("3. Запустите тесты: `pytest tests/ -v --alluredir=allure-results`")
+            lines.append("4. Просмотрите результаты в Allure TestOps")
+            
+            return "\n".join(lines)
+        
         # Если generated_text - это dict с файлами, сохраняем как есть
         # Если это строка (для manual тестов), преобразуем в структуру
         if isinstance(generated_text, str):
@@ -294,6 +398,21 @@ def generate_test_case_task(
             }
         else:
             test_case_data = generated_text
+            # Для API/UI тестов добавляем файл с объяснениями
+            if test_type in ["api", "ui"] and isinstance(test_case_data, dict) and test_case_data.get("files"):
+                explanation_md = generate_explanation_md(
+                    test_type=test_type,
+                    feature=feature,
+                    story=story,
+                    files=test_case_data["files"],
+                    validation_result=validation_result
+                )
+                # Добавляем файл с объяснениями в начало списка файлов
+                test_case_data["files"].insert(0, {
+                    "description": "Документация с объяснениями фич и типов проверок",
+                    "code": explanation_md,
+                    "filename": "EXPLANATION.md"
+                })
         
         result = {
             "test_case": test_case_data,

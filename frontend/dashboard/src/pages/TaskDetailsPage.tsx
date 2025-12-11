@@ -4,6 +4,8 @@ import { Alert } from '@snack-uikit/alert'
 import { ButtonFilled } from '@snack-uikit/button'
 import { Card } from '@snack-uikit/card'
 import { Status } from '@snack-uikit/status'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { getTaskStatus, getTasksWebSocketUrl } from '../api/tasks'
 import './TasksPage.css'
 
@@ -150,6 +152,14 @@ export function TaskDetailsPage() {
     }
   }, [taskStatus?.status])
 
+  // Проверяет, является ли файл markdown файлом
+  const isMarkdownFile = (filename: string): boolean => {
+    const lower = filename.toLowerCase()
+    return lower.endsWith('.md') || lower.endsWith('.markdown') || 
+           lower === 'explanation.md' ||
+           (lower.endsWith('.txt') && taskStatus?.result?.test_type?.toLowerCase() === 'manual')
+  }
+
   // Получаем структуру файлов из результата
   const getTestFiles = (): TestFile[] => {
     if (!taskStatus?.result?.test_case) return []
@@ -163,7 +173,13 @@ export function TaskDetailsPage() {
     
     // Если это старая структура (строка) - преобразуем
     if (typeof testCase === 'string') {
-      return [{ description: null, code: testCase, filename: 'test.py' }]
+      // Для ручных тестов это markdown, для других - код
+      const isManual = taskStatus?.result?.test_type?.toLowerCase() === 'manual'
+      return [{ 
+        description: null, 
+        code: testCase, 
+        filename: isManual ? 'manual_test_case.md' : 'test.py' 
+      }]
     }
     
     return []
@@ -382,30 +398,42 @@ export function TaskDetailsPage() {
                       </div>
                     </div>
                     
-                          {files.map((file: TestFile, index: number) => (
-                      <div key={index} className="code-preview" style={{ marginBottom: '1.5rem' }}>
-                        <div className="code-header">
-                          <span>
-                            <strong>{file.filename}</strong>
-                            {file.description && <span style={{ marginLeft: '0.5rem', fontSize: '0.875rem', color: '#666' }}>с описанием</span>}
-                          </span>
-                          <div className="code-actions">
-                            <ButtonFilled 
-                              label="Скачать файл" 
-                              onClick={() => downloadFile(file)} 
-                              size="s" 
-                              appearance="neutral" 
-                            />
+                          {files.map((file: TestFile, index: number) => {
+                      const isMarkdown = isMarkdownFile(file.filename)
+                      return (
+                        <div key={index} className={isMarkdown ? "markdown-preview" : "code-preview"} style={{ marginBottom: '1.5rem' }}>
+                          <div className="code-header">
+                            <span>
+                              <strong>{file.filename}</strong>
+                              {file.description && <span style={{ marginLeft: '0.5rem', fontSize: '0.875rem', color: '#666' }}>с описанием</span>}
+                              {isMarkdown && <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: '#667eea', background: '#f0f0ff', padding: '0.125rem 0.5rem', borderRadius: '4px' }}>Markdown</span>}
+                            </span>
+                            <div className="code-actions">
+                              <ButtonFilled 
+                                label="Скачать файл" 
+                                onClick={() => downloadFile(file)} 
+                                size="s" 
+                                appearance="neutral" 
+                              />
+                            </div>
                           </div>
+                          {file.description && (
+                            <div style={{ padding: '0.75rem', background: '#f5f5f5', borderRadius: '4px', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+                              {file.description}
+                            </div>
+                          )}
+                          {isMarkdown ? (
+                            <div className="markdown-content">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {file.code}
+                              </ReactMarkdown>
+                            </div>
+                          ) : (
+                            <pre className="code-content">{file.code}</pre>
+                          )}
                         </div>
-                        {file.description && (
-                          <div style={{ padding: '0.75rem', background: '#f5f5f5', borderRadius: '4px', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
-                            {file.description}
-                          </div>
-                        )}
-                        <pre className="code-content">{file.code}</pre>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )
               })()}
