@@ -370,156 +370,158 @@ def generate_test_case_task(
                             return True
             return False
 
-        # Первичная генерация
-        generated_text = loop.run_until_complete(
-            llm_client.generate(
-                system_prompt=system_prompt,
-                user_prompt=user_prompt,
-            )
-        )
-
-        # Для API/UI извлекаем код из ответа (может быть в markdown блоках или как чистый код)
+        # Для API/UI используем двухэтапный подход: сначала код, потом объяснение
         if test_type in ["api", "ui"]:
-            # Логируем первые 500 символов для отладки
-            preview = generated_text[:500].replace("\n", "\\n")
-            logger.debug(
-                "LLM response preview",
+            logger.info(
+                "Using two-step approach for API/UI tests: generate code first, then explanation",
                 task_id=self.request.id,
-                preview=preview,
-                length=len(generated_text),
             )
             
-            # Извлекаем код из ответа (может быть несколько файлов)
-            # Это нормальный формат ответа ИИ - markdown с объяснениями и кодом
-            extracted = extract_code_from_text(generated_text)
+            # Этап 1: Генерируем только код (максимально строгий промпт)
+            self.update_progress(40, 100, "Generating Python code...")
             
-            # Проверяем, что извлеченный код валидный Python код, а не объяснения
-            has_valid_code = False
-            if extracted and extracted.get("files") and len(extracted["files"]) > 0:
-                # Проверяем, что извлеченный код не пустой И является валидным Python кодом
-                valid_files = []
-                for f in extracted["files"]:
-                    code = f.get("code", "")
-                    if code and len(code.strip()) > 50:
-                        # ВАЖНО: проверяем, что это реальный Python код, а не объяснения
-                        if is_valid_python_code(code):
-                            valid_files.append(f)
-                        else:
-                            logger.warning(
-                                "Extracted text is not valid Python code (looks like explanations)",
-                                task_id=self.request.id,
-                                filename=f.get("filename", "unknown"),
-                                code_preview=code[:200],
-                            )
-                
-                if valid_files:
-                    has_valid_code = True
-                    logger.info(
-                        "Extracted valid code files from LLM response",
-                        task_id=self.request.id,
-                        files_count=len(valid_files),
-                        has_descriptions=any(f.get("description") for f in valid_files),
-                    )
-                    # Сохраняем только валидные файлы
-                    extracted["files"] = valid_files
-                    generated_text = extracted
-                else:
-                    logger.warning(
-                        "Extracted files are empty, too short, or not valid Python code",
-                        task_id=self.request.id,
-                        extracted_files_count=len(extracted.get("files", [])),
-                    )
+            code_system_prompt = """Ты — генератор Python-кода тестов в формате Allure TestOps as Code. Твоя ЕДИНСТВЕННАЯ задача — вернуть готовый код.
+
+КРИТИЧЕСКИ ВАЖНО:
+- Твой ответ ДОЛЖЕН начинаться СРАЗУ с ```python (без единого символа перед ним)
+- ЗАПРЕЩЕНО писать: 'We need to...', 'We must...', 'Let's create...', 'I'll generate...', 'Here is...'
+- ЗАПРЕЩЕНО писать планы действий или описания
+- Пиши ТОЛЬКО готовый код на Python внутри блока ```python ... ```
+
+Формат ответа (СТРОГО):
+```python
+import pytest
+# ... готовый код ...
+```
+
+НИКАКИХ объяснений перед блоком кода. НИКАКИХ планов. ТОЛЬКО КОД."""
             
-            # Если код не найден или не валидный, проверяем более строго и пробуем повторный запрос
-            if not has_valid_code:
-                original_text = generated_text if isinstance(generated_text, str) else str(generated_text)
-                
-                # Проверяем через has_code (может найти код, который не извлекся)
-                if not has_code(original_text):
-                    logger.warning(
-                        "LLM response doesn't contain valid Python code (contains explanations instead)",
-                        task_id=self.request.id,
-                        preview=preview,
-                    )
-                    # Пробуем ещё раз с более строгим промптом
-                    strict_user_prompt = (
-                        "КРИТИЧЕСКИ ВАЖНО: Твой ответ ДОЛЖЕН начинаться СРАЗУ с ```python (без единого символа перед ним).\n"
-                        "ЗАПРЕЩЕНО писать:\n"
-                        "- 'We need to...', 'We must...', 'We should...'\n"
-                        "- 'Let's create...', 'Let us...'\n"
-                        "- 'I'll generate...', 'I will...', 'I need...'\n"
-                        "- 'Here is...', 'This is...', 'The code...'\n"
-                        "- 'Will produce...', 'Should output...', 'Must include...'\n"
-                        "- Любые планы действий или описания того, что ты собираешься сделать\n\n"
-                        "ТВОЙ ОТВЕТ ДОЛЖЕН БЫТЬ ТОЛЬКО:\n"
-                        "```python\n"
-                        "import pytest\n"
-                        "# ... готовый код ...\n"
-                        "```\n\n"
-                        "НИКАКИХ объяснений перед блоком кода. НИКАКИХ планов. ТОЛЬКО КОД.\n\n"
-                        + user_prompt
-                    )
-                    generated_text = loop.run_until_complete(
-                        llm_client.generate(
-                            system_prompt=system_prompt,
-                            user_prompt=strict_user_prompt,
-                        )
-                    )
-                    
-                    # Извлекаем код из повторного ответа
-                    extracted = extract_code_from_text(generated_text)
-                    if extracted and extracted.get("files") and len(extracted["files"]) > 0:
-                        # Проверяем валидность кода
-                        valid_files = []
-                        for f in extracted["files"]:
-                            code = f.get("code", "")
-                            if code and len(code.strip()) > 50 and is_valid_python_code(code):
-                                valid_files.append(f)
-                        
-                        if valid_files:
-                            extracted["files"] = valid_files
-                            generated_text = extracted
-                            has_valid_code = True
-                            logger.info(
-                                "Successfully extracted valid code after retry",
-                                task_id=self.request.id,
-                                files_count=len(valid_files),
-                            )
-                    
-                    # Проверяем снова
-                    if not has_valid_code:
-                        retry_text = generated_text if isinstance(generated_text, str) else str(generated_text)
-                        if not has_code(retry_text):
-                            # Логируем полный ответ для отладки
-                            logger.error(
-                                "LLM still doesn't return valid Python code after retry",
-                                task_id=self.request.id,
-                                response_preview=retry_text[:1000],
-                            )
-                            raise LLMError(
-                                "Invalid response from LLM API",
-                                details={
-                                    "reason": "LLM returned explanations instead of Python code",
-                                    "response_preview": retry_text[:500],
-                                    "note": "The response should start with ```python and contain actual Python code, not explanations"
-                                },
-                            )
+            code_user_prompt = (
+                "КРИТИЧЕСКИ ВАЖНО: Твой ответ ДОЛЖЕН начинаться СРАЗУ с ```python (без единого символа перед ним).\n"
+                "ЗАПРЕЩЕНО писать:\n"
+                "- 'We need to...', 'We must...', 'We should...'\n"
+                "- 'Let's create...', 'Let us...'\n"
+                "- 'I'll generate...', 'I will...', 'I need...'\n"
+                "- 'Here is...', 'This is...', 'The code...'\n"
+                "- 'Will produce...', 'Should output...', 'Must include...'\n"
+                "- Любые планы действий или описания того, что ты собираешься сделать\n\n"
+                "ТВОЙ ОТВЕТ ДОЛЖЕН БЫТЬ ТОЛЬКО:\n"
+                "```python\n"
+                "import pytest\n"
+                "# ... готовый код ...\n"
+                "```\n\n"
+                "НИКАКИХ объяснений перед блоком кода. НИКАКИХ планов. ТОЛЬКО КОД.\n\n"
+                + user_prompt
+            )
             
-            # Если после всех проверок код не извлечен, НЕ используем fallback с текстом
-            # Вместо этого выбрасываем ошибку, так как это означает, что ИИ не вернул код
-            if not has_valid_code or not isinstance(generated_text, dict):
-                logger.error(
-                    "Failed to extract valid Python code from LLM response",
+            code_response = loop.run_until_complete(
+                llm_client.generate(
+                    system_prompt=code_system_prompt,
+                    user_prompt=code_user_prompt,
+                )
+            )
+            
+            # Извлекаем код
+            code_extracted = extract_code_from_text(code_response)
+            if not code_extracted or not code_extracted.get("files"):
+                # Если не удалось извлечь, пробуем еще раз
+                logger.warning(
+                    "Failed to extract code, retrying with even stricter prompt",
                     task_id=self.request.id,
-                    response_type=type(generated_text).__name__,
                 )
+                code_response = loop.run_until_complete(
+                    llm_client.generate(
+                        system_prompt="Ты генератор Python кода. Верни ТОЛЬКО код, начиная с ```python. Без объяснений.",
+                        user_prompt=f"```python\n{user_prompt}\n\nВерни ТОЛЬКО код Python внутри блока ```python ... ```. БЕЗ объяснений.",
+                    )
+                )
+                code_extracted = extract_code_from_text(code_response)
+            
+            if not code_extracted or not code_extracted.get("files"):
                 raise LLMError(
-                    "Failed to extract valid Python code",
-                    details={
-                        "reason": "Extracted text is not valid Python code",
-                        "note": "The LLM response should contain Python code in markdown blocks (```python ... ```)"
-                    },
+                    "Failed to generate Python code",
+                    details={"reason": "Could not extract code from LLM response"},
                 )
+            
+            # Проверяем валидность кода
+            valid_code_files = []
+            for f in code_extracted["files"]:
+                code = f.get("code", "")
+                if code and len(code.strip()) > 50 and is_valid_python_code(code):
+                    valid_code_files.append(f)
+            
+            if not valid_code_files:
+                raise LLMError(
+                    "Generated code is not valid Python code",
+                    details={"reason": "LLM returned text that is not valid Python code"},
+                )
+            
+            logger.info(
+                "Code generated successfully, now generating explanation",
+                task_id=self.request.id,
+                files_count=len(valid_code_files),
+            )
+            
+            # Этап 2: Генерируем объяснение для кода
+            self.update_progress(60, 100, "Generating explanation...")
+            
+            # Берем первый файл с кодом для объяснения
+            main_code = valid_code_files[0]['code']
+            
+            explanation_prompt = f"""Объясни на русском языке следующий тестовый код:
+
+```python
+{main_code[:3000]}
+```
+
+Объясни подробно в формате Markdown:
+1. **Описание функциональности** - что тестирует этот код
+2. **Типы проверок** - какие проверки выполняются (статус коды, валидация данных, обработка ошибок и т.д.)
+3. **Структура тестов** - какие тесты содержатся, их назначение
+4. **Используемые библиотеки и инструменты** - pytest, httpx/allure и т.д.
+5. **Как использовать** - как запустить эти тесты
+
+Используй заголовки, списки, таблицы для структурирования информации."""
+            
+            explanation_response = loop.run_until_complete(
+                llm_client.generate(
+                    system_prompt="Ты помощник, объясняющий тестовый код. Объясни код на русском языке в формате Markdown с заголовками, списками и структурированной информацией.",
+                    user_prompt=explanation_prompt,
+                )
+            )
+            
+            # Добавляем объяснение как description к файлам с кодом
+            if explanation_response:
+                explanation_text = explanation_response.strip()
+                for f in valid_code_files:
+                    # Добавляем объяснение к каждому файлу (или только к первому)
+                    if not f.get("description"):
+                        f["description"] = explanation_text
+            
+            # Сохраняем результат
+            generated_text = {
+                "files": valid_code_files,
+                "raw_response": code_response
+            }
+            
+            logger.info(
+                "Successfully generated code and explanation using two-step approach",
+                task_id=self.request.id,
+                files_count=len(valid_code_files),
+            )
+        
+        else:
+            # Для manual тестов используем обычный подход
+            generated_text = loop.run_until_complete(
+                llm_client.generate(
+                    system_prompt=system_prompt,
+                    user_prompt=user_prompt,
+                )
+            )
+
+        # Для API/UI тестов код уже сгенерирован в двухэтапном подходе выше
+        # Для manual тестов обрабатываем ответ
+        if test_type == "manual":
 
         # Update progress: 80% - Processing result
         self.update_progress(80, 100, "Processing generated test case...")
@@ -672,17 +674,32 @@ def generate_test_case_task(
             test_case_data = generated_text
             # Для API/UI тестов добавляем файл с объяснениями
             if test_type in ["api", "ui"] and isinstance(test_case_data, dict) and test_case_data.get("files"):
-                explanation_md = generate_explanation_md(
+                # Берем объяснение из description первого файла (если есть - сгенерировано в двухэтапном подходе)
+                llm_explanation = None
+                if test_case_data["files"] and test_case_data["files"][0].get("description"):
+                    llm_explanation = test_case_data["files"][0]["description"]
+                
+                # Генерируем техническое объяснение
+                technical_explanation = generate_explanation_md(
                     test_type=test_type,
                     feature=feature,
                     story=story,
                     files=test_case_data["files"],
                     validation_result=validation_result
                 )
+                
+                # Объединяем объяснение от LLM с техническим объяснением
+                if llm_explanation:
+                    # Если есть объяснение от LLM, используем его как основу и добавляем техническую информацию
+                    combined_explanation = f"{llm_explanation}\n\n---\n\n## Техническая информация\n\n{technical_explanation}"
+                else:
+                    # Если нет объяснения от LLM, используем только техническое
+                    combined_explanation = technical_explanation
+                
                 # Добавляем файл с объяснениями в начало списка файлов
                 test_case_data["files"].insert(0, {
                     "description": "Документация с объяснениями фич и типов проверок",
-                    "code": explanation_md,
+                    "code": combined_explanation,
                     "filename": "EXPLANATION.md"
                 })
         
