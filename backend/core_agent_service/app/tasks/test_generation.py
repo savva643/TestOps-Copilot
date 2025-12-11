@@ -100,29 +100,83 @@ def generate_test_case_task(
         def extract_code_blocks_from_markdown(txt: str) -> list[dict]:
             """Извлекает все блоки кода из markdown с описаниями перед ними.
             
+            Обрабатывает формат, где ИИ возвращает markdown с объяснениями и кодом:
+            - Объяснение в начале
+            - Блоки кода ```python ... ```
+            - Объяснения между блоками кода
+            
             Returns:
                 List of dicts: [{"description": "...", "code": "..."}, ...]
             """
             import re
-            # Ищем все блоки кода: ```python ... ``` или ``` ... ```
-            pattern = r'```(?:python)?\s*\n(.*?)\n```'
-            code_matches = list(re.finditer(pattern, txt, re.DOTALL))
+            # Более гибкий паттерн: ищем ```python или ``` с любым содержимым
+            # Поддерживает варианты:
+            # - ```python\nкод\n```
+            # - ```python код```
+            # - ```\nкод\n```
+            # - ``` код```
+            patterns = [
+                r'```(?:python)?\s*\n(.*?)\n```',  # Стандартный формат с переносами строк
+                r'```(?:python)?\s+(.*?)```',      # Без переноса строк после ```
+                r'```(?:python)?(.*?)```',          # Без пробелов
+            ]
             
             files = []
             last_end = 0
+            all_matches = []
             
-            for i, match in enumerate(code_matches):
-                # Текст перед этим блоком кода - описание
+            # Пробуем все паттерны и собираем все совпадения
+            for pattern in patterns:
+                matches = list(re.finditer(pattern, txt, re.DOTALL))
+                for match in matches:
+                    # Проверяем, не перекрывается ли с уже найденными
+                    overlap = False
+                    for existing in all_matches:
+                        if not (match.end() <= existing.start() or match.start() >= existing.end()):
+                            overlap = True
+                            break
+                    if not overlap:
+                        all_matches.append(match)
+            
+            # Сортируем по позиции начала
+            all_matches.sort(key=lambda m: m.start())
+            
+            # Если есть общее объяснение в начале (до первого блока кода)
+            general_description = None
+            if all_matches:
+                first_match = all_matches[0]
+                text_before_first = txt[:first_match.start()].strip()
+                if text_before_first:
+                    # Проверяем, что это не код (не начинается с import/from/def/class)
+                    if not any(text_before_first.lstrip().startswith(kw) for kw in 
+                              ['import ', 'from ', 'def ', 'class ', '@pytest', '@allure']):
+                        general_description = text_before_first
+            
+            for i, match in enumerate(all_matches):
+                # Текст перед этим блоком кода - описание для этого конкретного блока
                 description_start = last_end
                 description_end = match.start()
-                description = txt[description_start:description_end].strip()
+                block_description = txt[description_start:description_end].strip()
                 
                 code = match.group(1).strip()
                 
+                # Пропускаем пустые блоки
+                if not code:
+                    continue
+                
+                # Объединяем общее описание (если есть и это первый блок) с описанием блока
+                if i == 0 and general_description:
+                    if block_description:
+                        final_description = f"{general_description}\n\n{block_description}"
+                    else:
+                        final_description = general_description
+                else:
+                    final_description = block_description if block_description else None
+                
                 files.append({
-                    "description": description if description else None,
+                    "description": final_description if final_description else None,
                     "code": code,
-                    "filename": f"test_{i+1}.py" if len(code_matches) > 1 else "test.py"
+                    "filename": f"test_{i+1}.py" if len(all_matches) > 1 else "test.py"
                 })
                 
                 last_end = match.end()
@@ -131,12 +185,15 @@ def generate_test_case_task(
             if last_end < len(txt):
                 remaining = txt[last_end:].strip()
                 if remaining:
-                    # Если это не код, добавляем как описание к последнему файлу
-                    if files:
-                        if files[-1]["description"]:
-                            files[-1]["description"] += "\n\n" + remaining
-                        else:
-                            files[-1]["description"] = remaining
+                    # Проверяем, что это не код
+                    if not any(remaining.lstrip().startswith(kw) for kw in 
+                              ['import ', 'from ', 'def ', 'class ', '@pytest', '@allure']):
+                        # Если это не код, добавляем как описание к последнему файлу
+                        if files:
+                            if files[-1]["description"]:
+                                files[-1]["description"] += "\n\n" + remaining
+                            else:
+                                files[-1]["description"] = remaining
             
             return files
 
@@ -150,26 +207,71 @@ def generate_test_case_task(
                     "raw_response": txt  # Сохраняем оригинальный ответ
                 }
             
-            # Если нет markdown блоков, ищем код, начинающийся с import/from
+            # Если нет markdown блоков, ищем код, начинающийся с import/from или других ключевых слов
             lines = txt.splitlines()
             code_start_idx = None
+            
+            # Ищем начало кода по ключевым словам Python
+            python_starters = ['import ', 'from ', 'def ', 'class ', '@pytest', '@allure', 'async def']
             for i, line in enumerate(lines):
                 stripped_line = line.lstrip()
-                if stripped_line.startswith("import ") or stripped_line.startswith("from "):
-                    code_start_idx = i
+                for starter in python_starters:
+                    if stripped_line.startswith(starter):
+                        code_start_idx = i
+                        break
+                if code_start_idx is not None:
                     break
             
             if code_start_idx is not None:
                 description = "\n".join(lines[:code_start_idx]).strip() if code_start_idx > 0 else None
                 code = "\n".join(lines[code_start_idx:]).strip()
-                return {
-                    "files": [{
-                        "description": description,
-                        "code": code,
-                        "filename": "test.py"
-                    }],
-                    "raw_response": txt
-                }
+                
+                # Проверяем, что код не пустой и содержит достаточно содержимого
+                if code and len(code) > 50:  # Минимум 50 символов кода
+                    return {
+                        "files": [{
+                            "description": description,
+                            "code": code,
+                            "filename": "test.py"
+                        }],
+                        "raw_response": txt
+                    }
+            
+            # Если код не найден, но текст содержит Python-подобные конструкции, 
+            # пытаемся извлечь код более агрессивно
+            # Ищем блоки, которые выглядят как код (содержат отступы, ключевые слова)
+            if 'def ' in txt or 'class ' in txt or '@pytest' in txt or '@allure' in txt:
+                # Пытаемся найти начало реального кода, пропуская текст
+                lines = txt.splitlines()
+                code_lines = []
+                in_code = False
+                
+                for line in lines:
+                    stripped = line.lstrip()
+                    # Если строка начинается с Python-ключевого слова или имеет отступ
+                    if (stripped.startswith(('import ', 'from ', 'def ', 'class ', '@', 'async ')) or
+                        (in_code and (line.startswith((' ', '\t')) or stripped == '' or stripped.startswith('#')))):
+                        in_code = True
+                        code_lines.append(line)
+                    elif in_code and not stripped.startswith((' ', '\t', '#')) and stripped:
+                        # Если мы в коде и встретили строку без отступа (не пустую и не комментарий),
+                        # это может быть конец блока кода или начало нового
+                        if any(stripped.startswith(kw) for kw in python_starters):
+                            code_lines.append(line)
+                        else:
+                            break
+                
+                if code_lines:
+                    code = "\n".join(code_lines).strip()
+                    if len(code) > 50:
+                        return {
+                            "files": [{
+                                "description": None,
+                                "code": code,
+                                "filename": "test.py"
+                            }],
+                            "raw_response": txt
+                        }
             
             # Если код не найден, возвращаем весь текст как один файл
             return {
@@ -182,12 +284,39 @@ def generate_test_case_task(
             }
 
         def has_code(txt: str) -> bool:
-            """Проверяет, есть ли в тексте код (markdown блоки или import/from)."""
+            """Проверяет, есть ли в тексте код (markdown блоки или import/from).
+            
+            Учитывает, что ответ может содержать markdown объяснения перед кодом.
+            """
+            # Сначала проверяем наличие блоков кода в markdown
             code_blocks = extract_code_blocks_from_markdown(txt)
-            if code_blocks:
+            if code_blocks and any(block.get("code") and len(block["code"].strip()) > 10 for block in code_blocks):
                 return True
-            stripped = txt.lstrip()
-            return stripped.startswith("import ") or stripped.startswith("from ")
+            
+            # Ищем import/from в любой строке, не только в начале
+            lines = txt.splitlines()
+            for line in lines:
+                stripped = line.lstrip()
+                if stripped.startswith("import ") or stripped.startswith("from "):
+                    return True
+            
+            # Также проверяем наличие ключевых слов Python (но не в markdown заголовках)
+            python_keywords = ['def ', 'class ', '@pytest', '@allure', 'async def', 'assert ']
+            txt_lower = txt.lower()
+            for keyword in python_keywords:
+                # Проверяем, что ключевое слово не в markdown заголовке (не начинается с #)
+                keyword_pos = txt_lower.find(keyword)
+                if keyword_pos != -1:
+                    # Проверяем, что перед ключевым словом нет # на той же строке
+                    line_start = txt.rfind('\n', 0, keyword_pos)
+                    if line_start == -1:
+                        line_start = 0
+                    else:
+                        line_start += 1
+                    line_before_keyword = txt[line_start:keyword_pos].strip()
+                    if not line_before_keyword.startswith('#'):
+                        return True
+            return False
 
         # Первичная генерация
         generated_text = loop.run_until_complete(
@@ -199,54 +328,106 @@ def generate_test_case_task(
 
         # Для API/UI извлекаем код из ответа (может быть в markdown блоках или как чистый код)
         if test_type in ["api", "ui"]:
-            if not has_code(generated_text):
-                # Логируем первые 200 символов для отладки
-                preview = generated_text[:200].replace("\n", "\\n")
-                logger.warning(
-                    "LLM response doesn't contain code blocks or import statements",
-                    task_id=self.request.id,
-                    preview=preview,
-                )
-                # Пробуем ещё раз с более строгим промптом
-                strict_user_prompt = (
-                    "СТРОГОЕ ТРЕБОВАНИЕ: Твой ответ ДОЛЖЕН начинаться СРАЗУ с ```python (без единого символа перед ним). "
-                    "ЗАПРЕЩЕНО писать: 'We need to...', 'Let's create...', 'I'll generate...', 'Here is...'. "
-                    "ЗАПРЕЩЕНО писать планы действий или описания. "
-                    "Пиши ТОЛЬКО готовый код на Python внутри блока ```python ... ```.\n\n"
-                    + user_prompt
-                )
-                generated_text = loop.run_until_complete(
-                    llm_client.generate(
-                        system_prompt=system_prompt,
-                        user_prompt=strict_user_prompt,
-                    )
-                )
-                
-                if not has_code(generated_text):
-                    raise LLMError(
-                        "Invalid response from LLM API",
-                        details={"reason": "expected code in markdown blocks or starting with import/from"},
-                    )
+            # Логируем первые 500 символов для отладки
+            preview = generated_text[:500].replace("\n", "\\n")
+            logger.debug(
+                "LLM response preview",
+                task_id=self.request.id,
+                preview=preview,
+                length=len(generated_text),
+            )
             
             # Извлекаем код из ответа (может быть несколько файлов)
+            # Это нормальный формат ответа ИИ - markdown с объяснениями и кодом
             extracted = extract_code_from_text(generated_text)
-            if extracted and extracted.get("files"):
-                logger.info(
-                    "Extracted code files from LLM response",
+            
+            # Проверяем, что извлеченный код валидный
+            has_valid_code = False
+            if extracted and extracted.get("files") and len(extracted["files"]) > 0:
+                # Проверяем, что извлеченный код не пустой
+                valid_files = [f for f in extracted["files"] if f.get("code") and len(f["code"].strip()) > 50]
+                if valid_files:
+                    has_valid_code = True
+                    logger.info(
+                        "Extracted code files from LLM response",
+                        task_id=self.request.id,
+                        files_count=len(valid_files),
+                        has_descriptions=any(f.get("description") for f in valid_files),
+                    )
+                    # Сохраняем только валидные файлы
+                    extracted["files"] = valid_files
+                    generated_text = extracted
+                else:
+                    logger.warning(
+                        "Extracted files are empty or too short",
+                        task_id=self.request.id,
+                        extracted_files_count=len(extracted.get("files", [])),
+                    )
+            
+            # Если код не найден, проверяем более строго и пробуем повторный запрос
+            if not has_valid_code:
+                # Проверяем через has_code (может найти код, который не извлекся)
+                if not has_code(generated_text if isinstance(generated_text, str) else str(generated_text)):
+                    logger.warning(
+                        "LLM response doesn't contain code blocks or import statements",
+                        task_id=self.request.id,
+                        preview=preview,
+                    )
+                    # Пробуем ещё раз с более строгим промптом
+                    strict_user_prompt = (
+                        "СТРОГОЕ ТРЕБОВАНИЕ: Твой ответ ДОЛЖЕН начинаться СРАЗУ с ```python (без единого символа перед ним). "
+                        "ЗАПРЕЩЕНО писать: 'We need to...', 'Let's create...', 'I'll generate...', 'Here is...'. "
+                        "ЗАПРЕЩЕНО писать планы действий или описания. "
+                        "Пиши ТОЛЬКО готовый код на Python внутри блока ```python ... ```.\n\n"
+                        + user_prompt
+                    )
+                    generated_text = loop.run_until_complete(
+                        llm_client.generate(
+                            system_prompt=system_prompt,
+                            user_prompt=strict_user_prompt,
+                        )
+                    )
+                    
+                    # Извлекаем код из повторного ответа
+                    extracted = extract_code_from_text(generated_text)
+                    if extracted and extracted.get("files") and len(extracted["files"]) > 0:
+                        valid_files = [f for f in extracted["files"] if f.get("code") and len(f["code"].strip()) > 50]
+                        if valid_files:
+                            extracted["files"] = valid_files
+                            generated_text = extracted
+                            has_valid_code = True
+                    
+                    # Проверяем снова
+                    if not has_valid_code and not has_code(generated_text if isinstance(generated_text, str) else str(generated_text)):
+                        # Логируем полный ответ для отладки
+                        logger.error(
+                            "LLM still doesn't return code after retry",
+                            task_id=self.request.id,
+                            response_preview=str(generated_text)[:1000] if isinstance(generated_text, str) else str(generated_text)[:1000],
+                        )
+                        raise LLMError(
+                            "Invalid response from LLM API",
+                            details={
+                                "reason": "expected code in markdown blocks or starting with import/from",
+                                "response_preview": str(generated_text)[:500] if isinstance(generated_text, str) else str(generated_text)[:500]
+                            },
+                        )
+            
+            # Если после всех проверок код не извлечен, используем fallback
+            if not has_valid_code or not isinstance(generated_text, dict):
+                logger.warning(
+                    "Failed to extract code files, using fallback",
                     task_id=self.request.id,
-                    files_count=len(extracted["files"]),
                 )
-                # Сохраняем структурированный ответ
-                generated_text = extracted
-            else:
                 # Fallback: сохраняем как один файл
+                original_text = generated_text if isinstance(generated_text, str) else str(generated_text)
                 generated_text = {
                     "files": [{
                         "description": None,
-                        "code": generated_text,
+                        "code": original_text,
                         "filename": "test.py"
                     }],
-                    "raw_response": generated_text
+                    "raw_response": original_text
                 }
 
         # Update progress: 80% - Processing result
