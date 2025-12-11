@@ -455,10 +455,12 @@ export function TasksPage() {
                         <span>Тип:</span>
                         <span>{taskStatus.result.test_type || 'N/A'}</span>
                       </div>
-                      <div className="info-row">
-                        <span>Фича:</span>
-                        <span>{taskStatus.result.feature || 'N/A'}</span>
-                      </div>
+                      {taskStatus.result.feature && (
+                        <div className="info-row">
+                          <span>Фича:</span>
+                          <span>{taskStatus.result.feature}</span>
+                        </div>
+                      )}
                       <div className="info-row">
                         <span>Приоритет:</span>
                         <span>{taskStatus.result.priority || 'N/A'}</span>

@@ -5,6 +5,7 @@ import structlog
 from celery import Task
 from app.services.llm_client import LLMClient
 from app.services.prompt_engineer import PromptEngineer, PromptValidationError
+from app.services.standard_validator import StandardValidator
 from app.core.exceptions import LLMError, TaskError
 
 logger = structlog.get_logger()
@@ -74,6 +75,9 @@ def generate_test_case_task(
                 test_type=test_type,
                 feature=feature,
                 story=story,
+                priority=priority,
+                owner=owner,
+                jira_link=jira_link,
             )
         except PromptValidationError as e:
             logger.error("Prompt validation failed", error=str(e))
@@ -248,6 +252,23 @@ def generate_test_case_task(
         # Update progress: 80% - Processing result
         self.update_progress(80, 100, "Processing generated test case...")
 
+        # Валидация сгенерированного кода
+        validation_result = None
+        if test_type in ["api", "ui"]:
+            validator = StandardValidator()
+            # Валидируем первый файл (или все файлы)
+            if isinstance(generated_text, dict) and generated_text.get("files"):
+                first_file_code = generated_text["files"][0].get("code", "")
+                if first_file_code:
+                    validation_result = validator.validate_test_case(first_file_code, test_type)
+                    logger.info(
+                        "Validation completed",
+                        task_id=self.request.id,
+                        is_valid=validation_result.get("is_valid"),
+                        score=validation_result.get("score"),
+                        errors_count=len(validation_result.get("errors", [])),
+                    )
+
         # Close client
         loop.run_until_complete(llm_client.close())
 
@@ -278,6 +299,10 @@ def generate_test_case_task(
             "jira_link": jira_link,
             "prompt": full_prompt,  # Сохраняем промпт для отладки
         }
+        
+        # Добавляем результаты валидации, если есть
+        if validation_result:
+            result["validation"] = validation_result
 
         # Update progress: 100% - Complete
         self.update_progress(100, 100, "Test case generated successfully")

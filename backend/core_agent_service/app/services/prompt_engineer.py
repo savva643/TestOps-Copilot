@@ -45,6 +45,9 @@ class PromptEngineer:
             raise PromptValidationError(
                 f"Invalid test_type: {test_type}. Must be one of {valid_test_types}"
             )
+        
+        valid_priorities = ["CRITICAL", "NORMAL", "LOW"]
+        # priority валидируется в get_test_case_generation_prompt, но здесь тоже можно проверить
 
         if feature and len(feature) > 200:
             raise PromptValidationError("Feature name is too long (maximum 200 characters)")
@@ -58,6 +61,9 @@ class PromptEngineer:
         test_type: str = "manual",
         feature: Optional[str] = None,
         story: Optional[str] = None,
+        priority: str = "NORMAL",
+        owner: Optional[str] = None,
+        jira_link: Optional[str] = None,
     ) -> tuple[str, str]:
         """
         Generate system and user prompts for test case generation.
@@ -70,6 +76,13 @@ class PromptEngineer:
         """
         # Validate inputs
         PromptEngineer.validate_prompt_inputs(description, test_type, feature, story)
+        
+        # Validate priority
+        valid_priorities = ["CRITICAL", "NORMAL", "LOW"]
+        if priority not in valid_priorities:
+            raise PromptValidationError(
+                f"Invalid priority: {priority}. Must be one of {valid_priorities}"
+            )
 
         # Optimized system prompts for different test types
         if test_type == "manual":
@@ -85,7 +98,7 @@ class PromptEngineer:
 - Всё на русском, без лишних пояснений."""
 
         elif test_type == "api":
-            system_prompt = """Ты — генератор Python-кода тестов. Твоя ЕДИНСТВЕННАЯ задача — вернуть готовый код.
+            system_prompt = """Ты — генератор Python-кода тестов в формате Allure TestOps as Code. Твоя задача — вернуть готовый код.
 
 СТРОГО ЗАПРЕЩЕНО:
 - Писать текстовые пояснения типа "We need to produce...", "Let's create...", "I'll generate..."
@@ -97,22 +110,46 @@ class PromptEngineer:
 - Внутри блока — полный готовый код на Python
 - Закрой блок ```
 - Если нужно несколько файлов — используй несколько блоков ```python ... ```
+- Можешь добавлять пояснения МЕЖДУ блоками кода (перед следующим блоком ```python)
 
 Формат ответа (СТРОГО):
 ```python
 import pytest
 import httpx
 import allure
-# ... остальной код ...
+# ... код ...
 ```
 
-Требования к коду:
+Если нужно несколько файлов:
+```python
+# Первый файл
+import pytest
+# ... код первого файла ...
+```
+
+Пояснение ко второму файлу (если нужно).
+
+```python
+# Второй файл
+import pytest
+# ... код второго файла ...
+```
+
+Требования к коду (формат Allure TestOps as Code):
 - pytest + httpx AsyncClient (фикстуры для клиента)
-- Allure аннотации: @allure.feature(), @allure.story(), @allure.title(), @allure.severity(), @allure.label("owner", ...)
-- Структура AAA (Arrange-Act-Assert) в каждом тесте
+- ОБЯЗАТЕЛЬНЫЕ Allure декораторы в каждом тесте:
+  * @allure.label("owner", owner) - owner из запроса
+  * @allure.feature(feature) - feature из запроса (если указан)
+  * @allure.story(story) - story из запроса (если указан)
+  * @allure.suite("api") - всегда "api" для API тестов
+  * @allure.tag(priority) - приоритет: "CRITICAL", "NORMAL" или "LOW" (НЕ severity!)
+  * @allure.label("priority", priority) - дублирование приоритета в label
+  * @allure.title("Название теста") - краткое название теста
+  * @allure.link(jira_link, name="JIRA") - если есть jira_link
+- Структура AAA (Arrange-Act-Assert) в каждом тесте с комментариями # Arrange, # Act, # Assert
 - Проверка статус-кодов и полей ответа
 - Позитивные и негативные сценарии (200, 400, 401, 403, 404)
-- Авторизация через Bearer token в заголовке Authorization
+- Авторизация через Bearer token в заголовке Authorization (если требуется)
 - Все названия тестов, строки, комментарии — на русском языке
 - Несколько тестов в одном файле — отдельные функции
 
@@ -129,31 +166,50 @@ async def client():
     async with httpx.AsyncClient(base_url=BASE_URL) as ac:
         yield ac
 
-@allure.feature("Виртуальные машины")
-@allure.story("Получение списка")
-@allure.title("Получить список ВМ - успешный запрос")
+@allure.label("owner", "qa-team")
+@allure.feature("Example Feature")
+@allure.story("Example Story")
+@allure.suite("api")
+@allure.tag("CRITICAL")
+@allure.label("priority", "CRITICAL")
+@allure.title("Успешный запрос")
 @pytest.mark.asyncio
-async def test_get_vms_success(client):
-    # Arrange
-    # Act
-    response = await client.get("/vms")
-    # Assert
+async def test_example_success(client):
+    # Arrange - подготовка данных
+    headers = {"Authorization": "Bearer valid-token"}
+    payload = {"key": "value"}
+    # Act - выполнение действия
+    response = await client.post("/endpoint", json=payload, headers=headers)
+    # Assert - проверка результата
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
+    assert data.get("id") is not None
 ```"""
 
         else:  # UI
-            system_prompt = """Ты — опытный QA-инженер по UI/E2E. Генерируй Python-код тестов с пояснениями.
+            system_prompt = """Ты — генератор Python-кода UI тестов в формате Allure TestOps as Code.
 
-Требования к ответу:
-- Код на Python оборачивай в markdown блоки ```python ... ```.
-- Можешь добавлять пояснения перед/между блоками кода на русском языке.
-- Если генерируешь несколько тестов, можешь разделить их на блоки с пояснениями.
-- pytest + Playwright, аннотации Allure (@allure.feature, @allure.story, @allure.title, @allure.severity, @allure.label("owner", ...)).
-- Строгая структура AAA в тестах.
-- Используй явные селекторы (id/data-testid), ожидания, скриншот при ошибке по необходимости.
-- Позитивные и негативные сценарии, граничные случаи.
+ОБЯЗАТЕЛЬНО:
+- Твой ответ ДОЛЖЕН начинаться СРАЗУ с ```python (без пробелов и текста перед ним)
+- Внутри блока — полный готовый код на Python
+- Закрой блок ```
+- Если нужно несколько файлов — используй несколько блоков ```python ... ```
+- Можешь добавлять пояснения МЕЖДУ блоками кода (перед следующим блоком ```python)
+
+Требования к коду (формат Allure TestOps as Code):
+- pytest + Playwright для браузерной автоматизации
+- ОБЯЗАТЕЛЬНЫЕ Allure декораторы в каждом тесте:
+  * @allure.label("owner", owner) - owner из запроса
+  * @allure.feature(feature) - feature из запроса (если указан)
+  * @allure.story(story) - story из запроса (если указан)
+  * @allure.suite("ui") - всегда "ui" для UI тестов
+  * @allure.tag(priority) - приоритет: "CRITICAL", "NORMAL" или "LOW"
+  * @allure.label("priority", priority) - дублирование приоритета
+  * @allure.title("Название теста") - краткое название теста
+  * @allure.link(jira_link, name="JIRA") - если есть jira_link
+- Структура AAA (Arrange-Act-Assert) с комментариями # Arrange, # Act, # Assert
+- Используй явные селекторы (id/data-testid), ожидания, скриншот при ошибке
+- Позитивные и негативные сценарии, граничные случаи
 - Всё на русском (названия тестов, строки, аннотации)."""
 
         # Clean and optimize description
@@ -175,11 +231,29 @@ async def test_get_vms_success(client):
             user_prompt_parts.append("\n\nСТРОГОЕ ТРЕБОВАНИЕ:")
             user_prompt_parts.append("Начни ответ СРАЗУ с ```python (без единого символа перед ним)")
             user_prompt_parts.append("НЕ пиши: 'We need to...', 'Let's create...', 'I'll generate...'")
-            user_prompt_parts.append("НЕ пиши планы или описания — пиши ТОЛЬКО готовый код")
+            user_prompt_parts.append("НЕ пиши планы или описания перед первым блоком кода")
             user_prompt_parts.append("Если нужно несколько файлов — используй несколько блоков ```python ... ```")
+            user_prompt_parts.append("Можешь добавлять пояснения МЕЖДУ блоками кода (перед следующим ```python)")
+            
+            user_prompt_parts.append("\nОБЯЗАТЕЛЬНЫЕ Allure декораторы для каждого теста:")
+            if owner:
+                user_prompt_parts.append(f"- @allure.label(\"owner\", \"{owner}\")")
+            else:
+                user_prompt_parts.append("- @allure.label(\"owner\", \"qa-team\")")
+            if feature:
+                user_prompt_parts.append(f"- @allure.feature(\"{feature}\")")
+            if story:
+                user_prompt_parts.append(f"- @allure.story(\"{story}\")")
+            user_prompt_parts.append(f"- @allure.suite(\"{test_type}\")")
+            user_prompt_parts.append(f"- @allure.tag(\"{priority}\")")
+            user_prompt_parts.append(f"- @allure.label(\"priority\", \"{priority}\")")
+            user_prompt_parts.append("- @allure.title(\"Название теста\")")
+            if jira_link:
+                user_prompt_parts.append(f"- @allure.link(\"{jira_link}\", name=\"JIRA\")")
+            
             user_prompt_parts.append("\nТребования к коду:")
             user_prompt_parts.append("- Полный готовый код с импортами, фикстурами, тестами")
-            user_prompt_parts.append("- Структура AAA в каждом тесте")
+            user_prompt_parts.append("- Структура AAA в каждом тесте с комментариями # Arrange, # Act, # Assert")
             user_prompt_parts.append("- Позитивные и негативные сценарии")
             user_prompt_parts.append("- Все на русском языке")
         else:

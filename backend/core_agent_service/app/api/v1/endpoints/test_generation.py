@@ -50,6 +50,14 @@ async def generate_test_case(
     This endpoint accepts a description and generates a structured test case
     using the Cloud.ru Evolution Foundation Model.
     """
+    # Validate priority
+    valid_priorities = ["CRITICAL", "NORMAL", "LOW"]
+    if request.priority not in valid_priorities:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid priority: {request.priority}. Must be one of {valid_priorities}"
+        )
+    
     # Get LLM API key from header if provided
     llm_api_key = http_request.headers.get("X-LLM-API-Key")
     
