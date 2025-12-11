@@ -278,14 +278,14 @@ class TestPriceCalculatorDynamicPrice:
     
     @pytest.fixture(scope="function", autouse=True)
     def setup(self, page: Page):
-        """Предусловия: открыть калькулятор."""
+        '''Предусловия: открыть калькулятор.'''
         page.goto("https://cloud.ru/calculator")
         expect(page.locator('[data-testid="calculator-title"]')).toBeVisible()
         yield
     
     @allure.title("Изменение vCPU должно пересчитывать цену")
     def test_change_vcpu_updates_price(self, page: Page):
-        """Позитивный сценарий: изменение vCPU динамически меняет цену."""
+        '''Позитивный сценарий: изменение vCPU динамически меняет цену.'''
         with allure.step("1. Добавить сервис Compute"):
             add_service_button = page.locator('[data-testid="btn-add-service"]')
             add_service_button.click()
