@@ -174,6 +174,15 @@ export function TaskDetailsPage() {
     if (taskStatus.result?.feature) parts.push(`Фича: ${taskStatus.result.feature}`)
     if (taskStatus.result?.priority) parts.push(`Приоритет: ${taskStatus.result.priority}`)
     parts.push('')
+    
+    // Добавляем промпт, если он есть
+    if (taskStatus.result?.prompt) {
+      parts.push('--- промпт, отправленный в LLM ---')
+      parts.push(taskStatus.result.prompt)
+      parts.push('--- конец промпта ---')
+      parts.push('')
+    }
+    
     parts.push('--- начало кода ---')
     if (taskStatus.result?.test_case) {
       parts.push(taskStatus.result.test_case)

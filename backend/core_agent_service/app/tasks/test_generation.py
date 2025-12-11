@@ -93,19 +93,38 @@ def generate_test_case_task(
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
 
-        def is_code_output(txt: str) -> bool:
-            """Проверяет, начинается ли текст с import/from (любого модуля)."""
-            stripped = txt.lstrip()
-            return stripped.startswith("import ") or stripped.startswith("from ")
+        def extract_code_blocks_from_markdown(txt: str) -> list[str]:
+            """Извлекает все блоки кода из markdown (```python ... ```)."""
+            import re
+            # Ищем все блоки кода: ```python ... ``` или ``` ... ```
+            pattern = r'```(?:python)?\s*\n(.*?)\n```'
+            matches = re.findall(pattern, txt, re.DOTALL)
+            return [match.strip() for match in matches if match.strip()]
 
-        def extract_first_code_block(txt: str) -> str:
-            """Возвращает текст, начиная с первой строки import/from, если она есть."""
+        def extract_code_from_text(txt: str) -> str:
+            """Извлекает код из текста: сначала из markdown блоков, потом ищет import/from."""
+            # Пробуем извлечь из markdown блоков
+            code_blocks = extract_code_blocks_from_markdown(txt)
+            if code_blocks:
+                # Объединяем все блоки кода
+                return "\n\n".join(code_blocks)
+            
+            # Если нет markdown блоков, ищем код, начинающийся с import/from
             lines = txt.splitlines()
             for i, line in enumerate(lines):
                 stripped_line = line.lstrip()
                 if stripped_line.startswith("import ") or stripped_line.startswith("from "):
                     return "\n".join(lines[i:]).strip()
+            
             return txt.strip()
+
+        def has_code(txt: str) -> bool:
+            """Проверяет, есть ли в тексте код (markdown блоки или import/from)."""
+            code_blocks = extract_code_blocks_from_markdown(txt)
+            if code_blocks:
+                return True
+            stripped = txt.lstrip()
+            return stripped.startswith("import ") or stripped.startswith("from ")
 
         # Первичная генерация
         generated_text = loop.run_until_complete(
@@ -115,49 +134,43 @@ def generate_test_case_task(
             )
         )
 
-        # Для API/UI требуем код. Если пришёл текст без кода — обрезаем до первого import/from; если всё равно нет — повторяем с усилением.
+        # Для API/UI извлекаем код из ответа (может быть в markdown блоках или как чистый код)
         if test_type in ["api", "ui"]:
-            if not is_code_output(generated_text):
+            if not has_code(generated_text):
                 # Логируем первые 200 символов для отладки
                 preview = generated_text[:200].replace("\n", "\\n")
                 logger.warning(
-                    "LLM response doesn't start with import/from",
+                    "LLM response doesn't contain code blocks or import statements",
                     task_id=self.request.id,
                     preview=preview,
                 )
-                trimmed = extract_first_code_block(generated_text)
-                if is_code_output(trimmed):
-                    logger.info(
-                        "Found code block after trimming",
-                        task_id=self.request.id,
-                        trimmed_preview=trimmed[:100].replace("\n", "\\n"),
+                # Пробуем ещё раз с более строгим промптом
+                strict_user_prompt = (
+                    user_prompt
+                    + "\n\nВажно: оберни код в markdown блоки ```python ... ``` или верни чистый код, начинающийся с import/from."
+                )
+                generated_text = loop.run_until_complete(
+                    llm_client.generate(
+                        system_prompt=system_prompt,
+                        user_prompt=strict_user_prompt,
                     )
-                    generated_text = trimmed
-                else:
-                    logger.warning(
-                        "LLM returned non-code response for code test; retrying with stricter prompt",
-                        task_id=self.request.id,
+                )
+                
+                if not has_code(generated_text):
+                    raise LLMError(
+                        "Invalid response from LLM API",
+                        details={"reason": "expected code in markdown blocks or starting with import/from"},
                     )
-                    strict_user_prompt = (
-                        user_prompt
-                        + "\n\nВерни только готовый Python-код. Начни ответ со строки import или from. Без текста и пояснений."
-                    )
-                    generated_text = loop.run_until_complete(
-                        llm_client.generate(
-                            system_prompt=system_prompt,
-                            user_prompt=strict_user_prompt,
-                        )
-                    )
-
-                    if not is_code_output(generated_text):
-                        trimmed_retry = extract_first_code_block(generated_text)
-                        if is_code_output(trimmed_retry):
-                            generated_text = trimmed_retry
-                        else:
-                            raise LLMError(
-                                "Invalid response from LLM API",
-                                details={"reason": "expected code starting with import/from"},
-                            )
+            
+            # Извлекаем код из ответа (может быть несколько блоков)
+            extracted_code = extract_code_from_text(generated_text)
+            if extracted_code:
+                generated_text = extracted_code
+                logger.info(
+                    "Extracted code from LLM response",
+                    task_id=self.request.id,
+                    code_length=len(extracted_code),
+                )
 
         # Update progress: 80% - Processing result
         self.update_progress(80, 100, "Processing generated test case...")
@@ -165,6 +178,9 @@ def generate_test_case_task(
         # Close client
         loop.run_until_complete(llm_client.close())
 
+        # Формируем полный промпт для сохранения в артефактах
+        full_prompt = f"System Prompt:\n{system_prompt}\n\nUser Prompt:\n{user_prompt}"
+        
         result = {
             "test_case": generated_text,
             "test_type": test_type,
@@ -173,6 +189,7 @@ def generate_test_case_task(
             "priority": priority,
             "owner": owner,
             "jira_link": jira_link,
+            "prompt": full_prompt,  # Сохраняем промпт для отладки
         }
 
         # Update progress: 100% - Complete
