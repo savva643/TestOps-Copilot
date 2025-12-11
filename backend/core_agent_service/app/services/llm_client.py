@@ -170,6 +170,14 @@ class LLMClient:
                             elif isinstance(item, str):
                                 parts.append(item.strip())
                         return "\n".join([p for p in parts if p])
+                    # Fallback to reasoning_content if main content is missing
+                    reasoning_content = message.get("reasoning_content")
+                    if isinstance(reasoning_content, str):
+                        return reasoning_content.strip()
+                    # Some responses put text directly under 'message' without content
+                    message_text = message.get("text")
+                    if isinstance(message_text, str):
+                        return message_text.strip()
                     # Legacy completion shape
                     text_fallback = choice.get("text")
                     if isinstance(text_fallback, str):
