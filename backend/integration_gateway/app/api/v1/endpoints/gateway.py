@@ -115,25 +115,38 @@ async def task_status_ws(task_id: str, websocket: WebSocket):
     try:
         async with httpx.AsyncClient() as client:
             while True:
-                resp = await client.get(
-                    f"{settings.CORE_AGENT_URL}/api/v1/tasks/{task_id}",
-                    headers={"X-API-Key": settings.API_KEY},
-                    timeout=10.0,
-                )
-                await websocket.send_text(resp.text)
+                try:
+                    resp = await client.get(
+                        f"{settings.CORE_AGENT_URL}/api/v1/tasks/{task_id}",
+                        headers={"X-API-Key": settings.API_KEY},
+                        timeout=10.0,
+                    )
+                    await websocket.send_text(resp.text)
 
-                data = resp.json()
-                status = data.get("status", "").upper()
-                if status not in ["PENDING", "PROGRESS", "IN_PROGRESS"]:
+                    data = resp.json()
+                    status = data.get("status", "").upper()
+                    if status not in ["PENDING", "PROGRESS", "IN_PROGRESS"]:
+                        break
+
+                    await asyncio.sleep(1.0)
+                except httpx.ConnectError as e:
+                    logger.error("Connection error in Task WS", task_id=task_id, error=str(e))
+                    await websocket.send_text('{"error":"Backend service unavailable","status":"error"}')
                     break
-
-                await asyncio.sleep(1.0)
+                except httpx.TimeoutException as e:
+                    logger.error("Timeout in Task WS", task_id=task_id, error=str(e))
+                    await websocket.send_text('{"error":"Backend service timeout","status":"error"}')
+                    break
+                except httpx.HTTPStatusError as e:
+                    logger.error("HTTP error in Task WS", task_id=task_id, status_code=e.response.status_code, error=str(e))
+                    await websocket.send_text(f'{{"error":"Backend service error: {e.response.status_code}","status":"error"}}')
+                    break
     except WebSocketDisconnect:
         logger.info("Task WS disconnected", task_id=task_id)
     except Exception as e:
         logger.error("Task WS error", task_id=task_id, error=str(e), exc_info=True)
         try:
-            await websocket.send_text('{"error":"websocket_error"}')
+            await websocket.send_text('{"error":"websocket_error","status":"error"}')
         except Exception:
             pass
     finally:
