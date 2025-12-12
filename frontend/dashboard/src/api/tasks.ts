@@ -12,12 +12,28 @@ export function getTasksWebSocketUrl(taskId: string) {
   const apiKey = import.meta.env.VITE_API_KEY || 'testops-copilot-api-key-2024'
 
   try {
+    // Используем текущий хост страницы для WebSocket, чтобы избежать проблем с CORS и прокси
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const host = window.location.host
+    
+    // Если API URL указывает на тот же домен, используем текущий хост
     const apiUrl = new URL(apiBase)
-    // Подбираем ws/wss по схеме API (используем протокол из переменной окружения)
-    const wsProtocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:'
-    // Используем hostname вместо host, чтобы избежать проблем с портами
-    const wsHost = apiUrl.hostname + (apiUrl.port ? `:${apiUrl.port}` : '')
-    const wsUrl = new URL(`${wsProtocol}//${wsHost}/api/v1/tasks/ws/${taskId}`)
+    const currentHost = window.location.hostname
+    
+    // Если домены совпадают или API URL относительный, используем текущий хост
+    let wsHost = host
+    if (apiUrl.hostname === currentHost || apiUrl.hostname === 'localhost' || apiUrl.hostname === '127.0.0.1') {
+      wsHost = host
+    } else {
+      // Иначе используем хост из API URL
+      wsHost = apiUrl.hostname + (apiUrl.port ? `:${apiUrl.port}` : '')
+      const wsProtocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:'
+      const wsUrl = new URL(`${wsProtocol}//${wsHost}/api/v1/tasks/ws/${taskId}`)
+      wsUrl.searchParams.set('api_key', apiKey)
+      return wsUrl.toString()
+    }
+    
+    const wsUrl = new URL(`${protocol}//${wsHost}/api/v1/tasks/ws/${taskId}`)
     wsUrl.searchParams.set('api_key', apiKey)
     return wsUrl.toString()
   } catch (error) {

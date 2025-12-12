@@ -1,7 +1,9 @@
 """Application configuration."""
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import List
+from pydantic import field_validator
+from typing import List, Union
+import json
 
 
 class Settings(BaseSettings):
@@ -34,6 +36,28 @@ class Settings(BaseSettings):
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+    
+    @field_validator('CORS_ORIGINS', mode='before')
+    @classmethod
+    def parse_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        """Parse CORS_ORIGINS from environment variable."""
+        if isinstance(v, list):
+            return v
+        if isinstance(v, str):
+            v = v.strip()
+            # Try to parse as JSON first
+            try:
+                if v.startswith('[') and v.endswith(']'):
+                    return json.loads(v)
+                elif v.startswith('"[') and v.endswith(']"'):
+                    return json.loads(v[1:-1])
+                elif v.startswith("'[") and v.endswith("]'"):
+                    return json.loads(v[1:-1])
+            except (json.JSONDecodeError, ValueError):
+                pass
+            # Fall back to comma-separated values
+            return [origin.strip().strip('"').strip("'") for origin in v.split(',') if origin.strip()]
+        return v
 
 
 settings = Settings()

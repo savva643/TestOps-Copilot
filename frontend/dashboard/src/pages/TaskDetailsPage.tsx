@@ -36,6 +36,8 @@ export function TaskDetailsPage() {
   const [progressVisible, setProgressVisible] = useState(true)
   const [progressFading, setProgressFading] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
+  const pollingRef = useRef<NodeJS.Timeout | null>(null)
+  const usePollingRef = useRef(false)
 
   const isTerminal = (status?: string) => {
     if (!status) return false
@@ -80,16 +82,69 @@ export function TaskDetailsPage() {
     }
   }
 
+  const startPolling = () => {
+    if (!taskId || usePollingRef.current) return
+    
+    usePollingRef.current = true
+    const poll = async () => {
+      if (!taskId) return
+      try {
+        const status = await getTaskStatus(taskId)
+        setTaskStatus(status)
+        setError(null)
+        if (!isTerminal(status.status)) {
+          pollingRef.current = setTimeout(poll, 2000) // Poll every 2 seconds
+        } else {
+          pollingRef.current = null
+        }
+      } catch (err: any) {
+        const errorMsg = err.response?.data?.detail || err.message || 'Не удалось получить статус задачи'
+        setError(errorMsg)
+        // Continue polling even on error
+        pollingRef.current = setTimeout(poll, 5000) // Retry after 5 seconds on error
+      }
+    }
+    poll()
+  }
+
+  const stopPolling = () => {
+    if (pollingRef.current) {
+      clearTimeout(pollingRef.current)
+      pollingRef.current = null
+    }
+    usePollingRef.current = false
+  }
+
   const connectWebSocket = () => {
-    if (!taskId) return
+    if (!taskId || usePollingRef.current) return
     setConnecting(true)
     const url = getTasksWebSocketUrl(taskId)
+    
+    let wsTimeout: NodeJS.Timeout | null = null
+    
     try {
       const ws = new WebSocket(url)
       wsRef.current = ws
 
+      // Timeout для подключения - если не подключился за 5 секунд, переключаемся на polling
+      wsTimeout = setTimeout(() => {
+        if (ws.readyState === WebSocket.CONNECTING) {
+          console.warn('WebSocket connection timeout, switching to polling')
+          ws.close()
+          setConnecting(false)
+          setError('WebSocket недоступен, используем опрос статуса.')
+          startPolling()
+        }
+      }, 5000)
+
       ws.onopen = () => {
+        if (wsTimeout) {
+          clearTimeout(wsTimeout)
+          wsTimeout = null
+        }
         setConnecting(false)
+        setError(null)
+        console.log('WebSocket connected')
       }
 
       ws.onmessage = (event) => {
@@ -105,18 +160,40 @@ export function TaskDetailsPage() {
         }
       }
 
-      ws.onerror = () => {
+      ws.onerror = (event) => {
+        console.error('WebSocket error:', event)
+        if (wsTimeout) {
+          clearTimeout(wsTimeout)
+          wsTimeout = null
+        }
         setConnecting(false)
-        setError('Ошибка WebSocket, переключаемся на опрос.')
+        // Не показываем ошибку сразу, попробуем polling
+        setError(null)
         ws.close()
       }
 
-      ws.onclose = () => {
+      ws.onclose = (event) => {
+        if (wsTimeout) {
+          clearTimeout(wsTimeout)
+          wsTimeout = null
+        }
         wsRef.current = null
+        
+        // Если закрылось с ошибкой и мы еще не используем polling, переключаемся
+        if (event.code !== 1000 && !usePollingRef.current) {
+          console.warn('WebSocket closed unexpectedly, switching to polling', event.code, event.reason)
+          setError('WebSocket недоступен, используем опрос статуса.')
+          startPolling()
+        }
       }
     } catch (err: any) {
+      if (wsTimeout) {
+        clearTimeout(wsTimeout)
+      }
       setConnecting(false)
-      setError(err.message || 'Не удалось подключиться к WebSocket')
+      console.error('Failed to create WebSocket:', err)
+      setError('Не удалось создать WebSocket соединение, используем опрос.')
+      startPolling()
     }
   }
 
@@ -134,9 +211,11 @@ export function TaskDetailsPage() {
 
   useEffect(() => {
     fetchOnce()
+    // Сначала пытаемся WebSocket, если не получится - переключимся на polling
     connectWebSocket()
     return () => {
       wsRef.current?.close()
+      stopPolling()
     }
   }, [taskId])
 
