@@ -197,22 +197,33 @@ export function TaskDetailsPage() {
     }
   }
 
-  const fetchOnce = async () => {
-    if (!taskId) return
+  const fetchOnce = async (): Promise<boolean> => {
+    if (!taskId) return false
     try {
       const status = await getTaskStatus(taskId)
       setTaskStatus(status)
       setError(null)
+      // Возвращаем true если задача уже завершена
+      return isTerminal(status.status)
     } catch (err: any) {
       const errorMsg = err.response?.data?.detail || err.message || 'Не удалось получить статус задачи'
       setError(errorMsg)
+      return false
     }
   }
 
   useEffect(() => {
-    fetchOnce()
-    // Сначала пытаемся WebSocket, если не получится - переключимся на polling
-    connectWebSocket()
+    // Сначала загружаем актуальный статус из БД через HTTP
+    const loadInitialStatus = async () => {
+      const isCompleted = await fetchOnce()
+      // Только если задача не завершена, подключаем WebSocket для обновлений
+      if (!isCompleted) {
+        connectWebSocket()
+      }
+    }
+    
+    loadInitialStatus()
+    
     return () => {
       wsRef.current?.close()
       stopPolling()
