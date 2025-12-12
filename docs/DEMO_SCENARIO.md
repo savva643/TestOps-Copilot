@@ -1,5 +1,7 @@
 # Демо-сценарий (UI + GitLab)
 
+> 📖 Вернуться к [главной документации](../../README.md)
+
 ## Часть 1. Генерация ручных/UI кейсов
 1. Открыть Dashboard → «Сгенерировать тесты».
 2. Загрузить `demo_materials/manual/ui-calculator-openapi.yaml`, выбрать тип UI/manual, язык ru, паттерн AAA.
@@ -21,4 +23,11 @@
 - Время генерации 5–10 кейсов (<30 сек).
 - Доля корректных тестов без правок (>80%).
 - Coverage отчёт из GitLab pipeline.
+
+## Связанная документация
+
+- [README.md](../../README.md) — Главная документация проекта
+- [QUICK_START.md](../../QUICK_START.md) — Быстрый старт
+- [docs/USER_GUIDE.md](USER_GUIDE.md) — Пользовательское руководство
+- [demo_materials/README.md](../../demo_materials/README.md) — Демо-материалы
 

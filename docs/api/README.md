@@ -1,5 +1,7 @@
 # API схемы и Swagger UI
 
+> 📖 Вернуться к [главной документации](../../README.md)
+
 Все сервисы — FastAPI, Swagger UI доступен по `/docs`, схема — `/openapi.json`.
 
 ## Локальные URL (по умолчанию)
@@ -25,4 +27,10 @@ curl -s http://localhost:8005/openapi.json -o docs/api/gitlab-integration-openap
 ## Публикация в UI
 - В Dashboard можно добавить ссылку/iframe на gateway Swagger UI (`/docs`).
 - Для внешней публикации используйте Redoc/Swagger UI хостинг, указывая сохранённые схемы из `docs/api/`.
+
+## Связанная документация
+
+- [README.md](../../README.md) — Главная документация проекта
+- [docs/API_DOCS_CHECKLIST.md](../API_DOCS_CHECKLIST.md) — Чек-лист публикации API
+- [docs/ARCHITECTURE.md](../ARCHITECTURE.md) — Архитектура системы
 

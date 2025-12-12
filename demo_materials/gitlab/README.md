@@ -1,5 +1,7 @@
 # Демо GitLab интеграции
 
+> 📖 Вернуться к [главной документации](../../README.md)
+
 Цель: показать генерацию/публикацию тестов и аналитику через GitLab CI/CD.
 
 Сценарий:
@@ -23,4 +25,11 @@
   `include: template: Code-Quality.gitlab-ci.yml` и др.
 - Для бэйджей используйте URL вида  
   `https://gitlab.com/<group>/<project>/badges/main/pipeline.svg`.
+
+## Связанная документация
+
+- [README.md](../../README.md) — Главная документация проекта
+- [docs/DEMO_SCENARIO.md](../../docs/DEMO_SCENARIO.md) — Сценарий демонстрации
+- [demo_materials/README.md](../README.md) — Демо-материалы
+- [gitlab-test/README.md](../../gitlab-test/README.md) — GitLab тестовый проект
 

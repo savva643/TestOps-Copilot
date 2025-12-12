@@ -115,4 +115,5 @@ docker-compose up -d postgres
 - Прочитайте [DEVELOPMENT.md](DEVELOPMENT.md) для разработки
 - Изучите [PROJECT_PLAN.md](PROJECT_PLAN.md) для плана развития
 - См. [README.md](README.md) для полной документации
+- См. [docs/USER_GUIDE.md](docs/USER_GUIDE.md) для пользовательского руководства
 

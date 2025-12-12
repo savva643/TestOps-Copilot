@@ -174,5 +174,143 @@
   font-size: 14px;
   background: var(--surface-primary);
   border-top: 1px solid var(--border-primary);
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+}
+
+/* Нижнее меню для мобильных устройств */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface-primary);
+  border-top: 1px solid var(--border-primary);
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  z-index: 100;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  justify-content: space-around;
+  align-items: center;
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 12px;
+  text-decoration: none;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  min-width: 60px;
+  position: relative;
+}
+
+.bottom-nav-item:hover {
+  background: var(--muted);
+  color: var(--text-primary);
+}
+
+.bottom-nav-item.active {
+  color: var(--accent-primary);
+}
+
+.bottom-nav-item.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 3px;
+  background: var(--accent-primary);
+  border-radius: 0 0 3px 3px;
+}
+
+.bottom-nav-icon {
+  font-size: 24px;
+  transition: transform 0.2s ease;
+}
+
+.bottom-nav-item.active .bottom-nav-icon {
+  transform: scale(1.1);
+}
+
+.bottom-nav-label {
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Медиа-запросы для мобильных устройств */
+@media (max-width: 768px) {
+  /* Скрываем верхнюю навигацию на мобильных */
+  .nav-links {
+    display: none !important;
+  }
+
+  /* Скрываем кнопки профиля/входа на мобильных */
+  .header-actions .btn-primary {
+    display: none !important;
+  }
+
+  /* Адаптируем логотип - скрываем текст на мобильных */
+  .logo-text {
+    display: none;
+  }
+
+  .logo-mark {
+    width: 100px;
+  }
+
+  .logo {
+    gap: 6px;
+  }
+
+  /* Показываем нижнее меню на мобильных */
+  .bottom-nav {
+    display: flex !important;
+  }
+
+  /* Добавляем отступ снизу для контента, чтобы не перекрывался нижним меню */
+  .main-content {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+
+  .footer {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+    margin-bottom: calc(60px + env(safe-area-inset-bottom));
+  }
+
+  /* Адаптируем header для мобильных */
+  .header {
+    padding: 8px 12px;
+  }
+
+  .header-left {
+    gap: 8px;
+  }
+
+  .header-actions {
+    gap: 4px;
+  }
+}
+
+/* Для очень маленьких экранов */
+@media (max-width: 480px) {
+  .bottom-nav-label {
+    font-size: 10px;
+  }
+
+  .bottom-nav-icon {
+    font-size: 22px;
+  }
+
+  .bottom-nav-item {
+    padding: 6px 8px;
+    min-width: 50px;
+  }
 }
 

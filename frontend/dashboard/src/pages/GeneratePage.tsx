@@ -15,6 +15,7 @@ type TabType = 'manual' | 'gitlab'
 export function GeneratePage() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<TabType>('manual')
+  const [isTransitioning, setIsTransitioning] = useState(false)
   
   // Manual generation state
   const [description, setDescription] = useState('')
@@ -234,14 +235,30 @@ export function GeneratePage() {
       <div className="tab-navigation">
         <button
           className={`tab-button ${activeTab === 'manual' ? 'active' : ''}`}
-          onClick={() => setActiveTab('manual')}
+          onClick={() => {
+            if (activeTab !== 'manual') {
+              setIsTransitioning(true)
+              setTimeout(() => {
+                setActiveTab('manual')
+                setIsTransitioning(false)
+              }, 200)
+            }
+          }}
           type="button"
         >
           Ручной
         </button>
         <button
           className={`tab-button ${activeTab === 'gitlab' ? 'active' : ''}`}
-          onClick={() => setActiveTab('gitlab')}
+          onClick={() => {
+            if (activeTab !== 'gitlab') {
+              setIsTransitioning(true)
+              setTimeout(() => {
+                setActiveTab('gitlab')
+                setIsTransitioning(false)
+              }, 200)
+            }
+          }}
           type="button"
         >
           GitLab
@@ -256,7 +273,7 @@ export function GeneratePage() {
             </div>
           )}
 
-          <div className={`tab-content ${activeTab === 'manual' ? 'tab-active' : 'tab-inactive'}`}>
+          <div className={`tab-content ${activeTab === 'manual' ? 'tab-active' : 'tab-inactive'} ${isTransitioning && activeTab !== 'manual' ? 'tab-fade-out' : ''}`}>
           {activeTab === 'manual' && (
             <form onSubmit={handleManualSubmit} className="generate-form">
               <div className="form-section">
@@ -423,7 +440,7 @@ export function GeneratePage() {
           )}
 
           </div>
-          <div className={`tab-content ${activeTab === 'gitlab' ? 'tab-active' : 'tab-inactive'}`}>
+          <div className={`tab-content ${activeTab === 'gitlab' ? 'tab-active' : 'tab-inactive'} ${isTransitioning && activeTab !== 'gitlab' ? 'tab-fade-out' : ''}`}>
           {activeTab === 'gitlab' && (
             <form onSubmit={handleGitLabSubmit} className="generate-form">
               <div className="form-section">

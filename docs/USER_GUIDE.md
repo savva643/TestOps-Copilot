@@ -1,4 +1,8 @@
-# Руководство пользователя TestOps Copilot (черновик)
+# Руководство пользователя TestOps Copilot
+
+> 📖 Вернуться к [главной документации](../../README.md)
+
+## Содержание
 
 ## 1. Быстрый старт (UI)
 - Перейдите на Dashboard → кнопка «Сгенерировать тесты».
@@ -28,7 +32,14 @@
 - Для GitLab задач подтягиваются gitlab_url/MR (если заданы при создании).
 
 ## 6. Где смотреть примеры
-- `demo_materials/manual/` — UI калькулятор (ручные кейсы).
-- `demo_materials/api/` — Evolution Compute (API автотесты/ручные).
-- `demo_materials/gitlab/` — сценарий GitLab CI/CD + интеграция.
+- [demo_materials/manual/](../../demo_materials/manual/) — UI калькулятор (ручные кейсы).
+- [demo_materials/api/](../../demo_materials/api/) — Evolution Compute (API автотесты/ручные).
+- [demo_materials/gitlab/](../../demo_materials/gitlab/) — сценарий GitLab CI/CD + интеграция.
+
+## Связанная документация
+
+- [QUICK_START.md](../../QUICK_START.md) — Быстрый старт
+- [QUICK_TEST.md](../../QUICK_TEST.md) — Быстрая проверка работоспособности
+- [docs/DEMO_SCENARIO.md](DEMO_SCENARIO.md) — Сценарий демонстрации
+- [docs/TESTING_INSTRUCTIONS.md](TESTING_INSTRUCTIONS.md) — Инструкции по тестированию
 

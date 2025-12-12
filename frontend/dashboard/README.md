@@ -1,5 +1,7 @@
 # TestOps Copilot Frontend Dashboard
 
+> 📖 Вернуться к [главной документации](../../README.md)
+
 React + TypeScript frontend для TestOps Copilot.
 
 ## Технологии
@@ -65,4 +67,10 @@ src/
 - **Generate** - Генерация тест-кейсов
 - **Tasks** - Просмотр статуса задач
 - **Optimize** - Оптимизация тестов (v1.1)
+
+## Связанная документация
+
+- [README.md](../../README.md) — Главная документация проекта
+- [DEVELOPMENT.md](../../DEVELOPMENT.md) — Руководство для разработчиков
+- [docs/USER_GUIDE.md](../../docs/USER_GUIDE.md) — Пользовательское руководство
 

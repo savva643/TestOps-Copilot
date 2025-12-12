@@ -1,6 +1,12 @@
 # TestOps Copilot
 
-AI-ассистент для автоматизации рутинной работы QA-инженера. Система генерирует тест-кейсы и автотесты (UI/API), оптимизирует тестовое покрытие и проверяет соответствие стандартам, используя Cloud.ru Evolution Foundation Model.
+![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue?logo=typescript)
+![React](https://img.shields.io/badge/React-19-blue?logo=react)
+![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green?logo=fastapi)
+![Cloud.ru](https://img.shields.io/badge/Cloud.ru-Evolution%20Foundation-orange?logo=cloud)
+
+AI-ассистент для автоматизации рутинной работы QA-инженера. Система генерирует тест-кейсы и автотесты (UI/API), оптимизирует тестовое покрытие и проверяет соответствие стандартам, используя [Cloud.ru Evolution Foundation Model](https://cloud.ru).
 
 ## Архитектура
 
@@ -83,7 +89,7 @@ npm run dev
 - Test optimizer: http://localhost:8004/docs
 - GitLab integration: http://localhost:8005/docs
 
-Экспорт схем: см. `docs/api/README.md`.
+Экспорт схем: см. [docs/api/README.md](docs/api/README.md).
 
 ### Обязательные .env (создать вручную)
 - `backend/core_agent_service/.env`
@@ -160,13 +166,38 @@ testops-copilot/
     └── nginx/
 ```
 
-## Документация и примеры
-- Пользовательское руководство: `docs/USER_GUIDE.md`
-- Демо-сценарий: `docs/DEMO_SCENARIO.md`
-- План метрик: `docs/METRICS_PLAN.md`
-- Swagger/OpenAPI чек-лист: `docs/API_DOCS_CHECKLIST.md`
-- Архитектура: `docs/ARCHITECTURE.md`
-- Демо-материалы: `demo_materials/` (UI/API/GitLab)
+## 📚 Документация
+
+### Быстрый старт
+- **[QUICK_START.md](QUICK_START.md)** — Быстрый запуск через Docker Compose
+- **[QUICK_TEST.md](QUICK_TEST.md)** — Быстрая проверка работоспособности системы
+
+### Руководства
+- **[DEVELOPMENT.md](DEVELOPMENT.md)** — Руководство для разработчиков
+- **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)** — Пользовательское руководство
+- **[docs/TESTING_INSTRUCTIONS.md](docs/TESTING_INSTRUCTIONS.md)** — Инструкции по тестированию
+
+### Архитектура и планирование
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — Архитектура системы
+- **[PROJECT_PLAN.md](PROJECT_PLAN.md)** — План разработки проекта
+- **[CHANGELOG.md](CHANGELOG.md)** — История изменений
+
+### Демо и примеры
+- **[docs/DEMO_SCENARIO.md](docs/DEMO_SCENARIO.md)** — Сценарий демонстрации
+- **[demo_materials/README.md](demo_materials/README.md)** — Демо-материалы (UI/API/GitLab)
+- **[gitlab-test/README.md](gitlab-test/README.md)** — GitLab тестовый проект
+
+### API документация
+- **[docs/api/README.md](docs/api/README.md)** — API схемы и Swagger UI
+- **[docs/API_DOCS_CHECKLIST.md](docs/API_DOCS_CHECKLIST.md)** — Чек-лист публикации API
+
+### Планы и метрики
+- **[docs/TESTING_PLAN.md](docs/TESTING_PLAN.md)** — План тестирования
+- **[docs/METRICS_PLAN.md](docs/METRICS_PLAN.md)** — План сбора метрик
+- **[docs/PERFORMANCE_PLAN.md](docs/PERFORMANCE_PLAN.md)** — План производительности
+
+### Frontend
+- **[frontend/dashboard/README.md](frontend/dashboard/README.md)** — Документация Frontend Dashboard
 
 ## Конфигурация
 

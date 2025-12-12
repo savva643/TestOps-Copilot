@@ -141,6 +141,13 @@ dashboard/
 4. Создайте Merge Request в GitLab
 5. После ревью и прохождения CI/CD - мердж в `main`
 
+## Дополнительная документация
+
+- [README.md](README.md) — Главная документация проекта
+- [QUICK_START.md](QUICK_START.md) — Быстрый старт
+- [PROJECT_PLAN.md](PROJECT_PLAN.md) — План разработки
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — Архитектура системы
+
 ## Troubleshooting
 
 ### Проблемы с Docker

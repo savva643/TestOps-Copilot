@@ -1,5 +1,7 @@
 # GitLab Test Project
 
+> 📖 Вернуться к [главной документации](../README.md)
+
 Минимальный проект для проверки CI/CD, coverage и интеграции с TestOps Copilot.
 
 Содержимое:
@@ -17,4 +19,10 @@
 Бэйджи (замените group/project):
 - Pipeline: `https://gitlab.com/<group>/<project>/badges/main/pipeline.svg`
 - Coverage: `https://gitlab.com/<group>/<project>/badges/main/coverage.svg`
+
+## Связанная документация
+
+- [README.md](../README.md) — Главная документация проекта
+- [demo_materials/gitlab/README.md](../demo_materials/gitlab/README.md) — Демо GitLab интеграции
+- [docs/DEMO_SCENARIO.md](../docs/DEMO_SCENARIO.md) — Сценарий демонстрации
 

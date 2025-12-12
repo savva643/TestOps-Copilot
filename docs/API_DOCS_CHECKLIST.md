@@ -1,5 +1,7 @@
 # API документация — чек-лист публикации
 
+> 📖 Вернуться к [главной документации](../../README.md)
+
 Цель: собрать и опубликовать Swagger/OpenAPI для gateway и всех микросервисов.
 
 ## Шаги
@@ -18,11 +20,17 @@
    - В CI добавить job, который проверяет актуальность схем (сравнивает с сохранёнными).
 
 ## Текущее состояние
-- [ ] Gateway openapi экспортирован в docs/api
-- [ ] Core agent openapi экспортирован
-- [ ] Parser openapi экспортирован
-- [ ] Code generator openapi экспортирован
-- [ ] Optimizer openapi экспортирован
-- [ ] GitLab integration openapi экспортирован
-- [ ] docs/api/README.md обновлён ссылками
+- [x] Gateway openapi экспортирован в docs/api
+- [x] Core agent openapi экспортирован
+- [x] Parser openapi экспортирован
+- [x] Code generator openapi экспортирован
+- [x] Optimizer openapi экспортирован
+- [x] GitLab integration openapi экспортирован
+- [x] docs/api/README.md обновлён ссылками
+
+## Связанная документация
+
+- [README.md](../../README.md) — Главная документация проекта
+- [docs/api/README.md](api/README.md) — API схемы и Swagger UI
+- [docs/ARCHITECTURE.md](ARCHITECTURE.md) — Архитектура системы
 

@@ -1,4 +1,6 @@
-# Архитектура TestOps Copilot (кратко)
+# Архитектура TestOps Copilot
+
+> 📖 Вернуться к [главной документации](../../README.md)
 
 ## Микросервисы
 - **integration-gateway** — единая точка входа API, авторизация, rate limiting, метрики.
@@ -24,4 +26,10 @@
 - Test optimizer: 8004
 - GitLab integration: 8005
 - Frontend: 3000
+
+## Связанная документация
+
+- [README.md](../../README.md) — Главная документация проекта
+- [DEVELOPMENT.md](../../DEVELOPMENT.md) — Руководство для разработчиков
+- [docs/api/README.md](api/README.md) — API документация
 

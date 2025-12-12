@@ -80,5 +80,11 @@ OpenAPI файл
 
 ## Подробная инструкция
 
-См. `docs/TESTING_INSTRUCTIONS.md` для детальной информации.
+См. [docs/TESTING_INSTRUCTIONS.md](docs/TESTING_INSTRUCTIONS.md) для детальной информации.
+
+## Дополнительная документация
+
+- [README.md](README.md) — Главная документация проекта
+- [QUICK_START.md](QUICK_START.md) — Быстрый старт
+- [docs/USER_GUIDE.md](docs/USER_GUIDE.md) — Пользовательское руководство
 
