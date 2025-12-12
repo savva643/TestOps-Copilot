@@ -228,9 +228,7 @@ export function OptimizePage() {
 
           <div className="form-group">
             <label>
-              <Typography family="sans" purpose="body" size="m">
-                GitLab Personal Access Token *
-              </Typography>
+              <p>GitLab Personal Access Token *</p>
             </label>
             <input
               type="password"
@@ -240,9 +238,9 @@ export function OptimizePage() {
               placeholder="glpat-xxxxxxxxxxxxxxxxxxxx"
               disabled={loading}
             />
-            <Typography family="sans" purpose="body" size="s" className="hint-text">
+            <p className="hint-text">
               Создайте токен в GitLab: Settings → Access Tokens → Personal Access Tokens
-            </Typography>
+            </p>
           </div>
 
           <ButtonFilled 
@@ -256,17 +254,13 @@ export function OptimizePage() {
       {step === 'project-select' && (
         <Card className="optimize-card">
           <div className="card-header">
-            <Typography family="sans" purpose="title" size="m">
-              Выбор проекта
-            </Typography>
+            <h2>Выбор проекта</h2>
             <ButtonOutline label="Изменить токен" onClick={() => setStep('gitlab-setup')} />
           </div>
 
           <div className="form-group">
             <label>
-              <Typography family="sans" purpose="body" size="m">
-                Проект *
-              </Typography>
+              <p>Проект *</p>
             </label>
             <select
               className="form-input"
@@ -286,9 +280,7 @@ export function OptimizePage() {
           <div className="form-row">
             <div className="form-group">
               <label>
-                <Typography family="sans" purpose="body" size="m">
-                  Ветка
-                </Typography>
+                <p>Ветка</p>
               </label>
               <input
                 type="text"
@@ -302,9 +294,7 @@ export function OptimizePage() {
 
             <div className="form-group">
               <label>
-                <Typography family="sans" purpose="body" size="m">
-                  Директория с тестами
-                </Typography>
+                <p>Директория с тестами</p>
               </label>
               <input
                 type="text"
@@ -329,12 +319,8 @@ export function OptimizePage() {
         <Card className="optimize-card">
           <div className="analyzing-container">
             <div className="spinner"></div>
-            <Typography family="sans" purpose="title" size="m">
-              Анализ в процессе...
-            </Typography>
-            <Typography family="sans" purpose="body" size="m">
-              Клонирование репозитория, анализ тестов и генерация отчетов
-            </Typography>
+            <h2>Анализ в процессе...</h2>
+            <p>Клонирование репозитория, анализ тестов и генерация отчетов</p>
           </div>
         </Card>
       )}
@@ -344,63 +330,49 @@ export function OptimizePage() {
           {/* Coverage Results */}
           {coverageResult && (
             <Card className="result-card">
-              <Typography family="sans" purpose="title" size="m" className="card-title">
-                Анализ покрытия
-              </Typography>
+              <h2 className="card-title">Анализ покрытия</h2>
               <Divider />
               <div className="coverage-stats">
                 <div className="stat-item">
-                  <Typography family="sans" purpose="body" size="l" className="stat-value">
+                  <p className="stat-value">
                     {coverageResult.coverage_percentage.toFixed(1)}%
-                  </Typography>
-                  <Typography family="sans" purpose="body" size="s">
-                    Покрытие тестами
-                  </Typography>
+                  </p>
+                  <p>Покрытие тестами</p>
                 </div>
                 <div className="stat-item">
-                  <Typography family="sans" purpose="body" size="l" className="stat-value">
+                  <p className="stat-value">
                     {coverageResult.test_files_analyzed}
-                  </Typography>
-                  <Typography family="sans" purpose="body" size="s">
-                    Файлов проанализировано
-                  </Typography>
+                  </p>
+                  <p>Файлов проанализировано</p>
                 </div>
                 <div className="stat-item">
-                  <Typography family="sans" purpose="body" size="l" className="stat-value">
+                  <p className="stat-value">
                     {coverageResult.total_test_functions}
-                  </Typography>
-                  <Typography family="sans" purpose="caption" size="s">
-                    Тест-функций
-                  </Typography>
+                  </p>
+                  <p>Тест-функций</p>
                 </div>
                 <div className="stat-item">
-                  <Typography family="sans" purpose="body" size="l" className="stat-value">
+                  <p className="stat-value">
                     {coverageResult.total_endpoints}
-                  </Typography>
-                  <Typography family="sans" purpose="body" size="s">
-                    Всего эндпоинтов
-                  </Typography>
+                  </p>
+                  <p>Всего эндпоинтов</p>
                 </div>
               </div>
 
               {coverageResult.uncovered_endpoints.length > 0 && (
                 <div className="uncovered-section">
-                  <Typography family="sans" purpose="body" size="m" className="section-title">
+                  <p className="section-title">
                     Непокрытые эндпоинты ({coverageResult.uncovered_endpoints.length}):
-                  </Typography>
+                  </p>
                   <ul className="endpoints-list">
                     {coverageResult.uncovered_endpoints.slice(0, 10).map((endpoint, idx) => (
                       <li key={idx}>
-                        <Typography family="sans" purpose="body" size="s">
-                          {endpoint}
-                        </Typography>
+                        <p>{endpoint}</p>
                       </li>
                     ))}
                     {coverageResult.uncovered_endpoints.length > 10 && (
                       <li>
-                        <Typography family="sans" purpose="body" size="s">
-                          ... и еще {coverageResult.uncovered_endpoints.length - 10}
-                        </Typography>
+                        <p>... и еще {coverageResult.uncovered_endpoints.length - 10}</p>
                       </li>
                     )}
                   </ul>
@@ -412,43 +384,36 @@ export function OptimizePage() {
           {/* Duplicates Results */}
           {duplicatesResult && (
             <Card className="result-card">
-              <Typography family="sans" purpose="title" size="m" className="card-title">
-                Поиск дубликатов
-              </Typography>
+              <h2 className="card-title">Поиск дубликатов</h2>
               <Divider />
               <div className="duplicates-stats">
-                <Typography family="sans" purpose="body" size="l">
+                <p>
                   Найдено дубликатов: <strong>{duplicatesResult.duplicate_count}</strong>
-                </Typography>
-                <Typography family="sans" purpose="body" size="m">
+                </p>
+                <p>
                   Всего тестов: {duplicatesResult.total_tests}
-                </Typography>
+                </p>
               </div>
 
               {duplicatesResult.duplicates.length > 0 && (
                 <div className="duplicates-list">
                   {duplicatesResult.duplicates.slice(0, 5).map((dup, idx) => (
                     <div key={idx} className="duplicate-item">
-                      <Typography family="sans" purpose="body" size="s">
+                      <p>
                         <strong>{dup.test1}</strong>
-                      </Typography>
-                      <Typography family="sans" purpose="body" size="s">
+                      </p>
+                      <p>
                         <strong>{dup.test2}</strong>
-                      </Typography>
-                      <Typography
-                        family="sans"
-                        purpose="body"
-                        size="s"
-                        style={{ color: dup.similarity > 0.9 ? '#ef4444' : '#f59e0b' }}
-                      >
+                      </p>
+                      <p style={{ color: dup.similarity > 0.9 ? '#ef4444' : '#f59e0b' }}>
                         Схожесть: {(dup.similarity * 100).toFixed(0)}% ({dup.method})
-                      </Typography>
+                      </p>
                     </div>
                   ))}
                   {duplicatesResult.duplicates.length > 5 && (
-                    <Typography family="sans" purpose="body" size="s">
+                    <p>
                       ... и еще {duplicatesResult.duplicates.length - 5} дубликатов
-                    </Typography>
+                    </p>
                   )}
                 </div>
               )}
@@ -458,16 +423,14 @@ export function OptimizePage() {
           {/* Recommendations */}
           {recommendations && (
             <Card className="result-card">
-              <Typography family="sans" purpose="title" size="m" className="card-title">
-                Рекомендации по оптимизации
-              </Typography>
+              <h2 className="card-title">Рекомендации по оптимизации</h2>
               <Divider />
 
               {recommendations.recommendations.length > 0 && (
                 <div className="recommendations-section">
-                  <Typography family="sans" purpose="body" size="m" className="section-title">
+                  <p className="section-title">
                     Рекомендации:
-                  </Typography>
+                  </p>
                   {recommendations.recommendations.map((rec, idx) => (
                     <div key={idx} className="recommendation-item">
                       <div
@@ -477,12 +440,12 @@ export function OptimizePage() {
                         {rec.priority}
                       </div>
                       <div className="recommendation-content">
-                        <Typography family="sans" purpose="body" size="m">
+                        <p>
                           {rec.message}
-                        </Typography>
-                        <Typography family="sans" purpose="body" size="s" className="action-text">
+                        </p>
+                        <p className="action-text">
                           {rec.action}
-                        </Typography>
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -491,15 +454,15 @@ export function OptimizePage() {
 
               {recommendations.best_practices.length > 0 && (
                 <div className="best-practices-section">
-                  <Typography family="sans" purpose="body" size="m" className="section-title">
+                  <p className="section-title">
                     Best Practices:
-                  </Typography>
+                  </p>
                   <ul className="practices-list">
                     {recommendations.best_practices.map((practice, idx) => (
                       <li key={idx}>
-                        <Typography family="sans" purpose="body" size="s">
+                        <p>
                           {practice.message}
-                        </Typography>
+                        </p>
                       </li>
                     ))}
                   </ul>

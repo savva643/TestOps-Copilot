@@ -476,7 +476,9 @@ export function GeneratePage() {
                 </div>
               </div>
 
-              <Divider style={{ margin: '1.5rem 0' }} />
+              <div style={{ margin: '1.5rem 0' }}>
+                <Divider />
+              </div>
 
               <div className="form-section">
                 <div style={{ marginBottom: '1rem' }}>

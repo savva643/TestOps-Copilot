@@ -5,7 +5,7 @@ import { ButtonFilled, ButtonOutline } from '@snack-uikit/button'
 import { Alert } from '@snack-uikit/alert'
 import { Divider } from '@snack-uikit/divider'
 import './AuthPage.css'
-import { fetchIamToken, storeCredentials, storeToken, getStoredCredentials, clearCredentials, getStoredToken, getStoredGitLabCredentials, clearGitLabCredentials, storeGitLabCredentials } from '../api/auth'
+import { fetchIamToken, storeCredentials, storeToken, getStoredCredentials, clearCredentials, getStoredToken, getStoredGitLabCredentials, clearGitLabCredentials } from '../api/auth'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -234,13 +234,13 @@ export function LoginPage() {
                   placeholder="Введите API ключ для модели (не ограничен)"
                   required
                 />
-                <Typography family="sans" purpose="body" size="s" className="helper">
+                <p className="helper">
                   API ключ для доступа к Cloud.ru Evolution Foundation Model
-                </Typography>
+                </p>
               </div>
             </div>
 
-            <Typography family="sans" purpose="body" size="s" className="helper">
+            <p className="helper">
               Полная инструкция по получению ключей:{' '}
               <a
                 href="https://cloud.ru/docs/virtual-machines/ug/topics/api-ref__authentication?source-platform=Evolution"
@@ -249,7 +249,7 @@ export function LoginPage() {
               >
                 Cloud.ru API Authentication
               </a>
-            </Typography>
+            </p>
 
             <ButtonFilled
               type="submit"
