@@ -216,11 +216,11 @@ services:
       dockerfile: Dockerfile
     container_name: testops-frontend
     ports:
-      - "3000:3000"
+      - "80:80"
     env_file:
       - ./frontend/dashboard/.env
     environment:
-      - VITE_API_URL=http://localhost:8000
+      - VITE_API_URL=http://testops.keep-pixel.ru
       - VITE_API_KEY=testops-copilot-api-key-2024
     depends_on:
       - integration-gateway
