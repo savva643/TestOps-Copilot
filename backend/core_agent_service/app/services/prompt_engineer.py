@@ -228,13 +228,16 @@ async def test_example_success(client):
 - Писать текстовые пояснения типа "We need to produce...", "Let's create...", "I'll generate..."
 - Писать планы действий или описания того, что ты собираешься сделать
 - Начинать ответ с английского текста
+- Писать списки того, что будет в коде ("Each test includes...", "Take screenshots with...")
+- Любые размышления, планы или описания того, что ты СОБИРАЕШЬСЯ сделать
+- Добавлять пояснения, мысли или планы ПЕРЕД любым блоком ```python
 
 ОБЯЗАТЕЛЬНО:
-- Твой ответ ДОЛЖЕН начинаться СРАЗУ с ```python (без пробелов и текста перед ним)
+- Твой ответ ДОЛЖЕН начинаться СРАЗУ с ```python (без пробелов, текста и ЛЮБЫХ пояснений перед ним)
 - Внутри блока — полный готовый код на Python
 - Закрой блок ```
-- Если нужно несколько файлов — используй несколько блоков ```python ... ```
-- Можешь добавлять пояснения МЕЖДУ блоками кода (перед следующим блоком ```python)
+- Если нужно несколько файлов — используй несколько блоков ```python ... ``` БЕЗ пояснений между ними
+- ЗАПРЕЩЕНО добавлять пояснения, размышления или планы ПЕРЕД любым блоком ```python
 
 Формат ответа (СТРОГО):
 ```python
@@ -250,8 +253,6 @@ import allure
 import pytest
 # ... код первого файла ...
 ```
-
-Пояснение ко второму файлу (если нужно).
 
 ```python
 # Второй файл
@@ -332,6 +333,29 @@ class TestPriceCalculatorDynamicPrice:
             )
 ```
 
+ПРИМЕР НЕПРАВИЛЬНОГО ОТВЕТА (ЗАПРЕЩЕНО):
+@allure.label("owner","qa-team"), @allure.suite("ui"), @allure.tag? Actually @allure.tag("NORMAL"). Also @allure.label("priority","NORMAL") and @allure.title("...").
+
+Each test includes steps with allure.step.
+
+Take screenshots with allure.attach(page.screenshot(), name="screenshot", attachment_type=allure.attachment_type.PNG).
+
+Use comments # Arrange, # Act, # Assert.
+
+Also include negative scenario maybe invalid region selection? Or checking that "Add to configuration" disabled until parameters set.
+
+```python
+import pytest
+# ... код ...
+```
+
+ПОЧЕМУ ЭТО НЕПРАВИЛЬНО:
+- Есть текст перед ```python
+- LLM "думает вслух" о том, что она собирается сделать
+- Нет чистого кода с первой строки
+
+ТВОЙ ОТВЕТ БУДЕТ ПРОВЕРЕН АВТОМАТИЧЕСКИ. Если перед ```python есть ЛЮБОЙ текст (даже один символ), ответ будет считаться ошибочным.
+
 Примечание: Фикстура `page` предоставляется плагином pytest-playwright автоматически."""
 
         # Clean and optimize description
@@ -354,21 +378,31 @@ class TestPriceCalculatorDynamicPrice:
             user_prompt_parts.append("Начни ответ СРАЗУ с ```python (без единого символа перед ним)")
             user_prompt_parts.append("ЗАПРЕЩЕНО писать:")
             user_prompt_parts.append("- 'We need to...', 'We must...', 'We should...', 'We can...', 'We will...', 'We'll...'")
-            user_prompt_parts.append("- 'Let's create...', 'Let us...', 'Let me...'")
+            user_prompt_parts.append("- 'Let's create...', 'Let us...', 'Let me...', 'Let's think about this...', 'Let me consider...'")
             user_prompt_parts.append("- 'I'll generate...', 'I will...', 'I need...', 'I should...', 'I can...', 'I'm going...'")
             user_prompt_parts.append("- 'Here is...', 'This is...', 'The code...', 'The test...'")
             user_prompt_parts.append("- 'Will produce...', 'Should output...', 'Must include...', 'Need to output...'")
             user_prompt_parts.append("- 'We'll produce...', 'We're going to...', 'Now produce...', 'Let's craft...'")
-            user_prompt_parts.append("- Любые планы действий или описания того, что ты собираешься сделать")
+            user_prompt_parts.append("- 'Actually...', 'Also...', 'Maybe...', 'Perhaps...', 'First, we need to...'")
+            user_prompt_parts.append("- Писать списки того, что будет в коде ('Each test includes...', 'Take screenshots with...')")
+            user_prompt_parts.append("- Любые размышления, планы или описания того, что ты СОБИРАЕШЬСЯ сделать")
             user_prompt_parts.append("- Любой текст на английском языке перед блоком ```python")
-            user_prompt_parts.append("ТВОЙ ОТВЕТ ДОЛЖЕН БЫТЬ ТОЛЬКО:")
+            user_prompt_parts.append("- Добавлять пояснения, мысли или планы ПЕРЕД любым блоком ```python")
+            user_prompt_parts.append("")
+            user_prompt_parts.append("СТРОГОЕ ПРАВИЛО:")
+            user_prompt_parts.append("Твой ответ должен быть ТОЛЬКО таким:")
             user_prompt_parts.append("```python")
             user_prompt_parts.append("import pytest")
-            user_prompt_parts.append("# ... готовый код ...")
+            user_prompt_parts.append("from playwright.sync_api import Page, expect")
+            user_prompt_parts.append("import allure")
+            user_prompt_parts.append("")
+            user_prompt_parts.append("# [ГОТОВЫЙ КОД БЕЗ ЛИШНИХ КОММЕНТАРИЕВ]")
             user_prompt_parts.append("```")
-            user_prompt_parts.append("НИКАКИХ объяснений перед блоком кода. НИКАКИХ планов. ТОЛЬКО КОД.")
-            user_prompt_parts.append("Если нужно несколько файлов — используй несколько блоков ```python ... ```")
-            user_prompt_parts.append("Можешь добавлять пояснения МЕЖДУ блоками кода (перед следующим ```python)")
+            user_prompt_parts.append("НИЧЕГО перед ```python. НИЧЕГО после закрывающего ``` (кроме других блоков ```python для дополнительных файлов).")
+            user_prompt_parts.append("")
+            user_prompt_parts.append("ВАША СИСТЕМА ОЦЕНИВАЕТ ОТВЕТЫ. Ответ, начинающийся не с ```python, получит 0 баллов.")
+            if test_type == "ui":
+                user_prompt_parts.append("Если нужно несколько файлов — используй несколько блоков ```python ... ``` БЕЗ пояснений между ними.")
             
             user_prompt_parts.append("\nОБЯЗАТЕЛЬНЫЕ Allure декораторы для каждого теста:")
             if owner:
