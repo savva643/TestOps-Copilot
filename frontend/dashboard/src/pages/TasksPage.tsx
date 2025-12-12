@@ -336,6 +336,7 @@ export function TasksPage() {
               <input
                 id="taskId"
                 type="text"
+                className="task-input"
                 value={taskId}
                 onChange={(e) => setTaskId(e.target.value)}
                 placeholder="Введите ID задачи"

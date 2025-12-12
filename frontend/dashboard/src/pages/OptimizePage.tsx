@@ -188,11 +188,12 @@ export function OptimizePage() {
   return (
     <div className="optimize-page">
       <div className="page-header">
-        <h1>Test Optimization</h1>
+        <h1>Оптимизация тестов</h1>
         <p>Анализ покрытия тестами и поиск дубликатов в GitLab репозиториях</p>
       </div>
 
       <Divider />
+      <div style={{ marginTop: '1.5rem' }}></div>
 
       {error && (
         <Alert
@@ -455,7 +456,7 @@ export function OptimizePage() {
               {recommendations.best_practices.length > 0 && (
                 <div className="best-practices-section">
                   <p className="section-title">
-                    Best Practices:
+                    Лучшие практики:
                   </p>
                   <ul className="practices-list">
                     {recommendations.best_practices.map((practice, idx) => (

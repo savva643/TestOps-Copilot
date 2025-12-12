@@ -34,12 +34,22 @@
 }
 
 .logo-mark {
-  width: 28px;
-  height: 28px;
+  width: 120px;
+  height: auto;
+  min-height: 28px;
   background: url('/logo-header.png') center/contain no-repeat;
   background-size: contain;
   background-color: transparent;
   flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.logo:hover .logo-mark {
+  transform: scale(1.05);
+}
+
+.logo-mark.logo-dark {
+  background-image: url('/logo-header-white.png');
 }
 
 .logo-text {
@@ -58,13 +68,36 @@
   padding: 8px 10px;
   border-radius: 6px;
   font-weight: 600;
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition: all 0.3s ease;
+  position: relative;
+  display: inline-block;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--accent-primary);
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+}
+
+.nav-link:hover::after {
+  width: 80%;
 }
 
 .nav-link.active {
   background: rgba(38, 208, 124, 0.12);
   color: var(--text-primary);
   border: 1px solid var(--accent-primary);
+  transform: translateY(-1px);
+}
+
+.nav-link.active::after {
+  width: 100%;
 }
 
 .nav-link:hover {
@@ -79,9 +112,17 @@
 
 .btn-primary {
   background: var(--accent-primary) !important;
-  color: var(--accent-contrast) !important;
+  color: #ffffff !important;
   border-color: var(--accent-primary) !important;
   font-weight: 600 !important;
+}
+
+.theme-dark .btn-primary {
+  color: #ffffff !important;
+}
+
+.theme-dark .btn-secondary {
+  color: #ffffff !important;
 }
 
 .btn-secondary {
@@ -89,6 +130,33 @@
   color: var(--accent-contrast) !important;
   border-color: #3b4859 !important;
   font-weight: 600 !important;
+}
+
+.theme-toggle-button {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  color: var(--text-primary);
+}
+
+.theme-toggle-button:hover {
+  background: var(--muted);
+  transform: scale(1.05);
+}
+
+.theme-icon {
+  font-size: 20px;
+  transition: transform 0.3s ease;
+}
+
+.theme-toggle-button:hover .theme-icon {
+  transform: rotate(180deg);
 }
 
 .main-content {

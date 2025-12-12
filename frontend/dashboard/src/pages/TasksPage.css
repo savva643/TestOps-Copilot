@@ -72,12 +72,22 @@
 }
 
 .search-form .form-group {
+  display: flex;
+  flex-direction: column;
   flex: 1;
 }
+
+.search-form .form-group label {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
 
 .button-wrapper {
   display: flex;
   align-items: flex-end;
+  padding-bottom: 0;
 }
 
 /* Стили для кнопки "Проверить статус" */

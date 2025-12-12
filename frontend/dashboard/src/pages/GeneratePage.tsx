@@ -256,6 +256,7 @@ export function GeneratePage() {
             </div>
           )}
 
+          <div className={`tab-content ${activeTab === 'manual' ? 'tab-active' : 'tab-inactive'}`}>
           {activeTab === 'manual' && (
             <form onSubmit={handleManualSubmit} className="generate-form">
               <div className="form-section">
@@ -421,6 +422,8 @@ export function GeneratePage() {
             </form>
           )}
 
+          </div>
+          <div className={`tab-content ${activeTab === 'gitlab' ? 'tab-active' : 'tab-inactive'}`}>
           {activeTab === 'gitlab' && (
             <form onSubmit={handleGitLabSubmit} className="generate-form">
               <div className="form-section">
@@ -563,6 +566,7 @@ export function GeneratePage() {
               />
             </form>
           )}
+          </div>
         </Card>
       </div>
     </div>
