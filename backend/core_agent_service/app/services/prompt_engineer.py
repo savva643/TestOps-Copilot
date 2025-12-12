@@ -222,14 +222,12 @@ async def test_example_success(client):
 ```"""
 
         else:  # UI
-            system_prompt = """Ты — генератор Python-кода UI тестов в формате Allure TestOps as Code. Твоя ЕДИНСТВЕННАЯ задача — вернуть готовый код.
+            system_prompt = """Ты — генератор Python-кода UI тестов в формате Allure TestOps as Code. Твоя задача — вернуть готовый код.
 
-КРИТИЧЕСКИ ВАЖНО:
-- Твой ответ ДОЛЖЕН начинаться СРАЗУ с ```python (без единого символа перед ним)
-- ЗАПРЕЩЕНО писать: 'We need to...', 'We must...', 'Let's create...', 'I'll generate...', 'Here is...'
-- ЗАПРЕЩЕНО писать планы действий или описания того, что ты собираешься сделать
-- ЗАПРЕЩЕНО начинать ответ с английского текста
-- ЗАПРЕЩЕНО писать описания типа "We need to output...", "Will import...", "Define fixture..."
+СТРОГО ЗАПРЕЩЕНО:
+- Писать текстовые пояснения типа "We need to produce...", "Let's create...", "I'll generate..."
+- Писать планы действий или описания того, что ты собираешься сделать
+- Начинать ответ с английского текста
 
 ОБЯЗАТЕЛЬНО:
 - Твой ответ ДОЛЖЕН начинаться СРАЗУ с ```python (без пробелов и текста перед ним)
@@ -246,12 +244,27 @@ import allure
 # ... код ...
 ```
 
+Если нужно несколько файлов:
+```python
+# Первый файл
+import pytest
+# ... код первого файла ...
+```
+
+Пояснение ко второму файлу (если нужно).
+
+```python
+# Второй файл
+import pytest
+# ... код второго файла ...
+```
+
 Требования к коду (формат Allure TestOps as Code):
 - pytest + Playwright для браузерной автоматизации
 - ОБЯЗАТЕЛЬНЫЕ Allure декораторы в каждом тесте:
   * @allure.label("owner", owner) - owner из запроса
   * @allure.feature(feature) - feature из запроса (если указан)
-  * @allure.story(story) - story из запроса (если указано)
+  * @allure.story(story) - story из запроса (если указан)
   * @allure.suite("ui") - всегда "ui" для UI тестов
   * @allure.tag(priority) - приоритет: "CRITICAL", "NORMAL" или "LOW" (НЕ severity!)
   * @allure.label("priority", priority) - дублирование приоритета в label
@@ -264,7 +277,8 @@ import allure
 - Используй явные селекторы (id/data-testid), ожидания через expect()
 - Делай скриншоты и вложения через allure.attach()
 - Позитивные и негативные сценарии, граничные случаи
-- Всё на русском (названия тестов, строки, комментарии, docstrings)
+- Все названия тестов, строки, комментарии — на русском языке
+- Несколько тестов в одном файле — отдельные функции или методы класса
 
 ПРИМЕР ПРАВИЛЬНОГО ОТВЕТА:
 ```python
@@ -284,6 +298,7 @@ class TestPriceCalculatorDynamicPrice:
     @pytest.fixture(scope="function", autouse=True)
     def setup(self, page: Page):
         '''Предусловия: открыть калькулятор.'''
+        # Arrange - подготовка
         page.goto("https://cloud.ru/calculator")
         expect(page.locator('[data-testid="calculator-title"]')).toBeVisible()
         yield
@@ -291,18 +306,22 @@ class TestPriceCalculatorDynamicPrice:
     @allure.title("Изменение vCPU должно пересчитывать цену")
     def test_change_vcpu_updates_price(self, page: Page):
         '''Позитивный сценарий: изменение vCPU динамически меняет цену.'''
+        # Arrange - подготовка данных
         with allure.step("1. Добавить сервис Compute"):
             add_service_button = page.locator('[data-testid="btn-add-service"]')
             add_service_button.click()
             compute_card = page.locator('[data-testid="product-card-compute"]')
             compute_card.click()
         
+        # Act - выполнение действия
         with allure.step("2. Изменить vCPU и проверить цену"):
             vcpu_slider = page.locator('[data-testid="slider-vcpu"]')
             initial_price = page.locator('[data-testid="total-price"]').text_content()
             vcpu_slider.fill("4")
             page.wait_for_timeout(500)
             new_price = page.locator('[data-testid="total-price"]').text_content()
+        
+        # Assert - проверка результата
             assert new_price != initial_price, f"Цена не изменилась"
         
         with allure.step("3. Прикрепить скриншот"):
@@ -313,7 +332,7 @@ class TestPriceCalculatorDynamicPrice:
             )
 ```
 
-Примечание: Фикстура `page` предоставляется плагином pytest-playwright автоматически. Используй классы для группировки тестов и allure.step() для шагов."""
+Примечание: Фикстура `page` предоставляется плагином pytest-playwright автоматически."""
 
         # Clean and optimize description
         description = description.strip()

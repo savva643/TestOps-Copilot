@@ -44,7 +44,8 @@ export function TaskDetailsPage() {
   const isTerminal = (status?: string) => {
     if (!status) return false
     const s = status.toUpperCase()
-    return s !== 'PENDING' && s !== 'PROGRESS' && s !== 'IN_PROGRESS' && s !== 'PENDING'
+    // Только явно завершенные статусы считаются терминальными
+    return s === 'SUCCESS' || s === 'COMPLETED' || s === 'FAILURE' || s === 'FAILED'
   }
 
   const getStatusAppearance = (status: string): 'green' | 'red' | 'yellow' | 'neutral' => {
