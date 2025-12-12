@@ -139,6 +139,9 @@ nano backend/integration_gateway/.env
 nano frontend/dashboard/.env
 ```
 
+## Тестовый аккаунт
+Доступен по ссылке http://localhost/login?test
+К пути login просто добаляем параметр ?test
 ## Структура проекта
 
 ```
