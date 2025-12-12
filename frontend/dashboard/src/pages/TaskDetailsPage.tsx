@@ -19,6 +19,8 @@ interface TaskStatus {
   task_id: string
   status: string
   result?: any
+  updated_at?: string
+  created_at?: string
   error?: string
   progress?: {
     current: number
