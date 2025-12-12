@@ -247,32 +247,6 @@ export function TaskDetailsPage() {
     }
   }
 
-  const exportFormat = async (format: 'json' | 'yaml' | 'xml') => {
-    if (!taskId) return
-    
-    try {
-      const { createApiClient } = await import('../api/client')
-      const api = createApiClient()
-      const response = await api.get(`/api/v1/export/${taskId}`, {
-        params: { format },
-        responseType: 'blob',
-      })
-      
-      const blob = new Blob([response.data])
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `test_case_${taskId}.${format}`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-    } catch (err: any) {
-      console.error('Export failed', err)
-      alert(`Не удалось экспортировать в ${format.toUpperCase()}: ${err.response?.data?.detail || err.message}`)
-    }
-  }
-
   const downloadArtifacts = () => {
     if (!taskStatus) return
 
@@ -410,31 +384,13 @@ export function TaskDetailsPage() {
                       <span>Сгенерированные файлы ({files.length})</span>
                       <div className="code-actions" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <ButtonFilled 
-                          label="ZIP" 
+                          label="Скачать архив (ZIP)" 
                           onClick={downloadAllAsZip} 
                           size="s" 
                           appearance="primary" 
                         />
                         <ButtonFilled 
-                          label="JSON" 
-                          onClick={() => exportFormat('json')} 
-                          size="s" 
-                          appearance="neutral" 
-                        />
-                        <ButtonFilled 
-                          label="YAML" 
-                          onClick={() => exportFormat('yaml')} 
-                          size="s" 
-                          appearance="neutral" 
-                        />
-                        <ButtonFilled 
-                          label="XML" 
-                          onClick={() => exportFormat('xml')} 
-                          size="s" 
-                          appearance="neutral" 
-                        />
-                        <ButtonFilled 
-                          label="Артефакты" 
+                          label="Скачать артефакты" 
                           onClick={downloadArtifacts} 
                           size="s" 
                           appearance="neutral" 
@@ -449,7 +405,6 @@ export function TaskDetailsPage() {
                           <div className="code-header">
                             <span>
                               <strong>{file.filename}</strong>
-                              {file.description && <span style={{ marginLeft: '0.5rem', fontSize: '0.875rem', color: '#666' }}>с описанием</span>}
                               {isMarkdown && <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: '#667eea', background: '#f0f0ff', padding: '0.125rem 0.5rem', borderRadius: '4px' }}>Markdown</span>}
                             </span>
                             <div className="code-actions">
@@ -461,11 +416,6 @@ export function TaskDetailsPage() {
                               />
                             </div>
                           </div>
-                          {file.description && (
-                            <div style={{ padding: '0.75rem', background: '#f5f5f5', borderRadius: '4px', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
-                              {file.description}
-                            </div>
-                          )}
                           {isMarkdown ? (
                             <div className="markdown-content">
                               <ReactMarkdown remarkPlugins={[remarkGfm]}>
