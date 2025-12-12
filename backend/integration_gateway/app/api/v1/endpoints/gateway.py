@@ -114,6 +114,8 @@ async def task_status_ws(task_id: str, websocket: WebSocket):
     await websocket.accept()
     try:
         async with httpx.AsyncClient() as client:
+            # Первый запрос - получаем актуальный статус
+            first_request = True
             while True:
                 try:
                     resp = await client.get(
@@ -121,13 +123,26 @@ async def task_status_ws(task_id: str, websocket: WebSocket):
                         headers={"X-API-Key": settings.API_KEY},
                         timeout=10.0,
                     )
-                    await websocket.send_text(resp.text)
-
+                    
                     data = resp.json()
                     status = data.get("status", "").upper()
-                    if status not in ["PENDING", "PROGRESS", "IN_PROGRESS"]:
+                    
+                    # Если это первый запрос и задача уже завершена, отправляем статус и закрываем соединение
+                    if first_request and status not in ["PENDING", "PROGRESS", "IN_PROGRESS"]:
+                        await websocket.send_text(resp.text)
+                        logger.info("Task already completed on first WS request", task_id=task_id, status=status)
+                        break
+                    
+                    # Отправляем обновление только если задача еще активна
+                    if status in ["PENDING", "PROGRESS", "IN_PROGRESS"]:
+                        await websocket.send_text(resp.text)
+                    else:
+                        # Задача завершилась во время работы WebSocket
+                        await websocket.send_text(resp.text)
+                        logger.info("Task completed during WS connection", task_id=task_id, status=status)
                         break
 
+                    first_request = False
                     await asyncio.sleep(1.0)
                 except httpx.ConnectError as e:
                     logger.error("Connection error in Task WS", task_id=task_id, error=str(e))

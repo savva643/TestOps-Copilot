@@ -150,7 +150,34 @@ export function TaskDetailsPage() {
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data)
-          setTaskStatus(data)
+          
+          // Не обновляем статус если задача уже завершена (защита от устаревших данных)
+          setTaskStatus((currentStatus) => {
+            // Если текущий статус уже завершен, не перезаписываем его
+            if (currentStatus && isTerminal(currentStatus.status)) {
+              console.log('Ignoring WebSocket update - task already completed', {
+                current: currentStatus.status,
+                received: data.status
+              })
+              return currentStatus
+            }
+            
+            // Проверяем updated_at чтобы не перезаписывать новыми данными старыми
+            if (currentStatus && currentStatus.updated_at && data.updated_at) {
+              const currentTime = new Date(currentStatus.updated_at).getTime()
+              const receivedTime = new Date(data.updated_at).getTime()
+              if (receivedTime < currentTime) {
+                console.log('Ignoring WebSocket update - received older data', {
+                  current: currentStatus.updated_at,
+                  received: data.updated_at
+                })
+                return currentStatus
+              }
+            }
+            
+            return data
+          })
+          
           setError(null)
           if (isTerminal(data.status)) {
             ws.close()
@@ -200,13 +227,20 @@ export function TaskDetailsPage() {
   const fetchOnce = async (): Promise<boolean> => {
     if (!taskId) return false
     try {
+      console.log('Fetching initial task status from DB...', taskId)
       const status = await getTaskStatus(taskId)
+      console.log('Initial status loaded:', status.status, status.updated_at)
       setTaskStatus(status)
       setError(null)
       // Возвращаем true если задача уже завершена
-      return isTerminal(status.status)
+      const completed = isTerminal(status.status)
+      if (completed) {
+        console.log('Task is already completed, will not connect WebSocket')
+      }
+      return completed
     } catch (err: any) {
       const errorMsg = err.response?.data?.detail || err.message || 'Не удалось получить статус задачи'
+      console.error('Failed to fetch initial status:', errorMsg)
       setError(errorMsg)
       return false
     }
@@ -216,9 +250,13 @@ export function TaskDetailsPage() {
     // Сначала загружаем актуальный статус из БД через HTTP
     const loadInitialStatus = async () => {
       const isCompleted = await fetchOnce()
+      // Небольшая задержка чтобы HTTP запрос точно завершился перед WebSocket
+      await new Promise(resolve => setTimeout(resolve, 100))
       // Только если задача не завершена, подключаем WebSocket для обновлений
       if (!isCompleted) {
         connectWebSocket()
+      } else {
+        console.log('Task already completed, skipping WebSocket connection')
       }
     }
     
