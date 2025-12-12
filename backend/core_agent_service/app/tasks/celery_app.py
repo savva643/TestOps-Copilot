@@ -28,6 +28,19 @@ celery_app.conf.update(
     # Retry on failure
     task_default_retry_delay=60,  # 1 minute
     task_max_retries=3,
+    # Redis connection settings to avoid master/replica issues
+    broker_connection_retry_on_startup=True,
+    broker_connection_retry=True,
+    broker_connection_max_retries=10,
+    broker_transport_options={
+        'visibility_timeout': 3600,
+        'retry_policy': {
+            'timeout': 5.0
+        },
+        'health_check_interval': 30,
+        'socket_keepalive': True,
+        'socket_keepalive_options': {},
+    },
     # Explicitly include task modules
     include=['app.tasks.test_generation'],
 )
