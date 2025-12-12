@@ -11,7 +11,8 @@ import {
   MdAddCircle, 
   MdAssignment, 
   MdAnalytics,
-  MdPerson
+  MdPerson,
+  MdChat
 } from 'react-icons/md'
 import './Layout.css'
 
@@ -118,6 +119,16 @@ export function Layout({ children }: LayoutProps) {
             )}
           </div>
           <div className="header-actions">
+            {!isLoginPage && (
+              <button
+                className="gigachat-button"
+                onClick={() => navigate('/gigachat')}
+                aria-label="Гигачат"
+                title="Гигачат"
+              >
+                <MdChat className="gigachat-icon" />
+              </button>
+            )}
             {!isLoginPage && isAuthenticated && (
               <ButtonFilled
                 className="btn-primary"
