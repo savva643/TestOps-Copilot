@@ -447,7 +447,8 @@ export function GeneratePage() {
                       label={validatingToken ? 'Проверка...' : 'Проверить'}
                       onClick={handleValidateGitLabToken}
                       disabled={!gitlabToken.trim() || validatingToken || loading}
-                      size="s"
+                      size="l"
+                      style={{ height: '48px', minWidth: '140px' }}
                     />
                   </div>
                   {tokenValid && (

@@ -8,12 +8,15 @@ export async function getTaskStatus(taskId: string) {
 }
 
 export function getTasksWebSocketUrl(taskId: string) {
-  const base = import.meta.env.VITE_API_URL || 'https://testops.keep-pixel.ru'
+  const apiBase = import.meta.env.VITE_API_URL || 'https://testops.keep-pixel.ru'
   const apiKey = import.meta.env.VITE_API_KEY || 'testops-copilot-api-key-2024'
-  const wsBase = base.replace(/^http/, 'ws')
-  const url = new URL(`${wsBase}/api/v1/tasks/ws/${taskId}`)
-  url.searchParams.set('api_key', apiKey)
-  return url.toString()
+
+  const apiUrl = new URL(apiBase)
+  // Подбираем ws/wss по схеме API
+  const wsProtocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:'
+  const wsUrl = new URL(`${wsProtocol}//${apiUrl.host}/api/v1/tasks/ws/${taskId}`)
+  wsUrl.searchParams.set('api_key', apiKey)
+  return wsUrl.toString()
 }
 
 export interface TaskListItem {

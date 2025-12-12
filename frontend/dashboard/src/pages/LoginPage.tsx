@@ -11,6 +11,7 @@ export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const isTestMode = useMemo(() => new URLSearchParams(location.search).get('test') !== null, [location.search])
+  const appVersion = import.meta.env.VITE_APP_VERSION || 'v1.0.0'
   const [apiKeyId, setApiKeyId] = useState('')
   const [apiSecret, setApiSecret] = useState('')
   const [llmApiKey, setLlmApiKey] = useState('')
@@ -99,6 +100,17 @@ export function LoginPage() {
           <Card className="auth-card">
             <div className="vertical-gap">
               <div className="profile-info">
+                <div className="profile-field" style={{ background: 'var(--surface-secondary)', padding: '12px', borderRadius: '12px' }}>
+                  <p className="field-label">Версия приложения</p>
+                  <p className="field-value">TestOps Copilot — {appVersion}</p>
+                  <p className="helper" style={{ marginTop: '4px' }}>
+                    Разработано командой Сваровски. Репозиторий:{' '}
+                    <a href="https://github.com/savva643/TestOps-Copilot" target="_blank" rel="noreferrer">
+                      github.com/savva643/TestOps-Copilot
+                    </a>
+                  </p>
+                </div>
+
                 <div className="profile-field">
                   <p className="field-label">
                     Key ID (IAM)

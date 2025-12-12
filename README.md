@@ -123,6 +123,7 @@ CORS_ORIGINS=["http://localhost:3000","http://localhost:8000"]
 ```
 VITE_API_URL=https://testops.keep-pixel.ru
 VITE_API_KEY=testops-copilot-api-key-2024
+VITE_APP_VERSION=1.2.0
 ```
 
 Создание файлов через nano (на сервере, из корня репо):
