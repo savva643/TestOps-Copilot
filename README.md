@@ -85,6 +85,53 @@ npm run dev
 
 Экспорт схем: см. `docs/api/README.md`.
 
+### Обязательные .env (создать вручную)
+- `backend/core_agent_service/.env`
+- `backend/integration_gateway/.env`
+- `frontend/dashboard/.env`
+
+Пример `backend/core_agent_service/.env`:
+```
+SERVICE_NAME=core-agent-service
+DEBUG=false
+POSTGRES_URL=postgresql://testops:testops_password@postgres:5432/testops_db
+REDIS_URL=redis://redis:6379/0
+CELERY_BROKER_URL=redis://redis:6379/0
+CELERY_RESULT_BACKEND=redis://redis:6379/0
+CLOUD_RU_LLM_API_KEY=changeme-llm-key
+CLOUD_RU_LLM_API_URL=https://foundation-models.api.cloud.ru/v1
+CLOUD_RU_LLM_MODEL=openai/gpt-oss-120b
+SPEC_PARSER_URL=http://spec-parser-service:8000
+CODE_GENERATOR_URL=http://code-generator-service:8000
+CORS_ORIGINS=["http://localhost:3000","http://localhost:8000"]
+```
+
+Пример `backend/integration_gateway/.env`:
+```
+SERVICE_NAME=integration-gateway
+DEBUG=false
+API_KEY=testops-copilot-api-key-2024
+CORE_AGENT_URL=http://core-agent-service:8000
+SPEC_PARSER_URL=http://spec-parser-service:8000
+CODE_GENERATOR_URL=http://code-generator-service:8000
+TEST_OPTIMIZER_URL=http://test-optimizer-service:8000
+GITLAB_INTEGRATION_URL=http://gitlab-integration-service:8000
+CORS_ORIGINS=["http://localhost:3000","http://localhost:8000"]
+```
+
+Пример `frontend/dashboard/.env`:
+```
+VITE_API_URL=http://localhost:8000
+VITE_API_KEY=testops-copilot-api-key-2024
+```
+
+Создание файлов через nano (на сервере, из корня репо):
+```
+nano backend/core_agent_service/.env
+nano backend/integration_gateway/.env
+nano frontend/dashboard/.env
+```
+
 ## Структура проекта
 
 ```
