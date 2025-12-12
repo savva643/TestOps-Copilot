@@ -10,7 +10,6 @@ export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const isTestMode = useMemo(() => new URLSearchParams(location.search).get('test') !== null, [location.search])
-  const appVersion = import.meta.env.VITE_APP_VERSION || 'v1.0.0'
   const [apiKeyId, setApiKeyId] = useState('')
   const [apiSecret, setApiSecret] = useState('')
   const [llmApiKey, setLlmApiKey] = useState('')
