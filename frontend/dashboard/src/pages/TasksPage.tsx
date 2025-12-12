@@ -331,8 +331,8 @@ export function TasksPage() {
       <div className="tasks-container">
         <Card>
           <div className="search-form">
-            <div className="form-group">
-              <label htmlFor="taskId">ID задачи</label>
+            <label htmlFor="taskId" className="search-label">ID задачи</label>
+            <div className="search-input-row">
               <input
                 id="taskId"
                 type="text"
@@ -346,8 +346,6 @@ export function TasksPage() {
                   }
                 }}
               />
-            </div>
-            <div className="button-wrapper">
               <ButtonFilled
                 label={loading ? 'Проверка...' : 'Проверить статус'}
                 onClick={() => handleCheck()}

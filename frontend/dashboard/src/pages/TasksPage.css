@@ -67,54 +67,35 @@
 
 .search-form {
   display: flex;
-  gap: 1rem;
-  align-items: flex-end;
-}
-
-.search-form .form-group {
-  display: flex;
   flex-direction: column;
-  flex: 1;
+  gap: 0.75rem;
 }
 
-.search-form .form-group label {
-  margin-bottom: 0.5rem;
+.search-label {
   font-weight: 500;
   color: var(--text-primary);
+  font-size: 0.875rem;
 }
 
-
-.button-wrapper {
+.search-input-row {
   display: flex;
-  align-items: flex-end;
-  padding-bottom: 0;
+  gap: 1rem;
+  align-items: center;
+  width: 100%;
+}
+
+.search-input-row .task-input {
+  flex: 1;
+  min-width: 0;
 }
 
 /* Стили для кнопки "Проверить статус" */
-.check-status-button,
-.button-wrapper button,
-.button-wrapper a,
-.button-wrapper > * {
-  height: 46px !important;
-  min-height: 46px !important;
-  box-sizing: border-box;
-}
-
-/* Специфичные стили для кнопки из snack-uikit */
-.button-wrapper button[class*="Button"],
-.button-wrapper a[class*="Button"],
-.button-wrapper [class*="ButtonFilled"],
-.button-wrapper [class*="button-filled"] {
-  height: 46px !important;
-  min-height: 46px !important;
-  padding: 0 1.5rem !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+.search-input-row .check-status-button {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .task-input {
-  flex: 1;
   padding: 0.75rem;
   border: 1px solid var(--border-primary);
   border-radius: 6px;
@@ -124,6 +105,8 @@
     sans-serif;
   background: var(--surface-primary);
   color: var(--text-primary);
+  height: 46px;
+  box-sizing: border-box;
 }
 
 .task-input:focus {
@@ -641,12 +624,12 @@
 }
 
 @media (max-width: 768px) {
-  .search-form {
+  .search-input-row {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .button-wrapper {
+  .search-input-row .check-status-button {
     width: 100%;
   }
 

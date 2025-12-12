@@ -261,6 +261,7 @@ async def list_tasks(
     page_size: int = Query(default=10, ge=1, le=50),
 ):
     """Return paginated task list stored in Postgres."""
+    # Build base query
     query = db.query(TaskRecord)
     if owner_id:
         query = query.filter(TaskRecord.owner_id == owner_id)
@@ -268,7 +269,15 @@ async def list_tasks(
         ilike = f"%{search}%"
         query = query.filter(TaskRecord.task_id.ilike(ilike))
 
-    total = query.count()
+    # For count, use func.count to avoid selecting all columns
+    total = db.query(func.count(TaskRecord.task_id))
+    if owner_id:
+        total = total.filter(TaskRecord.owner_id == owner_id)
+    if search:
+        ilike = f"%{search}%"
+        total = total.filter(TaskRecord.task_id.ilike(ilike))
+    total = total.scalar() or 0
+    
     items = (
         query.order_by(TaskRecord.created_at.desc())
         .offset((page - 1) * page_size)
