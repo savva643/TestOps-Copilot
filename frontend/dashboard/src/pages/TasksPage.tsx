@@ -513,7 +513,6 @@ export function TasksPage() {
                               <div className="code-header">
                                 <span>
                                   <strong>{file.filename}</strong>
-                                  {file.description && <span style={{ marginLeft: '0.5rem', fontSize: '0.875rem', color: '#666' }}>с описанием</span>}
                                 </span>
                                 <div className="code-actions">
                                   <ButtonFilled 
@@ -524,11 +523,6 @@ export function TasksPage() {
                                   />
                                 </div>
                               </div>
-                              {file.description && (
-                                <div style={{ padding: '0.75rem', background: '#f5f5f5', borderRadius: '4px', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
-                                  {file.description}
-                                </div>
-                              )}
                               <pre className="code-content">{file.code}</pre>
                             </div>
                           ))}

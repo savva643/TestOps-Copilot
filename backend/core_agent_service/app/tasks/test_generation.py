@@ -11,6 +11,77 @@ from app.core.exceptions import LLMError, TaskError
 logger = structlog.get_logger()
 
 
+def filter_english_thinking_text(text: str) -> str:
+    """
+    Удаляет английский текст-раздумывание в начале объяснения.
+    Фильтрует фразы типа "We need to produce...", "Let's create...", "I'll generate..." и т.д.
+    """
+    if not text:
+        return text
+    
+    # Паттерны английского раздумывания
+    english_starters = [
+        "we need to",
+        "let's",
+        "i'll",
+        "i will",
+        "we should",
+        "we can",
+        "we will",
+        "let me",
+        "i need to",
+        "we must",
+        "i should",
+        "i can",
+        "i'm going to",
+        "we're going to",
+    ]
+    
+    lines = text.split('\n')
+    filtered_lines = []
+    skip_until_markdown = False
+    
+    for i, line in enumerate(lines):
+        line_lower = line.strip().lower()
+        
+        # Пропускаем пустые строки в начале
+        if not line_lower and not filtered_lines:
+            continue
+        
+        # Проверяем, начинается ли строка с английского раздумывания
+        starts_with_thinking = any(line_lower.startswith(starter) for starter in english_starters)
+        
+        # Если это английское раздумывание, пропускаем до первого markdown заголовка или русского текста
+        if starts_with_thinking:
+            skip_until_markdown = True
+            continue
+        
+        # Если мы пропускаем, ищем первый markdown заголовок (#) или русский текст
+        if skip_until_markdown:
+            # Проверяем, является ли строка markdown заголовком
+            if line.strip().startswith('#'):
+                skip_until_markdown = False
+                filtered_lines.append(line)
+            # Проверяем, есть ли в строке кириллица (русский текст)
+            elif any('\u0400' <= char <= '\u04FF' for char in line):
+                skip_until_markdown = False
+                filtered_lines.append(line)
+            # Пропускаем строку, если она не содержит кириллицу и не является заголовком
+            continue
+        
+        # Добавляем строку, если мы не в режиме пропуска
+        filtered_lines.append(line)
+    
+    result = '\n'.join(filtered_lines).strip()
+    
+    # Если после фильтрации остался только английский текст, возвращаем исходный
+    # (на случай, если весь текст был на английском, но не был раздумыванием)
+    if not result:
+        return text
+    
+    return result
+
+
 class ProgressTrackingTask(Task):
     """Custom task class with progress tracking."""
 
@@ -481,11 +552,13 @@ import pytest
 4. **Используемые библиотеки и инструменты** - pytest, httpx/allure и т.д.
 5. **Как использовать** - как запустить эти тесты
 
-Используй заголовки, списки, таблицы для структурирования информации."""
+Используй заголовки, списки, таблицы для структурирования информации.
+
+ВАЖНО: Начни ответ СРАЗУ с заголовка или русского текста. НЕ пиши английские фразы типа "We need to...", "Let's create...", "I'll generate..." в начале ответа."""
             
             explanation_response = loop.run_until_complete(
                 llm_client.generate(
-                    system_prompt="Ты помощник, объясняющий тестовый код. Объясни код на русском языке в формате Markdown с заголовками, списками и структурированной информацией.",
+                    system_prompt="Ты помощник, объясняющий тестовый код. Объясни код на русском языке в формате Markdown с заголовками, списками и структурированной информацией. НЕ пиши английские фразы-раздумывания в начале ответа. Начинай сразу с русского текста или заголовка Markdown.",
                     user_prompt=explanation_prompt,
                 )
             )
@@ -493,6 +566,8 @@ import pytest
             # Добавляем объяснение как description к файлам с кодом
             if explanation_response:
                 explanation_text = explanation_response.strip()
+                # Фильтруем английский текст-раздумывание в начале
+                explanation_text = filter_english_thinking_text(explanation_text)
                 for f in valid_code_files:
                     # Добавляем объяснение к каждому файлу (или только к первому)
                     if not f.get("description"):
@@ -677,6 +752,8 @@ import pytest
                 llm_explanation = None
                 if test_case_data["files"] and test_case_data["files"][0].get("description"):
                     llm_explanation = test_case_data["files"][0]["description"]
+                    # Фильтруем английский текст-раздумывание
+                    llm_explanation = filter_english_thinking_text(llm_explanation)
                 
                 # Генерируем техническое объяснение
                 technical_explanation = generate_explanation_md(
