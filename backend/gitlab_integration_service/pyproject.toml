@@ -1,21 +1,16 @@
 [project]
-name = "test-optimizer-service"
+name = "gitlab-integration-service"
 version = "0.1.0"
-description = "Test optimizer service for TestOps Copilot"
+description = "GitLab integration service for TestOps Copilot"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.104.0",
     "uvicorn[standard]>=0.24.0",
     "pydantic>=2.5.0",
     "pydantic-settings>=2.1.0",
-    "gitpython>=3.1.0",
-    "libcst>=1.1.0",
-    "ast-comments>=1.1.0",
     "httpx>=0.25.0",
-    "pyyaml>=6.0.0",
     "structlog>=23.2.0",
-    "psycopg2-binary>=2.9.0",
-    "redis>=5.0.0",
+    "python-multipart>=0.0.6",
 ]
 
 [project.optional-dependencies]
@@ -42,4 +37,6 @@ target-version = ['py311']
 [tool.isort]
 profile = "black"
 line_length = 100
+
+
 

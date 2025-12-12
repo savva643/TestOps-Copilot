@@ -36,8 +36,10 @@
 .logo-mark {
   width: 28px;
   height: 28px;
-  border-radius: 6px;
-  background: url('/logo.png') center/contain no-repeat, #26d07c;
+  background: url('/logo-header.png') center/contain no-repeat;
+  background-size: contain;
+  background-color: transparent;
+  flex-shrink: 0;
 }
 
 .logo-text {

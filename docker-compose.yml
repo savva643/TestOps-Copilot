@@ -163,6 +163,27 @@ services:
     networks:
       - testops-network
 
+  gitlab-integration-service:
+    build:
+      context: ./backend/gitlab_integration_service
+      dockerfile: Dockerfile
+    container_name: testops-gitlab-integration
+    ports:
+      - "8005:8000"
+    environment:
+      - CORE_AGENT_URL=http://core-agent-service:8000
+      - SPEC_PARSER_URL=http://spec-parser-service:8000
+      - CODE_GENERATOR_URL=http://code-generator-service:8000
+      - GITLAB_BASE_URL=https://gitlab.com/api/v4
+    depends_on:
+      - core-agent-service
+      - spec-parser-service
+      - code-generator-service
+    volumes:
+      - ./backend:/app/backend
+    networks:
+      - testops-network
+
   integration-gateway:
     build:
       context: ./backend/integration_gateway
@@ -177,12 +198,14 @@ services:
       - SPEC_PARSER_URL=http://spec-parser-service:8000
       - CODE_GENERATOR_URL=http://code-generator-service:8000
       - TEST_OPTIMIZER_URL=http://test-optimizer-service:8000
+      - GITLAB_INTEGRATION_URL=http://gitlab-integration-service:8000
       - API_KEY=testops-copilot-api-key-2024
     depends_on:
       - core-agent-service
       - spec-parser-service
       - code-generator-service
       - test-optimizer-service
+      - gitlab-integration-service
     networks:
       - testops-network
 

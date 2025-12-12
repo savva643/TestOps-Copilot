@@ -25,6 +25,10 @@ export interface TaskListItem {
   owner?: string
   owner_id?: string
   priority?: string
+  gitlab_url?: string
+  gitlab_merge_request_url?: string
+  gitlab_branch?: string
+  is_gitlab_task?: string
 }
 
 export interface TaskListResponse {

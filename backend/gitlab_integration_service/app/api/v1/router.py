@@ -1,12 +1,15 @@
 """Main API router for v1."""
 
 from fastapi import APIRouter
-from app.api.v1.endpoints import optimizer
+from app.api.v1.endpoints import gitlab
 
 api_router = APIRouter()
 
 api_router.include_router(
-    optimizer.router,
-    tags=["optimizer"],
+    gitlab.router,
+    prefix="/gitlab",
+    tags=["gitlab"],
 )
+
+
 

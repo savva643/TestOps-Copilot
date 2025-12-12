@@ -1,6 +1,9 @@
 .optimize-page {
   animation: fadeIn 0.3s ease-in;
   color: var(--text-primary);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
 }
 
 .page-header {
@@ -8,64 +11,238 @@
   margin-bottom: 2rem;
 }
 
-.page-header h1 {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
-  color: var(--text-primary);
+.optimize-alert {
+  margin-bottom: 2rem;
 }
 
-.page-header p {
+.optimize-card {
+  max-width: 800px;
+  margin: 0 auto 2rem;
+  padding: 2rem;
+}
+
+.card-title {
+  margin-bottom: 1rem;
+}
+
+.card-description {
   color: var(--text-secondary);
-  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
 }
 
-.coming-soon {
-  max-width: 600px;
-  margin: 4rem auto;
-  text-align: center;
-  background: var(--surface-primary);
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.hint-text {
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+  display: block;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem;
   border: 1px solid var(--border-primary);
-  border-radius: 12px;
+  border-radius: 6px;
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+select.form-input {
+  cursor: pointer;
+}
+
+.analyzing-container {
+  text-align: center;
   padding: 3rem;
 }
 
-.coming-soon-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--border-primary);
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1.5rem;
 }
 
-.coming-soon h2 {
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.results-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.result-card {
+  padding: 2rem;
+}
+
+.coverage-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 1rem;
+  background: var(--surface-secondary);
+  border-radius: 8px;
+}
+
+.stat-value {
   font-size: 2rem;
+  font-weight: bold;
+  color: #667eea;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.uncovered-section {
+  margin-top: 2rem;
+}
+
+.section-title {
+  font-weight: 600;
   margin-bottom: 1rem;
-  color: var(--text-primary);
+  display: block;
 }
 
-.coming-soon p {
-  color: var(--text-secondary);
-  margin-bottom: 1.5rem;
-  font-size: 1.1rem;
-}
-
-.features-list {
-  text-align: left;
+.endpoints-list {
   list-style: none;
   padding: 0;
+  margin: 0;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
-.features-list li {
-  padding: 0.75rem 0;
-  color: var(--text-secondary);
+.endpoints-list li {
+  padding: 0.5rem;
   border-bottom: 1px solid var(--border-primary);
 }
 
-.features-list li:last-child {
+.endpoints-list li:last-child {
   border-bottom: none;
 }
 
-.features-list li::before {
+.duplicates-stats {
+  margin: 1.5rem 0;
+}
+
+.duplicates-list {
+  margin-top: 1.5rem;
+}
+
+.duplicate-item {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: var(--surface-secondary);
+  border-radius: 8px;
+  border-left: 4px solid #f59e0b;
+}
+
+.duplicate-item strong {
+  color: var(--text-primary);
+}
+
+.recommendations-section,
+.best-practices-section {
+  margin-top: 2rem;
+}
+
+.recommendation-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: var(--surface-secondary);
+  border-radius: 8px;
+}
+
+.priority-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  height: fit-content;
+}
+
+.recommendation-content {
+  flex: 1;
+}
+
+.action-text {
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+  display: block;
+}
+
+.practices-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+}
+
+.practices-list li {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.practices-list li:last-child {
+  border-bottom: none;
+}
+
+.practices-list li::before {
   content: '✓ ';
-  color: #667eea;
+  color: #10b981;
   font-weight: bold;
   margin-right: 0.5rem;
+}
+
+.actions-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
 }
 

@@ -247,6 +247,32 @@ export function TaskDetailsPage() {
     }
   }
 
+  const exportFormat = async (format: 'json' | 'yaml' | 'xml') => {
+    if (!taskId) return
+    
+    try {
+      const { createApiClient } = await import('../api/client')
+      const api = createApiClient()
+      const response = await api.get(`/api/v1/export/${taskId}`, {
+        params: { format },
+        responseType: 'blob',
+      })
+      
+      const blob = new Blob([response.data])
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `test_case_${taskId}.${format}`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err: any) {
+      console.error('Export failed', err)
+      alert(`Не удалось экспортировать в ${format.toUpperCase()}: ${err.response?.data?.detail || err.message}`)
+    }
+  }
+
   const downloadArtifacts = () => {
     if (!taskStatus) return
 
@@ -382,15 +408,33 @@ export function TaskDetailsPage() {
                   <div className="test-files-section">
                     <div className="code-header" style={{ marginBottom: '1rem' }}>
                       <span>Сгенерированные файлы ({files.length})</span>
-                      <div className="code-actions">
+                      <div className="code-actions" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <ButtonFilled 
-                          label="Скачать архив (ZIP)" 
+                          label="ZIP" 
                           onClick={downloadAllAsZip} 
                           size="s" 
                           appearance="primary" 
                         />
                         <ButtonFilled 
-                          label="Скачать артефакты" 
+                          label="JSON" 
+                          onClick={() => exportFormat('json')} 
+                          size="s" 
+                          appearance="neutral" 
+                        />
+                        <ButtonFilled 
+                          label="YAML" 
+                          onClick={() => exportFormat('yaml')} 
+                          size="s" 
+                          appearance="neutral" 
+                        />
+                        <ButtonFilled 
+                          label="XML" 
+                          onClick={() => exportFormat('xml')} 
+                          size="s" 
+                          appearance="neutral" 
+                        />
+                        <ButtonFilled 
+                          label="Артефакты" 
                           onClick={downloadArtifacts} 
                           size="s" 
                           appearance="neutral" 

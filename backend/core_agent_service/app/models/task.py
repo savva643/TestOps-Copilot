@@ -27,6 +27,12 @@ class TaskRecord(Base):
     last_error = Column(Text, nullable=True)
     result_summary = Column(Text, nullable=True)
     progress_message = Column(Text, nullable=True)
+    # GitLab integration fields
+    gitlab_url = Column(String, nullable=True)
+    gitlab_merge_request_url = Column(String, nullable=True)
+    gitlab_branch = Column(String, nullable=True)
+    gitlab_spec_path = Column(String, nullable=True)
+    is_gitlab_task = Column(String, nullable=True, default="false")  # "true" or "false" as string
 
     def update_status(
         self,

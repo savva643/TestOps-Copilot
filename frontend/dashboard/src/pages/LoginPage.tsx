@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card } from '@snack-uikit/card'
 import { Typography } from '@snack-uikit/typography'
-import { ButtonFilled } from '@snack-uikit/button'
+import { ButtonFilled, ButtonOutlined } from '@snack-uikit/button'
 import { Alert } from '@snack-uikit/alert'
 import { Divider } from '@snack-uikit/divider'
 import './AuthPage.css'
-import { fetchIamToken, storeCredentials, storeToken, getStoredCredentials, clearCredentials, getStoredToken } from '../api/auth'
+import { fetchIamToken, storeCredentials, storeToken, getStoredCredentials, clearCredentials, getStoredToken, getStoredGitLabCredentials, clearGitLabCredentials } from '../api/auth'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -128,6 +128,27 @@ export function LoginPage() {
                     <Typography family="sans" purpose="body" size="s" className="helper">
                       Токен автоматически обновляется при необходимости
                     </Typography>
+                  </div>
+                )}
+
+                {gitlabCreds && (
+                  <div className="profile-field">
+                    <Typography family="sans" purpose="body" size="s" className="field-label">
+                      GitLab подключение
+                    </Typography>
+                    <Typography family="sans" purpose="body" size="m" className="field-value">
+                      {gitlabCreds.user || 'Подключено'}
+                    </Typography>
+                    <Typography family="sans" purpose="body" size="s" className="helper">
+                      URL: {gitlabCreds.url}
+                    </Typography>
+                    <ButtonOutlined
+                      label="Отключить GitLab"
+                      onClick={handleGitLabLogout}
+                      size="s"
+                      appearance="destructive"
+                      style={{ marginTop: '0.5rem' }}
+                    />
                   </div>
                 )}
               </div>

@@ -405,7 +405,25 @@ export function TasksPage() {
                   <div className="history-item-meta">
                     <span>{item.created_at ? new Date(item.created_at).toLocaleString('ru-RU') : '—'}</span>
                     {item.test_type && <span className="test-type-badge">{item.test_type}</span>}
+                    {item.is_gitlab_task === 'true' && (
+                      <span className="gitlab-badge" style={{ background: '#fc6d26', color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem' }}>
+                        GitLab
+                      </span>
+                    )}
                   </div>
+                  {item.gitlab_merge_request_url && (
+                    <div style={{ marginTop: '0.5rem' }}>
+                      <a
+                        href={item.gitlab_merge_request_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ color: '#fc6d26', fontSize: '0.875rem', textDecoration: 'none' }}
+                      >
+                        → Merge Request
+                      </a>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
