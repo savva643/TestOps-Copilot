@@ -49,3 +49,19 @@ format: ## Format code
 install-pre-commit: ## Install pre-commit hooks
 	pre-commit install
 
+swagger-export: ## Export OpenAPI specs to docs/api
+	mkdir -p docs/api
+	@echo "Exporting gateway..."
+	-@curl -s http://localhost:8000/openapi.json -o docs/api/gateway-openapi.json
+	@echo "Exporting core-agent..."
+	-@curl -s http://localhost:8001/openapi.json -o docs/api/core-agent-openapi.json
+	@echo "Exporting spec-parser..."
+	-@curl -s http://localhost:8002/openapi.json -o docs/api/spec-parser-openapi.json
+	@echo "Exporting code-generator..."
+	-@curl -s http://localhost:8003/openapi.json -o docs/api/code-generator-openapi.json
+	@echo "Exporting test-optimizer..."
+	-@curl -s http://localhost:8004/openapi.json -o docs/api/test-optimizer-openapi.json
+	@echo "Exporting gitlab-integration..."
+	-@curl -s http://localhost:8005/openapi.json -o docs/api/gitlab-integration-openapi.json
+	@echo "Done. Check docs/api/*.json"
+

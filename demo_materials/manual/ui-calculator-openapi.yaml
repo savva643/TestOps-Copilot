@@ -1,0 +1,168 @@
+openapi: 3.0.0
+info:
+  title: Cloud.ru Calculator UI
+  version: "1.0.0"
+  description: |
+    Упрощённая схема экранов для генерации UI тест-кейсов (25-35 шт).
+    Покрывает главную страницу, каталог продуктов и конфигурацию Compute.
+servers:
+  - url: https://cloud.ru
+paths:
+  /:
+    get:
+      summary: Главная страница
+      description: |
+        Отображение баннера, поиска, навигации и CTA кнопок.
+      tags: [ui]
+      responses:
+        "200":
+          description: Главная страница открывается
+          content:
+            text/html:
+              schema:
+                type: object
+                properties:
+                  heroVisible:
+                    type: boolean
+                  searchField:
+                    type: boolean
+                  ctaButtons:
+                    type: array
+                    items:
+                      type: string
+  /catalog:
+    get:
+      summary: Каталог продуктов
+      description: |
+        Фильтры, категории, карточки Compute/Storage/Network.
+      tags: [ui]
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: Поиск по названию продукта
+        - in: query
+          name: category
+          schema:
+            type: string
+            enum: [compute, storage, network, database]
+      responses:
+        "200":
+          description: Каталог загружается
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ProductCard"
+  /catalog/compute/{id}:
+    get:
+      summary: Карточка продукта Compute
+      description: |
+        Проверка карточки виртуальной машины, прайсинга, кнопок "Рассчитать".
+      tags: [ui]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Карточка отображается
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeCard"
+  /calculator/compute:
+    post:
+      summary: Конфигурация VM (UI форма)
+      description: |
+        Настройка CPU/RAM/Disk/Region, расчёт стоимости, валидация полей.
+      tags: [ui]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComputeConfig"
+      responses:
+        "200":
+          description: Стоимость рассчитана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeQuote"
+        "400":
+          description: Ошибка валидации (например, пустой регион или некорректное значение CPU)
+components:
+  schemas:
+    ProductCard:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        hasCalculator:
+          type: boolean
+    ComputeCard:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        priceFrom:
+          type: number
+        ctaText:
+          type: string
+        breadcrumbs:
+          type: array
+          items:
+            type: string
+    ComputeConfig:
+      type: object
+      required: [cpu, ram, disk, region]
+      properties:
+        cpu:
+          type: integer
+          minimum: 1
+          maximum: 64
+        ram:
+          type: number
+          minimum: 1
+          maximum: 256
+        disk:
+          type: number
+          minimum: 10
+          maximum: 2000
+        region:
+          type: string
+          enum: [ru-msk, ru-spb, kz-ast]
+        os:
+          type: string
+          enum: [linux, windows]
+    ComputeQuote:
+      type: object
+      properties:
+        monthlyCost:
+          type: number
+        currency:
+          type: string
+        breakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              item:
+                type: string
+              cost:
+                type: number
+

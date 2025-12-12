@@ -1,0 +1,17 @@
+[
+  {
+    "date": "2025-01-15",
+    "scenario": "ui-calculator-10-cases",
+    "duration_sec": 24,
+    "correctness_pct": 86,
+    "notes": "UI калькулятор, 10 кейсов"
+  },
+  {
+    "date": "2025-01-15",
+    "scenario": "api-evolution-8-cases",
+    "duration_sec": 18,
+    "correctness_pct": 82,
+    "notes": "Evolution API sample, 8 кейсов"
+  }
+]
+

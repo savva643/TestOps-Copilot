@@ -47,42 +47,43 @@ AI-ассистент для автоматизации рутинной раб�
 ### Запуск через Docker Compose
 
 ```bash
-# Клонировать репозиторий
 git clone <repository-url>
 cd testops-copilot
-
-# Запустить все сервисы
 docker-compose up -d
-
-# Проверить статус
 docker-compose ps
 ```
 
-Сервисы будут доступны:
+Сервисы:
 - Frontend Dashboard: http://localhost:3000
-- Integration Gateway: http://localhost:8000
-- API Documentation: http://localhost:8000/docs
+- Integration Gateway (API): http://localhost:8000
+- Swagger UI (gateway): http://localhost:8000/docs
 
 ### Локальная разработка
 
-#### Backend сервисы
-
+Backend (пример для core-agent):
 ```bash
-# Установить зависимости (используя uv)
 cd backend/core_agent_service
 uv sync
-
-# Запустить сервис
 uv run uvicorn app.main:app --reload --port 8001
 ```
 
-#### Frontend
-
+Frontend:
 ```bash
 cd frontend/dashboard
 npm install
 npm run dev
 ```
+
+### Swagger/OpenAPI
+Все сервисы на FastAPI, Swagger UI доступен по `/docs`, OpenAPI по `/openapi.json`.
+- Gateway: http://localhost:8000/docs
+- Core agent: http://localhost:8001/docs
+- Spec parser: http://localhost:8002/docs
+- Code generator: http://localhost:8003/docs
+- Test optimizer: http://localhost:8004/docs
+- GitLab integration: http://localhost:8005/docs
+
+Экспорт схем: см. `docs/api/README.md`.
 
 ## Структура проекта
 
@@ -111,15 +112,13 @@ testops-copilot/
     └── nginx/
 ```
 
-## API Endpoints
-
-### Integration Gateway (http://localhost:8000)
-
-- `POST /api/v1/generate/test-case` - Генерация тест-кейса
-- `POST /api/v1/generate/autotest` - Генерация автотеста
-- `POST /api/v1/parse/specification` - Парсинг спецификации
-- `GET /api/v1/tasks/{task_id}` - Статус задачи
-- `POST /api/v1/optimize/coverage` - Анализ покрытия
+## Документация и примеры
+- Пользовательское руководство: `docs/USER_GUIDE.md`
+- Демо-сценарий: `docs/DEMO_SCENARIO.md`
+- План метрик: `docs/METRICS_PLAN.md`
+- Swagger/OpenAPI чек-лист: `docs/API_DOCS_CHECKLIST.md`
+- Архитектура: `docs/ARCHITECTURE.md`
+- Демо-материалы: `demo_materials/` (UI/API/GitLab)
 
 ## Конфигурация
 

@@ -1,0 +1,14 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Integration Gateway API",
+    "version": "0.1.0",
+    "description": "Swagger экспорт (сжатый) для демонстрации. Сгенерируйте актуальную схему командой `make swagger-export`."
+  },
+  "servers": [
+    { "url": "http://localhost:8000" }
+  ],
+  "paths": {},
+  "components": {}
+}
+

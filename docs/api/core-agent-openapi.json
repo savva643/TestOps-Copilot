@@ -1,0 +1,14 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Core Agent API",
+    "version": "0.1.0",
+    "description": "Заготовка OpenAPI; обновите реальной схемой через `make swagger-export`."
+  },
+  "servers": [
+    { "url": "http://localhost:8001" }
+  ],
+  "paths": {},
+  "components": {}
+}
+

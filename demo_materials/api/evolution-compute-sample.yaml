@@ -1,0 +1,167 @@
+openapi: 3.0.0
+info:
+  title: Evolution Compute API (sample)
+  version: "1.0.0"
+servers:
+  - url: https://api.cloud.ru/compute/v1
+paths:
+  /vms:
+    get:
+      summary: Список ВМ
+      tags: [vm]
+      responses:
+        "200":
+          description: Список виртуальных машин
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VM"
+    post:
+      summary: Создание ВМ
+      tags: [vm]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VMCreateRequest"
+      responses:
+        "201":
+          description: ВМ создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VM"
+        "400":
+          description: Ошибка валидации
+  /vms/{id}:
+    get:
+      summary: Детали ВМ
+      tags: [vm]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Карточка ВМ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VM"
+        "404":
+          description: Не найдено
+    delete:
+      summary: Удаление ВМ
+      tags: [vm]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Удалено
+        "404":
+          description: Не найдено
+  /flavors:
+    get:
+      summary: Доступные конфигурации
+      tags: [catalog]
+      responses:
+        "200":
+          description: Перечень flavor
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Flavor"
+  /disks:
+    post:
+      summary: Создать диск
+      tags: [disk]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DiskCreateRequest"
+      responses:
+        "201":
+          description: Диск создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Disk"
+        "400":
+          description: Ошибка валидации
+components:
+  schemas:
+    VM:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [building, active, stopped, error]
+        flavorId:
+          type: string
+        disks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Disk"
+    VMCreateRequest:
+      type: object
+      required: [name, flavorId, image, region]
+      properties:
+        name:
+          type: string
+        flavorId:
+          type: string
+        image:
+          type: string
+        region:
+          type: string
+        sshKey:
+          type: string
+    Flavor:
+      type: object
+      properties:
+        id:
+          type: string
+        vcpu:
+          type: integer
+        ram:
+          type: integer
+        disk:
+          type: integer
+    Disk:
+      type: object
+      properties:
+        id:
+          type: string
+        size:
+          type: integer
+        type:
+          type: string
+          enum: [hdd, ssd]
+    DiskCreateRequest:
+      type: object
+      required: [size, type]
+      properties:
+        size:
+          type: integer
+          minimum: 10
+        type:
+          type: string
+          enum: [hdd, ssd]
+

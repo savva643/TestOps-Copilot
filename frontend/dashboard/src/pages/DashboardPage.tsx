@@ -119,6 +119,54 @@ export function DashboardPage() {
         updated: task.updated_at ? new Date(task.updated_at).toLocaleDateString('ru-RU') : '—',
       }))
   }, [tasks])
+
+  // Лёгкий мониторинг: успех, средняя длительность, GitLab-задачи, очередь
+  const monitoringCards = useMemo(() => {
+    const completed = tasks.filter((t) => {
+      const s = t.status.toUpperCase()
+      return s === 'SUCCESS' || s === 'COMPLETED'
+    })
+    const failed = tasks.filter((t) => {
+      const s = t.status.toUpperCase()
+      return s === 'FAILURE' || s === 'FAILED'
+    })
+    const pending = tasks.filter((t) => {
+      const s = t.status.toUpperCase()
+      return s === 'PENDING' || s === 'PROGRESS' || s === 'IN_PROGRESS'
+    })
+
+    const successBase = completed.length + failed.length
+    const successRate = successBase > 0 ? `${Math.round((completed.length / successBase) * 100)}%` : '—'
+
+    const durationsSeconds = completed
+      .map((t) => {
+        if (!t.created_at || !t.updated_at) return null
+        const start = new Date(t.created_at).getTime()
+        const end = new Date(t.updated_at).getTime()
+        if (Number.isNaN(start) || Number.isNaN(end) || end <= start) return null
+        return Math.round((end - start) / 1000)
+      })
+      .filter((v): v is number => v !== null)
+
+    const avgDuration =
+      durationsSeconds.length > 0
+        ? (() => {
+            const avg = durationsSeconds.reduce((a, b) => a + b, 0) / durationsSeconds.length
+            if (avg >= 90) return `${Math.round(avg / 60)} мин`
+            return `${Math.round(avg)} сек`
+          })()
+        : '—'
+
+    const gitlabTasks = tasks.filter((t) => t.is_gitlab_task === 'true' || t.gitlab_url).length
+
+    return [
+      { title: 'Успех задач', value: successRate, hint: 'SUCCESS / (SUCCESS + FAILED)' },
+      { title: 'Средняя длительность', value: avgDuration, hint: 'для завершённых задач' },
+      { title: 'GitLab задачи', value: gitlabTasks.toString(), hint: 'c GitLab URL/MR' },
+      { title: 'В очереди', value: pending.length.toString(), hint: 'PENDING / IN_PROGRESS' },
+    ]
+  }, [tasks])
+
   return (
     <div className="dashboard-page">
       <div className="page-header">
@@ -144,6 +192,27 @@ export function DashboardPage() {
             <p className="stat-hint">{item.hint}</p>
           </Card>
         ))}
+      </div>
+
+      <div className="panel">
+        <div className="panel-header">
+          <div>
+            <h3 className="panel-title">Мониторинг</h3>
+            <p className="panel-hint">Качество выполнения задач и очередь (live из API)</p>
+          </div>
+          <div className="panel-actions">
+            <ButtonFilled label="Обновить" size="s" appearance="primary" onClick={fetchTasks} />
+          </div>
+        </div>
+        <div className="monitoring-grid">
+          {monitoringCards.map((item) => (
+            <Card key={item.title} className="stat-card">
+              <h3>{item.title}</h3>
+              <div className="stat-value">{item.value}</div>
+              <p className="stat-hint">{item.hint}</p>
+            </Card>
+          ))}
+        </div>
       </div>
 
       <div className="cta-grid">

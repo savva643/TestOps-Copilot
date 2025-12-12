@@ -1,0 +1,14 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Spec Parser API",
+    "version": "0.1.0",
+    "description": "Заготовка OpenAPI; экспортируйте актуальную схему через `make swagger-export`."
+  },
+  "servers": [
+    { "url": "http://localhost:8002" }
+  ],
+  "paths": {},
+  "components": {}
+}
+
