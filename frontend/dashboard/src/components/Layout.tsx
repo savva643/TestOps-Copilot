@@ -123,7 +123,7 @@ export function Layout({ children }: LayoutProps) {
                 className="btn-primary"
                 label="Профиль"
                 size="s"
-                onClick={() => navigate('/login')}
+                onClick={() => navigate('/profile')}
               />
             )}
             {!isLoginPage && !isAuthenticated && (
@@ -173,8 +173,8 @@ export function Layout({ children }: LayoutProps) {
             })}
             {isAuthenticated && (
               <Link 
-                className={`bottom-nav-item ${location.pathname === '/login' ? 'active' : ''}`} 
-                to="/login"
+                className={`bottom-nav-item ${location.pathname === '/profile' ? 'active' : ''}`} 
+                to="/profile"
                 title="Профиль"
               >
                 <MdPerson className="bottom-nav-icon" />

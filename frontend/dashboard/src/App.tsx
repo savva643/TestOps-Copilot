@@ -7,6 +7,7 @@ import { TasksPage } from './pages/TasksPage'
 import { TaskDetailsPage } from './pages/TaskDetailsPage'
 import { OptimizePage } from './pages/OptimizePage'
 import { LoginPage } from './pages/LoginPage'
+import { ProfilePage } from './pages/ProfilePage'
 
 function App() {
   return (
@@ -14,6 +15,16 @@ function App() {
       <Layout>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <div className="page-transition">
+                  <ProfilePage />
+                </div>
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/"
             element={

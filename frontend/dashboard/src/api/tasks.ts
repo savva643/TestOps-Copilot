@@ -11,12 +11,22 @@ export function getTasksWebSocketUrl(taskId: string) {
   const apiBase = import.meta.env.VITE_API_URL || 'https://testops.keep-pixel.ru'
   const apiKey = import.meta.env.VITE_API_KEY || 'testops-copilot-api-key-2024'
 
-  const apiUrl = new URL(apiBase)
-  // Подбираем ws/wss по схеме API
-  const wsProtocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:'
-  const wsUrl = new URL(`${wsProtocol}//${apiUrl.host}/api/v1/tasks/ws/${taskId}`)
-  wsUrl.searchParams.set('api_key', apiKey)
-  return wsUrl.toString()
+  try {
+    const apiUrl = new URL(apiBase)
+    // Подбираем ws/wss по схеме API
+    const wsProtocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:'
+    // Используем hostname вместо host, чтобы избежать проблем с портами
+    const wsHost = apiUrl.hostname + (apiUrl.port ? `:${apiUrl.port}` : '')
+    const wsUrl = new URL(`${wsProtocol}//${wsHost}/api/v1/tasks/ws/${taskId}`)
+    wsUrl.searchParams.set('api_key', apiKey)
+    return wsUrl.toString()
+  } catch (error) {
+    // Fallback если URL невалидный
+    console.error('Error constructing WebSocket URL:', error)
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const host = window.location.host
+    return `${protocol}//${host}/api/v1/tasks/ws/${taskId}?api_key=${apiKey}`
+  }
 }
 
 export interface TaskListItem {
