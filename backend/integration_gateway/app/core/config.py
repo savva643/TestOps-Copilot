@@ -24,10 +24,16 @@ class Settings(BaseSettings):
 
     # CORS
     CORS_ORIGINS: List[str] = [
+        # локальная разработка
         "http://localhost:3000",
         "http://localhost:8000",
+        # прод/сервер
         "https://testops.keep-pixel.ru",
         "http://testops.keep-pixel.ru",
+        "http://testops.keep-pixel.ru:8000",
+        "http://144.31.104.8:3000",
+        "http://144.31.104.8",
+        "https://144.31.104.8",
     ]
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
