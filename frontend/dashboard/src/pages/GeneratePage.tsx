@@ -4,10 +4,9 @@ import { generateTestCase } from '../api/testGeneration'
 import { parseOpenAPI, ParseOpenAPIResponse } from '../api/parser'
 import { generateAndCommitTests, validateGitLabToken, GitLabValidateResponse } from '../api/gitlabIntegration'
 import { getStoredGitLabCredentials, storeGitLabCredentials } from '../api/auth'
-import { ButtonFilled, ButtonOutlined } from '@snack-uikit/button'
+import { ButtonFilled, ButtonOutline } from '@snack-uikit/button'
 import { Card } from '@snack-uikit/card'
 import { Alert } from '@snack-uikit/alert'
-import { Typography } from '@snack-uikit/typography'
 import { Divider } from '@snack-uikit/divider'
 import './GeneratePage.css'
 
@@ -223,10 +222,10 @@ export function GeneratePage() {
   return (
     <div className="generate-page">
       <div className="page-header">
-        <Typography family="sans" purpose="title" size="l">Генерация тест-кейсов</Typography>
-        <Typography family="sans" purpose="body" size="m">
+        <h1>Генерация тест-кейсов</h1>
+        <p>
           Ручная генерация или автоматическая через GitLab репозиторий
-        </Typography>
+        </p>
       </div>
 
       <Divider />
@@ -252,15 +251,19 @@ export function GeneratePage() {
       <div className="generate-container">
         <Card>
           {error && (
-            <Alert appearance="error" title="Ошибка" description={error} style={{ marginBottom: '1rem' }} />
+            <div style={{ marginBottom: '1rem' }}>
+              <Alert appearance="error" title="Ошибка" description={error} />
+            </div>
           )}
 
           {activeTab === 'manual' && (
             <form onSubmit={handleManualSubmit} className="generate-form">
               <div className="form-section">
-                <Typography family="sans" purpose="title" size="m" style={{ marginBottom: '1rem' }}>
-                  Конфигурация теста
-                </Typography>
+                <div style={{ marginBottom: '1rem' }}>
+                  <h2>
+                    Конфигурация теста
+                  </h2>
+                </div>
                 <div className="form-grid">
                   <div className="form-group">
                     <label htmlFor="testType">Тип теста *</label>
@@ -339,9 +342,11 @@ export function GeneratePage() {
               </div>
 
               <div className="form-section">
-                <Typography family="sans" purpose="title" size="m" style={{ marginBottom: '1rem' }}>
-                  Входные данные
-                </Typography>
+                <div style={{ marginBottom: '1rem' }}>
+                  <h2>
+                    Входные данные
+                  </h2>
+                </div>
                 {testType === 'api' && (
                   <div className="form-group">
                     <label htmlFor="file">Загрузить спецификацию OpenAPI (необязательно)</label>
@@ -419,9 +424,9 @@ export function GeneratePage() {
           {activeTab === 'gitlab' && (
             <form onSubmit={handleGitLabSubmit} className="generate-form">
               <div className="form-section">
-                <Typography family="sans" purpose="title" size="m" style={{ marginBottom: '1rem' }}>
+                <h2 style={{ marginBottom: '1rem' }}>
                   Подключение к GitLab
-                </Typography>
+                </h2>
 
                 <div className="form-group">
                   <label>GitLab Personal Access Token *</label>
@@ -435,7 +440,7 @@ export function GeneratePage() {
                       disabled={loading || validatingToken}
                       style={{ flex: 1 }}
                     />
-                    <ButtonOutlined
+                    <ButtonOutline
                       label={validatingToken ? 'Проверка...' : 'Проверить'}
                       onClick={handleValidateGitLabToken}
                       disabled={!gitlabToken.trim() || validatingToken || loading}
@@ -453,9 +458,9 @@ export function GeneratePage() {
                       )}
                     </div>
                   )}
-                  <Typography family="sans" purpose="caption" size="s" style={{ marginTop: '0.5rem', display: 'block' }}>
+                  <p style={{ marginTop: '0.5rem', display: 'block' }}>
                     Создайте токен в GitLab: Settings → Access Tokens → Personal Access Tokens
-                  </Typography>
+                  </p>
                 </div>
 
                 <div className="form-group">
@@ -474,9 +479,9 @@ export function GeneratePage() {
               <Divider style={{ margin: '1.5rem 0' }} />
 
               <div className="form-section">
-                <Typography family="sans" purpose="title" size="m" style={{ marginBottom: '1rem' }}>
-                  Параметры генерации
-                </Typography>
+                <div style={{ marginBottom: '1rem' }}>
+                  <h2>Параметры генерации</h2>
+                </div>
 
                 <div className="form-group">
                   <label>GitLab URL проекта *</label>

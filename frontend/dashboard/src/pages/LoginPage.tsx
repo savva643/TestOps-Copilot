@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card } from '@snack-uikit/card'
-import { Typography } from '@snack-uikit/typography'
-import { ButtonFilled, ButtonOutlined } from '@snack-uikit/button'
+import { ButtonFilled, ButtonOutline } from '@snack-uikit/button'
 import { Alert } from '@snack-uikit/alert'
 import { Divider } from '@snack-uikit/divider'
 import './AuthPage.css'
-import { fetchIamToken, storeCredentials, storeToken, getStoredCredentials, clearCredentials, getStoredToken, getStoredGitLabCredentials, clearGitLabCredentials } from '../api/auth'
+import { fetchIamToken, storeCredentials, storeToken, getStoredCredentials, clearCredentials, getStoredToken, getStoredGitLabCredentials, clearGitLabCredentials, storeGitLabCredentials } from '../api/auth'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -17,6 +16,7 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [gitlabCreds, setGitlabCreds] = useState<{ user: string; url: string } | null>(null)
 
   // Функция для маскировки чувствительных данных
   const maskSensitiveData = (value: string, showFirst: number = 4, showLast: number = 4): string => {
@@ -42,6 +42,10 @@ export function LoginPage() {
       if (token) {
         setAccessToken(token)
       }
+    }
+    const gitlabCreds = getStoredGitLabCredentials()
+    if (gitlabCreds) {
+      setGitlabCreds({ user: gitlabCreds.user || '', url: gitlabCreds.url })
     }
   }, [])
 
@@ -74,14 +78,19 @@ export function LoginPage() {
     navigate('/')
   }
 
+  const handleGitLabLogout = () => {
+    clearGitLabCredentials()
+    setGitlabCreds(null)
+  }
+
   if (isAuthenticated) {
     return (
       <div className="auth-page">
         <div className="auth-header">
-          <Typography family="sans" purpose="title" size="l">Профиль</Typography>
-          <Typography family="sans" purpose="body" size="m" className="helper">
+          <h1>Профиль</h1>
+          <p className="helper">
             Информация о сохранённых ключах и токенах
-          </Typography>
+          </p>
         </div>
 
         <div className="auth-container">
@@ -89,73 +98,74 @@ export function LoginPage() {
             <div className="vertical-gap">
               <div className="profile-info">
                 <div className="profile-field">
-                  <Typography family="sans" purpose="body" size="s" className="field-label">
+                  <p className="field-label">
                     Key ID (IAM)
-                  </Typography>
-                  <Typography family="sans" purpose="body" size="m" className="field-value">
+                  </p>
+                  <p className="field-value">
                     {apiKeyId}
-                  </Typography>
+                  </p>
                 </div>
 
                 <div className="profile-field">
-                  <Typography family="sans" purpose="body" size="s" className="field-label">
+                  <p className="field-label">
                     Key Secret (IAM)
-                  </Typography>
-                  <Typography family="sans" purpose="body" size="m" className="field-value">
+                  </p>
+                  <p className="field-value">
                     {maskSensitiveData(apiSecret)}
-                  </Typography>
+                  </p>
                 </div>
 
                 {llmApiKey && (
                   <div className="profile-field">
-                    <Typography family="sans" purpose="body" size="s" className="field-label">
+                    <p className="field-label">
                       API Key (Cloud.ru Evolution Model)
-                    </Typography>
-                    <Typography family="sans" purpose="body" size="m" className="field-value">
+                    </p>
+                    <p className="field-value">
                       {maskSensitiveData(llmApiKey)}
-                    </Typography>
+                    </p>
                   </div>
                 )}
 
                 {accessToken && (
                   <div className="profile-field">
-                    <Typography family="sans" purpose="body" size="s" className="field-label">
+                    <p className="field-label">
                       Access Token (IAM)
-                    </Typography>
-                    <Typography family="sans" purpose="body" size="m" className="field-value">
+                    </p>
+                    <p className="field-value">
                       {maskSensitiveData(accessToken, 10, 10)}
-                    </Typography>
-                    <Typography family="sans" purpose="body" size="s" className="helper">
+                    </p>
+                    <p className="helper">
                       Токен автоматически обновляется при необходимости
-                    </Typography>
+                    </p>
                   </div>
                 )}
 
                 {gitlabCreds && (
                   <div className="profile-field">
-                    <Typography family="sans" purpose="body" size="s" className="field-label">
+                    <p className="field-label">
                       GitLab подключение
-                    </Typography>
-                    <Typography family="sans" purpose="body" size="m" className="field-value">
+                    </p>
+                    <p className="field-value">
                       {gitlabCreds.user || 'Подключено'}
-                    </Typography>
-                    <Typography family="sans" purpose="body" size="s" className="helper">
+                    </p>
+                    <p className="helper">
                       URL: {gitlabCreds.url}
-                    </Typography>
-                    <ButtonOutlined
-                      label="Отключить GitLab"
-                      onClick={handleGitLabLogout}
-                      size="s"
-                      appearance="destructive"
-                      style={{ marginTop: '0.5rem' }}
-                    />
+                    </p>
+                    <div style={{ marginTop: '0.5rem' }}>
+                      <ButtonOutline
+                        label="Отключить GitLab"
+                        onClick={handleGitLabLogout}
+                        size="s"
+                        appearance="destructive"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
 
               <Divider />
 
-              <Typography family="sans" purpose="body" size="s" className="helper">
+              <p className="helper">
                 Полная инструкция по аутентификации:{' '}
                 <a
                   href="https://cloud.ru/docs/virtual-machines/ug/topics/api-ref__authentication?source-platform=Evolution"
@@ -164,7 +174,7 @@ export function LoginPage() {
                 >
                   Cloud.ru API Authentication
                 </a>
-              </Typography>
+              </p>
 
               <ButtonFilled
                 label="Выйти"
@@ -183,10 +193,10 @@ export function LoginPage() {
   return (
     <div className="auth-page">
       <div className="auth-header">
-        <Typography family="sans" purpose="title" size="l">Вход по сервисному ключу</Typography>
-        <Typography family="sans" purpose="body" size="m" className="helper">
+        <h1>Вход по сервисному ключу</h1>
+        <p className="helper">
           Используйте сервисный ключ Cloud.ru для доступа к системе
-        </Typography>
+        </p>
       </div>
 
       <div className="auth-container">

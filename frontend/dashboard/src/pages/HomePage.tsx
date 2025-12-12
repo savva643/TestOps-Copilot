@@ -1,5 +1,4 @@
 import { Card } from '@snack-uikit/card'
-import { Typography } from '@snack-uikit/typography'
 import { ButtonFilled } from '@snack-uikit/button'
 import { Divider } from '@snack-uikit/divider'
 import { Link } from 'react-router-dom'
@@ -9,10 +8,10 @@ export function HomePage() {
   return (
     <div className="home-page">
       <div className="hero">
-        <Typography family="sans" purpose="title" size="l">TestOps Copilot</Typography>
-        <Typography family="sans" purpose="body" size="l" className="subtitle">
+        <h1>TestOps Copilot</h1>
+        <p className="subtitle">
           AI-powered test generation and optimization platform
-        </Typography>
+        </p>
         <div className="hero-actions">
           <Link to="/generate">
             <ButtonFilled label="Get Started" size="l" />
@@ -26,66 +25,66 @@ export function HomePage() {
         <Card>
           <div className="feature-card">
             <div className="feature-icon">🧪</div>
-            <Typography family="sans" purpose="title" size="m">Generate Test Cases</Typography>
-            <Typography family="sans" purpose="body" size="m">
+            <h2>Generate Test Cases</h2>
+            <p>
               Automatically generate comprehensive test cases from requirements
               and specifications using AI
-            </Typography>
+            </p>
           </div>
         </Card>
 
         <Card>
           <div className="feature-card">
             <div className="feature-icon">🤖</div>
-            <Typography family="sans" purpose="title" size="m">Automated Tests</Typography>
-            <Typography family="sans" purpose="body" size="m">
+            <h2>Automated Tests</h2>
+            <p>
               Create automated API and UI tests following best practices with
               Allure TestOps format
-            </Typography>
+            </p>
           </div>
         </Card>
 
         <Card>
           <div className="feature-card">
             <div className="feature-icon">📊</div>
-            <Typography family="sans" purpose="title" size="m">Coverage Analysis</Typography>
-            <Typography family="sans" purpose="body" size="m">
+            <h2>Coverage Analysis</h2>
+            <p>
               Analyze test coverage, identify gaps, and get recommendations for
               improvement
-            </Typography>
+            </p>
           </div>
         </Card>
 
         <Card>
           <div className="feature-card">
             <div className="feature-icon">🔍</div>
-            <Typography family="sans" purpose="title" size="m">Find Duplicates</Typography>
-            <Typography family="sans" purpose="body" size="m">
+            <h2>Find Duplicates</h2>
+            <p>
               Detect duplicate tests and optimize your test suite for better
               efficiency
-            </Typography>
+            </p>
           </div>
         </Card>
 
         <Card>
           <div className="feature-card">
             <div className="feature-icon">⚡</div>
-            <Typography family="sans" purpose="title" size="m">Fast Generation</Typography>
-            <Typography family="sans" purpose="body" size="m">
+            <h2>Fast Generation</h2>
+            <p>
               Generate test cases in seconds with Cloud.ru Evolution Foundation
               Model
-            </Typography>
+            </p>
           </div>
         </Card>
 
         <Card>
           <div className="feature-card">
             <div className="feature-icon">🎯</div>
-            <Typography family="sans" purpose="title" size="m">Standards Compliant</Typography>
-            <Typography family="sans" purpose="body" size="m">
+            <h2>Standards Compliant</h2>
+            <p>
               All generated tests follow AAA pattern and Allure TestOps as Code
               standards
-            </Typography>
+            </p>
           </div>
         </Card>
       </div>
@@ -93,12 +92,12 @@ export function HomePage() {
       <Divider />
 
       <Card className="quick-start">
-        <Typography family="sans" purpose="title" size="l">Quick Start</Typography>
+        <h1>Quick Start</h1>
         <ol>
-          <li><Typography family="sans" purpose="body" size="m">Go to Generate Tests page</Typography></li>
-          <li><Typography family="sans" purpose="body" size="m">Upload OpenAPI specification or enter description</Typography></li>
-          <li><Typography family="sans" purpose="body" size="m">Select test type (Manual, API, or UI)</Typography></li>
-          <li><Typography family="sans" purpose="body" size="m">Get generated test cases in seconds</Typography></li>
+          <li><p>Go to Generate Tests page</p></li>
+          <li><p>Upload OpenAPI specification or enter description</p></li>
+          <li><p>Select test type (Manual, API, or UI)</p></li>
+          <li><p>Get generated test cases in seconds</p></li>
         </ol>
       </Card>
     </div>

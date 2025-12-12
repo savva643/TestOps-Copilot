@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Card } from '@snack-uikit/card'
-import { Typography } from '@snack-uikit/typography'
 import { Divider } from '@snack-uikit/divider'
-import { ButtonFilled, ButtonOutlined } from '@snack-uikit/button'
+import { ButtonFilled, ButtonOutline } from '@snack-uikit/button'
 import { Alert } from '@snack-uikit/alert'
 import { storeGitLabToken, getGitLabProjects, GitLabProject } from '../api/gitlab'
 import {
@@ -189,19 +188,15 @@ export function OptimizePage() {
   return (
     <div className="optimize-page">
       <div className="page-header">
-        <Typography family="sans" purpose="title" size="l">
-          Test Optimization
-        </Typography>
-        <Typography family="sans" purpose="body" size="m">
-          Анализ покрытия тестами и поиск дубликатов в GitLab репозиториях
-        </Typography>
+        <h1>Test Optimization</h1>
+        <p>Анализ покрытия тестами и поиск дубликатов в GitLab репозиториях</p>
       </div>
 
       <Divider />
 
       {error && (
         <Alert
-          type="error"
+          appearance="error"
           title="Ошибка"
           description={error}
           onClose={() => setError(null)}
@@ -211,19 +206,15 @@ export function OptimizePage() {
 
       {step === 'gitlab-setup' && (
         <Card className="optimize-card">
-          <Typography family="sans" purpose="title" size="m" className="card-title">
-            Подключение к GitLab
-          </Typography>
-          <Typography family="sans" purpose="body" size="m" className="card-description">
+          <h2 className="card-title">Подключение к GitLab</h2>
+          <p className="card-description">
             Введите ваш GitLab Personal Access Token для доступа к репозиториям. Токен должен иметь права на чтение
             репозиториев.
-          </Typography>
+          </p>
 
           <div className="form-group">
             <label>
-              <Typography family="sans" purpose="body" size="m">
-                GitLab URL (опционально)
-              </Typography>
+              <p>GitLab URL (опционально)</p>
             </label>
             <input
               type="text"
@@ -249,14 +240,16 @@ export function OptimizePage() {
               placeholder="glpat-xxxxxxxxxxxxxxxxxxxx"
               disabled={loading}
             />
-            <Typography family="sans" purpose="caption" size="s" className="hint-text">
+            <Typography family="sans" purpose="body" size="s" className="hint-text">
               Создайте токен в GitLab: Settings → Access Tokens → Personal Access Tokens
             </Typography>
           </div>
 
-          <ButtonFilled onClick={handleConnectGitLab} disabled={loading || !gitlabToken.trim()}>
-            {loading ? 'Подключение...' : 'Подключиться к GitLab'}
-          </ButtonFilled>
+          <ButtonFilled 
+            label={loading ? 'Подключение...' : 'Подключиться к GitLab'}
+            onClick={handleConnectGitLab} 
+            disabled={loading || !gitlabToken.trim()}
+          />
         </Card>
       )}
 
@@ -266,7 +259,7 @@ export function OptimizePage() {
             <Typography family="sans" purpose="title" size="m">
               Выбор проекта
             </Typography>
-            <ButtonOutlined onClick={() => setStep('gitlab-setup')}>Изменить токен</ButtonOutlined>
+            <ButtonOutline label="Изменить токен" onClick={() => setStep('gitlab-setup')} />
           </div>
 
           <div className="form-group">
@@ -324,9 +317,11 @@ export function OptimizePage() {
             </div>
           </div>
 
-          <ButtonFilled onClick={handleAnalyze} disabled={loading || !selectedProject}>
-            {loading ? 'Анализ...' : 'Запустить анализ'}
-          </ButtonFilled>
+          <ButtonFilled 
+            label={loading ? 'Анализ...' : 'Запустить анализ'}
+            onClick={handleAnalyze} 
+            disabled={loading || !selectedProject}
+          />
         </Card>
       )}
 
@@ -358,7 +353,7 @@ export function OptimizePage() {
                   <Typography family="sans" purpose="body" size="l" className="stat-value">
                     {coverageResult.coverage_percentage.toFixed(1)}%
                   </Typography>
-                  <Typography family="sans" purpose="caption" size="s">
+                  <Typography family="sans" purpose="body" size="s">
                     Покрытие тестами
                   </Typography>
                 </div>
@@ -366,7 +361,7 @@ export function OptimizePage() {
                   <Typography family="sans" purpose="body" size="l" className="stat-value">
                     {coverageResult.test_files_analyzed}
                   </Typography>
-                  <Typography family="sans" purpose="caption" size="s">
+                  <Typography family="sans" purpose="body" size="s">
                     Файлов проанализировано
                   </Typography>
                 </div>
@@ -382,7 +377,7 @@ export function OptimizePage() {
                   <Typography family="sans" purpose="body" size="l" className="stat-value">
                     {coverageResult.total_endpoints}
                   </Typography>
-                  <Typography family="sans" purpose="caption" size="s">
+                  <Typography family="sans" purpose="body" size="s">
                     Всего эндпоинтов
                   </Typography>
                 </div>
@@ -403,7 +398,7 @@ export function OptimizePage() {
                     ))}
                     {coverageResult.uncovered_endpoints.length > 10 && (
                       <li>
-                        <Typography family="sans" purpose="caption" size="s">
+                        <Typography family="sans" purpose="body" size="s">
                           ... и еще {coverageResult.uncovered_endpoints.length - 10}
                         </Typography>
                       </li>
@@ -442,7 +437,7 @@ export function OptimizePage() {
                       </Typography>
                       <Typography
                         family="sans"
-                        purpose="caption"
+                        purpose="body"
                         size="s"
                         style={{ color: dup.similarity > 0.9 ? '#ef4444' : '#f59e0b' }}
                       >
@@ -451,7 +446,7 @@ export function OptimizePage() {
                     </div>
                   ))}
                   {duplicatesResult.duplicates.length > 5 && (
-                    <Typography family="sans" purpose="caption" size="s">
+                    <Typography family="sans" purpose="body" size="s">
                       ... и еще {duplicatesResult.duplicates.length - 5} дубликатов
                     </Typography>
                   )}
@@ -485,7 +480,7 @@ export function OptimizePage() {
                         <Typography family="sans" purpose="body" size="m">
                           {rec.message}
                         </Typography>
-                        <Typography family="sans" purpose="caption" size="s" className="action-text">
+                        <Typography family="sans" purpose="body" size="s" className="action-text">
                           {rec.action}
                         </Typography>
                       </div>
@@ -514,7 +509,7 @@ export function OptimizePage() {
           )}
 
           <div className="actions-footer">
-            <ButtonOutlined onClick={() => setStep('project-select')}>Новый анализ</ButtonOutlined>
+            <ButtonOutline label="Новый анализ" onClick={() => setStep('project-select')} />
           </div>
         </div>
       )}
