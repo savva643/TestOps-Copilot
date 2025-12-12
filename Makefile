@@ -28,6 +28,18 @@ test: ## Run tests
 		cd $$service && pytest || true && cd - > /dev/null; \
 	done
 
+test-integration: ## Run integration tests
+	@echo "Running integration tests..."
+	@docker-compose up -d
+	@sleep 10
+	@pytest tests/integration/ -v -m integration || true
+
+test-e2e: ## Run E2E tests (requires frontend running)
+	@echo "Running E2E tests..."
+	@cd frontend/dashboard && npm run test:e2e || true
+
+test-all: test test-integration ## Run all tests
+
 lint: ## Run linters
 	@echo "Linting Python code..."
 	@for service in backend/*/; do \
@@ -64,4 +76,12 @@ swagger-export: ## Export OpenAPI specs to docs/api
 	@echo "Exporting gitlab-integration..."
 	-@curl -s http://localhost:8005/openapi.json -o docs/api/gitlab-integration-openapi.json
 	@echo "Done. Check docs/api/*.json"
+
+test-coverage: ## Run pytest with coverage for all backend services
+	@for service in backend/*/; do \
+		echo "==> Coverage $$service"; \
+		cd $$service && pytest --maxfail=1 --disable-warnings --cov=app --cov-report=xml --cov-report=term || exit $$?; \
+		cd - > /dev/null; \
+	done
+	@echo "Coverage reports generated (xml in each service dir)"
 

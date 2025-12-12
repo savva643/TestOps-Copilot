@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios'
 import { getValidToken, getStoredLlmApiKey } from './auth'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_URL = import.meta.env.VITE_API_URL || 'https://testops.keep-pixel.ru'
 const API_KEY = import.meta.env.VITE_API_KEY || 'testops-copilot-api-key-2024'
 
 export function createApiClient(): AxiosInstance {

@@ -2,6 +2,9 @@
 
 import yaml
 import json
+import hashlib
+import time
+import copy
 from typing import Dict, Any, List, Union
 import structlog
 from prance import ResolvingParser
@@ -10,6 +13,9 @@ from openapi_spec_validator import validate_spec
 from app.core.exceptions import ParsingError, ValidationError, UnsupportedFormatError
 
 logger = structlog.get_logger()
+_CACHE_TTL_SECONDS = 3600  # 1 час
+_parse_cache: Dict[str, Dict[str, Any]] = {}
+_cache_ts: Dict[str, float] = {}
 
 
 class OpenAPIParser:
@@ -27,6 +33,15 @@ class OpenAPIParser:
             Structured data with endpoints, schemas, and info
         """
         try:
+            # Cache by content hash to avoid повторного парсинга одной и той же спецификации
+            content_hash = hashlib.sha256(content).hexdigest()
+            now = time.time()
+            cached = _parse_cache.get(content_hash)
+            ts = _cache_ts.get(content_hash, 0)
+            if cached and now - ts < _CACHE_TTL_SECONDS:
+                logger.info("OpenAPI spec served from cache", cache_hit=True)
+                return copy.deepcopy(cached)
+
             # Decode content
             try:
                 text_content = content.decode("utf-8")
@@ -91,6 +106,10 @@ class OpenAPIParser:
             }
 
             logger.info("OpenAPI spec parsed successfully", endpoints_count=len(endpoints))
+
+            # Save to cache
+            _parse_cache[content_hash] = copy.deepcopy(result)
+            _cache_ts[content_hash] = now
 
             return result
 

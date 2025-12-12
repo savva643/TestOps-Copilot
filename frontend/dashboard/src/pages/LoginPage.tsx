@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useMemo } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Card } from '@snack-uikit/card'
 import { ButtonFilled, ButtonOutline } from '@snack-uikit/button'
 import { Alert } from '@snack-uikit/alert'
@@ -9,6 +9,8 @@ import { fetchIamToken, storeCredentials, storeToken, getStoredCredentials, clea
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const isTestMode = useMemo(() => new URLSearchParams(location.search).get('test') !== null, [location.search])
   const [apiKeyId, setApiKeyId] = useState('')
   const [apiSecret, setApiSecret] = useState('')
   const [llmApiKey, setLlmApiKey] = useState('')
@@ -258,6 +260,19 @@ export function LoginPage() {
               loading={loading}
               disabled={loading}
             />
+            {isTestMode && (
+              <ButtonOutline
+                type="button"
+                label="Использовать тестовый аккаунт"
+                size="m"
+                onClick={() => {
+                  // Демо-значения из localStorage, предоставленные пользователем
+                  setApiKeyId('e8cd3a5243f933a1b9721d4d35c2582c')
+                  setApiSecret('7ef9e95ae8c9a163df949f0cc2bdc4c5')
+                  setLlmApiKey('ZWI0ZDcwMDUtYmJhMS00OWUyLWEwNWYtZTYxNjliZjZlNTVh.0db2e453d4aa678fba26ea79fcbaa469')
+                }}
+              />
+            )}
 
             {error && (
               <Alert

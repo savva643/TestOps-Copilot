@@ -76,7 +76,7 @@ npm run dev
 
 ### Swagger/OpenAPI
 Все сервисы на FastAPI, Swagger UI доступен по `/docs`, OpenAPI по `/openapi.json`.
-- Gateway: http://localhost:8000/docs
+- Gateway: https://testops.keep-pixel.ru/docs
 - Core agent: http://localhost:8001/docs
 - Spec parser: http://localhost:8002/docs
 - Code generator: http://localhost:8003/docs
@@ -121,7 +121,7 @@ CORS_ORIGINS=["http://localhost:3000","http://localhost:8000"]
 
 Пример `frontend/dashboard/.env`:
 ```
-VITE_API_URL=http://localhost:8000
+VITE_API_URL=https://testops.keep-pixel.ru
 VITE_API_KEY=testops-copilot-api-key-2024
 ```
 

@@ -23,7 +23,12 @@ class Settings(BaseSettings):
     API_KEY: str = "default-api-key-change-in-production"
 
     # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "https://testops.keep-pixel.ru",
+        "http://testops.keep-pixel.ru",
+    ]
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 

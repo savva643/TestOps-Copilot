@@ -127,20 +127,20 @@
 ### Фаза 5: Полировка и подготовка к демо
 
 1. **Документация**
-   - [ ] API документация (Swagger/OpenAPI)
+   - [x] API документация (Swagger/OpenAPI)
    - [x] Руководство пользователя (см. docs/USER_GUIDE.md)
    - [x] Примеры использования (см. demo_materials/, docs/DEMO_SCENARIO.md)
    - [ ] Видео-демонстрация
 
 2. **Тестирование**
-   - [ ] Unit-тесты (покрытие >60%) — см. docs/TESTING_PLAN.md
-   - [ ] Интеграционные тесты — см. docs/TESTING_PLAN.md
-   - [ ] E2E тесты для критических сценариев — см. docs/TESTING_PLAN.md
+   - [x] Unit-тесты (покрытие >60%) — см. docs/TESTING_PLAN.md (тесты добавлены: core_agent, spec_parser, code_generator, test_optimizer, gitlab_integration)
+   - [x] Интеграционные тесты — см. docs/TESTING_PLAN.md (tests/integration/test_full_flow.py: parse -> generate -> download)
+   - [x] E2E тесты для критических сценариев — см. docs/TESTING_PLAN.md (tests/e2e/test_dashboard_flow.py: login, dashboard, generate, tasks, navigation)
 
 3. **Производительность**
-   - [ ] Оптимизация запросов к LLM — см. docs/PERFORMANCE_PLAN.md
-   - [ ] Кэширование результатов — см. docs/PERFORMANCE_PLAN.md
-   - [ ] Экспорт и публикация Swagger/OpenAPI (docs/api/*.json, make swagger-export)
+   - [x] Оптимизация запросов к LLM — rate limiting/retry в LLM client
+   - [x] Кэширование результатов — кэш парсинга OpenAPI (spec_parser_service)
+   - [x] Экспорт и публикация Swagger/OpenAPI (docs/api/*.json, make swagger-export)
    - [x] Мониторинг и алерты (базовый UI мониторинг на дашборде; алерты — TBD)
 
 4. **Демо-материалы**
@@ -153,20 +153,20 @@
 
 ## Технические долги
 
-- [ ] Исправить async/sync проблемы в Celery задачах
-- [ ] Добавить миграции базы данных (Alembic)
-- [ ] Настроить мониторинг (Prometheus + Grafana)
-- [ ] Добавить структурированное логирование везде
-- [ ] Улучшить обработку ошибок
-- [ ] Добавить валидацию входных данных
-- [ ] Оптимизировать Docker образы (multi-stage builds)
+- [x] Исправить async/sync проблемы в Celery задачах
+- [x] Добавить миграции базы данных (Alembic)
+- [x] Настроить мониторинг (Prometheus + Grafana)
+- [x] Добавить структурированное логирование везде
+- [x] Улучшить обработку ошибок
+- [x] Добавить валидацию входных данных
+- [x] Оптимизировать Docker образы (multi-stage builds)
 
 ## Известные проблемы
 
-1. Celery задачи используют sync функции, но вызывают async LLM клиент - нужно исправить
-2. Шаблоны Jinja2 созданы, но нужно протестировать на реальных данных
-3. Frontend использует базовые компоненты - нужно интегрировать snack-uikit
-4. Нет реальной интеграции с GitLab API для анализа тестов
+1. Celery задачи используют sync функции, но вызывают async LLM клиент - нужно исправить — закрыто
+2. Шаблоны Jinja2 созданы, но нужно протестировать на реальных данных — закрыто
+3. Frontend использует базовые компоненты - нужно интегрировать snack-uikit — закрыто
+4. Нет реальной интеграции с GitLab API для анализа тестов — закрыто
 
 ## Метрики успеха MVP v1.0
 

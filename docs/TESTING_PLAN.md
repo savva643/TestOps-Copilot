@@ -6,8 +6,8 @@
 - E2E критические сценарии UI (авторизация, загрузка, запуск, просмотр задач, скачивание).
 
 ## Backend: покрытие и команды
-- Запуск всех юнит-тестов по сервисам: `make test` или `pytest --maxfail=1 --disable-warnings --cov=app` внутри каждого сервиса.
-- Собрать отчёты покрытия: `pytest --cov=app --cov-report=xml` в сервисе; сложить xml в `docs/metrics/` (например, `backend-coverage-<service>.xml`).
+- Запуск всех юнит-тестов по сервисам: `make test-coverage` (pytest с `--cov`) или вручную `pytest --maxfail=1 --disable-warnings --cov=app --cov-report=xml` внутри каждого сервиса.
+- Собрать отчёты покрытия: xml формируются в корне сервисов; при необходимости скопировать в `docs/metrics/` (например, `backend-coverage-<service>.xml`).
 - Минимум по сервисам:
   - core_agent_service: задачи, LLM client, prompt_engineer.
   - spec_parser_service: openapi_parser текст/файлы.
