@@ -448,7 +448,6 @@ export function GeneratePage() {
                       onClick={handleValidateGitLabToken}
                       disabled={!gitlabToken.trim() || validatingToken || loading}
                       size="l"
-                      style={{ height: '48px', minWidth: '140px' }}
                     />
                   </div>
                   {tokenValid && (
