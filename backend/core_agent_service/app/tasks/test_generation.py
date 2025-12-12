@@ -15,9 +15,17 @@ def filter_english_thinking_text(text: str) -> str:
     """
     Удаляет английский текст-раздумывание в начале объяснения.
     Фильтрует фразы типа "We need to produce...", "Let's create...", "I'll generate..." и т.д.
+    Для manual тестов также ищет начало тест-кейса (# ТЕСТ-КЕЙС:).
     """
     if not text:
         return text
+    
+    # Для manual тестов: ищем начало тест-кейса
+    import re
+    tc_match = re.search(r'#\s*ТЕСТ-КЕЙС:', text, re.IGNORECASE)
+    if tc_match:
+        # Если нашли тест-кейс, берем текст начиная с него
+        text = text[tc_match.start():]
     
     # Паттерны английского раздумывания
     english_starters = [
@@ -35,6 +43,11 @@ def filter_english_thinking_text(text: str) -> str:
         "i can",
         "i'm going to",
         "we're going to",
+        "here is",
+        "this is",
+        "will output",
+        "should output",
+        "must include",
     ]
     
     lines = text.split('\n')
@@ -730,19 +743,55 @@ import pytest
         # Если generated_text - это dict с файлами, сохраняем как есть
         # Если это строка (для manual тестов), преобразуем в структуру
         if isinstance(generated_text, str):
-            # Для manual тестов генерируем имя файла с ID из текста или используем дефолтное
+            # Для manual тестов фильтруем английский текст-раздумывание и проверяем формат
             import re
-            tc_id_match = re.search(r'\*\*ID:\*\*\s*(TC-\d+)', generated_text)
+            
+            # Фильтруем английский текст-раздумывание в начале
+            filtered_text = filter_english_thinking_text(generated_text)
+            
+            # Проверяем, что ответ начинается с тест-кейса
+            # Если нет, пытаемся найти начало тест-кейса в тексте
+            if not filtered_text.strip().startswith("# ТЕСТ-КЕЙС:"):
+                # Ищем начало тест-кейса в тексте
+                tc_match = re.search(r'#\s*ТЕСТ-КЕЙС:', filtered_text, re.IGNORECASE)
+                if tc_match:
+                    # Берем текст начиная с найденного тест-кейса
+                    filtered_text = filtered_text[tc_match.start():]
+                else:
+                    # Если не нашли, проверяем, может быть это описание на английском
+                    # И ищем паттерны типа "We need to output..."
+                    english_thinking_patterns = [
+                        r'^[^#]*?(?=#\s*ТЕСТ-КЕЙС:)',  # Текст до тест-кейса
+                        r'^We\s+need\s+to[^#]*',  # "We need to..."
+                        r'^Let\'?s\s+[^#]*',  # "Let's..."
+                        r'^I\'?ll\s+[^#]*',  # "I'll..."
+                        r'^Here\s+is[^#]*',  # "Here is..."
+                    ]
+                    for pattern in english_thinking_patterns:
+                        filtered_text = re.sub(pattern, '', filtered_text, flags=re.IGNORECASE | re.DOTALL)
+                    filtered_text = filtered_text.strip()
+            
+            # Если после фильтрации текст пустой или слишком короткий, используем оригинал
+            if not filtered_text or len(filtered_text.strip()) < 50:
+                logger.warning(
+                    "Filtered text is too short, using original",
+                    task_id=self.request.id,
+                    filtered_length=len(filtered_text) if filtered_text else 0,
+                )
+                filtered_text = generated_text
+            
+            # Генерируем имя файла с ID из текста или используем дефолтное
+            tc_id_match = re.search(r'\*\*ID:\*\*\s*(TC-\d+)', filtered_text)
             tc_id = tc_id_match.group(1) if tc_id_match else "TC-001"
             filename = f"manual_test_case_{tc_id}.txt"
             
             test_case_data = {
                 "files": [{
                     "description": None,
-                    "code": generated_text,
+                    "code": filtered_text,
                     "filename": filename
                 }],
-                "raw_response": generated_text
+                "raw_response": generated_text  # Сохраняем оригинальный ответ для отладки
             }
         else:
             test_case_data = generated_text

@@ -86,18 +86,20 @@ class PromptEngineer:
 
         # Optimized system prompts for different test types
         if test_type == "manual":
-            system_prompt = """Ты — опытный QA-инженер по ручному тестированию. Твоя задача — создать структурированный тест-кейс для ручного выполнения.
+            system_prompt = """Ты — опытный QA-инженер по ручному тестированию. Твоя ЕДИНСТВЕННАЯ задача — вернуть готовый тест-кейс в формате Markdown.
 
-Требования к ответу (текст в формате Markdown):
-- Структурированный тест-кейс с четкими разделами
-- Используй Markdown форматирование (заголовки, таблицы, списки)
-- Всё на русском языке
+КРИТИЧЕСКИ ВАЖНО:
+- Твой ответ ДОЛЖЕН начинаться СРАЗУ с "# ТЕСТ-КЕЙС:" (без единого символа перед ним)
+- ЗАПРЕЩЕНО писать: 'We need to...', 'We must...', 'Let's create...', 'I'll generate...', 'Here is...'
+- ЗАПРЕЩЕНО писать планы действий или описания того, что ты собираешься сделать
+- ЗАПРЕЩЕНО начинать ответ с английского текста
+- Пиши ТОЛЬКО готовый тест-кейс в формате Markdown
 
-ОБЯЗАТЕЛЬНАЯ СТРУКТУРА:
+СТРОГИЙ ФОРМАТ ОТВЕТА (начинай сразу с этого):
 
 # ТЕСТ-КЕЙС: [Название сценария]
 
-**ID:** TC-001 (или другой уникальный ID)
+**ID:** TC-001
 **Приоритет:** CRITICAL | NORMAL | LOW
 **Feature:** [Название фичи, если указано]
 **Story:** [Название истории, если указано]
@@ -123,11 +125,12 @@ class PromptEngineer:
 ## 5. ПОСТУСЛОВИЯ
 - [Действия для очистки после теста]
 
-ВАЖНО:
+ТРЕБОВАНИЯ:
 - Используй таблицу для шагов тестирования
 - Каждый шаг должен иметь четкое действие и ожидаемый результат
 - Включи негативные и граничные сценарии
-- Всё на русском языке"""
+- Всё на русском языке
+- НИКАКИХ объяснений перед тест-кейсом. НИКАКИХ планов. ТОЛЬКО ГОТОВЫЙ ТЕСТ-КЕЙС."""
 
         elif test_type == "api":
             system_prompt = """Ты — генератор Python-кода тестов в формате Allure TestOps as Code. Твоя задача — вернуть готовый код.
@@ -359,7 +362,14 @@ class TestPriceCalculatorDynamicPrice:
             user_prompt_parts.append("- Позитивные и негативные сценарии")
             user_prompt_parts.append("- Все на русском языке (названия, комментарии, docstrings)")
         else:  # manual
-            user_prompt_parts.append("\n\nВерни структурированный тест-кейс в формате Markdown:")
+            user_prompt_parts.append("\n\nСТРОГОЕ ТРЕБОВАНИЕ:")
+            user_prompt_parts.append("Начни ответ СРАЗУ с \"# ТЕСТ-КЕЙС:\" (без единого символа перед ним)")
+            user_prompt_parts.append("НЕ пиши: 'We need to...', 'Let's create...', 'I'll generate...', 'Here is...'")
+            user_prompt_parts.append("НЕ пиши планы действий или описания того, что ты собираешься сделать")
+            user_prompt_parts.append("НЕ пиши на английском языке перед тест-кейсом")
+            user_prompt_parts.append("Пиши ТОЛЬКО готовый тест-кейс в формате Markdown")
+            
+            user_prompt_parts.append("\nВерни структурированный тест-кейс в формате Markdown:")
             user_prompt_parts.append("- Заголовок: # ТЕСТ-КЕЙС: [Название]")
             user_prompt_parts.append("- Метаданные: ID, Приоритет, Feature, Story, Владелец")
             user_prompt_parts.append("- Раздел 1: ПРЕДУСЛОВИЯ (список условий)")
@@ -371,6 +381,10 @@ class TestPriceCalculatorDynamicPrice:
                 user_prompt_parts.append(f"\nПриоритет теста: {priority}")
             if owner:
                 user_prompt_parts.append(f"Владелец теста: {owner}")
+            if feature:
+                user_prompt_parts.append(f"Feature: {feature}")
+            if story:
+                user_prompt_parts.append(f"Story: {story}")
 
         user_prompt = "\n".join(user_prompt_parts)
 
