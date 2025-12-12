@@ -382,13 +382,24 @@ def generate_test_case_task(
             # Проверяем, что это не просто объяснения на английском
             # Если текст начинается с "we need", "let's", "i'll" и т.д. - это не код
             explanation_starters = [
-                'we need', 'we must', 'we should', 'let\'s', 'let us',
-                'i\'ll', 'i will', 'i need', 'i must', 'here is',
-                'this is', 'the code', 'the test', 'will produce',
-                'should output', 'must include', 'need to'
+                'we need', 'we must', 'we should', 'we can', 'we will', 'we\'ll', 'we\'re going',
+                'let\'s', 'let us', 'let me',
+                'i\'ll', 'i will', 'i need', 'i must', 'i should', 'i can', 'i\'m going',
+                'here is', 'this is', 'the code', 'the test', 'will produce',
+                'should output', 'must include', 'need to', 'will output',
+                'now produce', 'let\'s craft', 'we\'ll produce'
             ]
-            first_lines = '\n'.join(code.splitlines()[:3]).lower()
+            first_lines = '\n'.join(code.splitlines()[:5]).lower()  # Проверяем первые 5 строк
             if any(first_lines.startswith(starter) for starter in explanation_starters):
+                return False
+            
+            # Проверяем, что в первых строках нет описательных фраз
+            first_100_chars = code[:100].lower()
+            if any(phrase in first_100_chars for phrase in [
+                'we need to output', 'must start with', 'provide code',
+                'define fixture', 'test classes:', 'will import',
+                'negative scenario:', 'we\'ll include'
+            ]):
                 return False
             
             # Если есть import/from И (def/class/@pytest/@allure), то это код
@@ -470,6 +481,7 @@ def generate_test_case_task(
 - Твой ответ ДОЛЖЕН начинаться СРАЗУ с ```python (без единого символа перед ним)
 - ЗАПРЕЩЕНО писать: 'We need to...', 'We must...', 'Let's create...', 'I'll generate...', 'Here is...'
 - ЗАПРЕЩЕНО писать планы действий или описания
+- ЗАПРЕЩЕНО писать на английском языке перед блоком кода
 - Пиши ТОЛЬКО готовый код на Python внутри блока ```python ... ```
 
 Формат ответа (СТРОГО):
@@ -483,12 +495,14 @@ import pytest
             code_user_prompt = (
                 "КРИТИЧЕСКИ ВАЖНО: Твой ответ ДОЛЖЕН начинаться СРАЗУ с ```python (без единого символа перед ним).\n"
                 "ЗАПРЕЩЕНО писать:\n"
-                "- 'We need to...', 'We must...', 'We should...'\n"
-                "- 'Let's create...', 'Let us...'\n"
-                "- 'I'll generate...', 'I will...', 'I need...'\n"
-                "- 'Here is...', 'This is...', 'The code...'\n"
-                "- 'Will produce...', 'Should output...', 'Must include...'\n"
-                "- Любые планы действий или описания того, что ты собираешься сделать\n\n"
+                "- 'We need to...', 'We must...', 'We should...', 'We can...', 'We will...'\n"
+                "- 'Let's create...', 'Let us...', 'Let me...'\n"
+                "- 'I'll generate...', 'I will...', 'I need...', 'I should...', 'I can...', 'I'm going to...'\n"
+                "- 'Here is...', 'This is...', 'The code...', 'The test...'\n"
+                "- 'Will produce...', 'Should output...', 'Must include...', 'Need to output...'\n"
+                "- 'We'll produce...', 'We're going to...'\n"
+                "- Любые планы действий или описания того, что ты собираешься сделать\n"
+                "- Любой текст на английском языке перед блоком ```python\n\n"
                 "ТВОЙ ОТВЕТ ДОЛЖЕН БЫТЬ ТОЛЬКО:\n"
                 "```python\n"
                 "import pytest\n"
@@ -505,8 +519,32 @@ import pytest
                 )
             )
             
-            # Извлекаем код
-            code_extracted = extract_code_from_text(code_response)
+            # Фильтруем английский текст-раздумывание перед извлечением кода
+            filtered_response = filter_english_thinking_text(code_response)
+            
+            # Проверяем, что ответ начинается с ```python, если нет - ищем его
+            if not filtered_response.strip().startswith("```python"):
+                import re
+                python_block_match = re.search(r'```python', filtered_response, re.IGNORECASE)
+                if python_block_match:
+                    filtered_response = filtered_response[python_block_match.start():]
+                else:
+                    # Если не нашли блок кода, пробуем найти начало кода по ключевым словам
+                    code_start_patterns = [
+                        r'^[^`]*?(?=```python)',
+                        r'^We\s+need\s+to[^`]*',
+                        r'^Let\'?s\s+[^`]*',
+                        r'^I\'?ll\s+[^`]*',
+                        r'^Here\s+is[^`]*',
+                        r'^Will\s+import[^`]*',
+                        r'^We\'?ll\s+[^`]*',
+                    ]
+                    for pattern in code_start_patterns:
+                        filtered_response = re.sub(pattern, '', filtered_response, flags=re.IGNORECASE | re.DOTALL)
+                    filtered_response = filtered_response.strip()
+            
+            # Извлекаем код из отфильтрованного ответа
+            code_extracted = extract_code_from_text(filtered_response)
             if not code_extracted or not code_extracted.get("files"):
                 # Если не удалось извлечь, пробуем еще раз
                 logger.warning(
@@ -531,14 +569,64 @@ import pytest
             valid_code_files = []
             for f in code_extracted["files"]:
                 code = f.get("code", "")
-                if code and len(code.strip()) > 50 and is_valid_python_code(code):
-                    valid_code_files.append(f)
+                if code and len(code.strip()) > 50:
+                    # Дополнительная фильтрация описаний из кода
+                    filtered_code = filter_english_thinking_text(code)
+                    # Ищем начало реального кода (import, from, def, class, @)
+                    import re
+                    code_start_patterns = [
+                        r'^[^i]*?(?=import\s)',  # Текст до import
+                        r'^[^f]*?(?=from\s)',   # Текст до from
+                        r'^[^d]*?(?=def\s)',    # Текст до def
+                        r'^[^c]*?(?=class\s)',  # Текст до class
+                        r'^[^@]*?(?=@)',        # Текст до декоратора
+                    ]
+                    for pattern in code_start_patterns:
+                        filtered_code = re.sub(pattern, '', filtered_code, flags=re.IGNORECASE | re.DOTALL)
+                    filtered_code = filtered_code.strip()
+                    
+                    if filtered_code and is_valid_python_code(filtered_code):
+                        f["code"] = filtered_code
+                        valid_code_files.append(f)
             
             if not valid_code_files:
-                raise LLMError(
-                    "Generated code is not valid Python code",
-                    details={"reason": "LLM returned text that is not valid Python code"},
+                # Если код не валиден, пробуем еще раз с максимально строгим промптом
+                logger.warning(
+                    "Generated code is not valid, retrying with ultra-strict prompt",
+                    task_id=self.request.id,
                 )
+                ultra_strict_prompt = (
+                    "Верни ТОЛЬКО Python код. НИЧЕГО больше.\n"
+                    "Начни СРАЗУ с ```python\n"
+                    "БЕЗ единого символа перед ```python\n"
+                    "БЕЗ объяснений, БЕЗ планов, БЕЗ описаний\n"
+                    "ТОЛЬКО код внутри блока ```python ... ```\n\n"
+                    + user_prompt
+                )
+                code_response = loop.run_until_complete(
+                    llm_client.generate(
+                        system_prompt="Ты генератор Python кода. Верни ТОЛЬКО код, начиная с ```python. БЕЗ объяснений.",
+                        user_prompt=ultra_strict_prompt,
+                    )
+                )
+                filtered_response = filter_english_thinking_text(code_response)
+                code_extracted = extract_code_from_text(filtered_response)
+                
+                # Проверяем валидность еще раз
+                valid_code_files = []
+                for f in code_extracted.get("files", []):
+                    code = f.get("code", "")
+                    if code and len(code.strip()) > 50:
+                        filtered_code = filter_english_thinking_text(code)
+                        if filtered_code and is_valid_python_code(filtered_code):
+                            f["code"] = filtered_code
+                            valid_code_files.append(f)
+                
+                if not valid_code_files:
+                    raise LLMError(
+                        "Generated code is not valid Python code after retry",
+                        details={"reason": "LLM returned text that is not valid Python code even after filtering"},
+                    )
             
             logger.info(
                 "Code generated successfully, now generating explanation",

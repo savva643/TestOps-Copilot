@@ -224,10 +224,12 @@ async def test_example_success(client):
         else:  # UI
             system_prompt = """Ты — генератор Python-кода UI тестов в формате Allure TestOps as Code. Твоя ЕДИНСТВЕННАЯ задача — вернуть готовый код.
 
-СТРОГО ЗАПРЕЩЕНО:
-- Писать текстовые пояснения типа "We need to produce...", "Let's create...", "I'll generate..."
-- Писать планы действий или описания того, что ты собираешься сделать
-- Начинать ответ с английского текста
+КРИТИЧЕСКИ ВАЖНО:
+- Твой ответ ДОЛЖЕН начинаться СРАЗУ с ```python (без единого символа перед ним)
+- ЗАПРЕЩЕНО писать: 'We need to...', 'We must...', 'Let's create...', 'I'll generate...', 'Here is...'
+- ЗАПРЕЩЕНО писать планы действий или описания того, что ты собираешься сделать
+- ЗАПРЕЩЕНО начинать ответ с английского текста
+- ЗАПРЕЩЕНО писать описания типа "We need to output...", "Will import...", "Define fixture..."
 
 ОБЯЗАТЕЛЬНО:
 - Твой ответ ДОЛЖЕН начинаться СРАЗУ с ```python (без пробелов и текста перед ним)
@@ -329,10 +331,23 @@ class TestPriceCalculatorDynamicPrice:
             user_prompt_parts.append(f"Story: {story}")
 
         if test_type in ["api", "ui"]:
-            user_prompt_parts.append("\n\nСТРОГОЕ ТРЕБОВАНИЕ:")
+            user_prompt_parts.append("\n\nКРИТИЧЕСКИ ВАЖНО:")
             user_prompt_parts.append("Начни ответ СРАЗУ с ```python (без единого символа перед ним)")
-            user_prompt_parts.append("НЕ пиши: 'We need to...', 'Let's create...', 'I'll generate...'")
-            user_prompt_parts.append("НЕ пиши планы или описания перед первым блоком кода")
+            user_prompt_parts.append("ЗАПРЕЩЕНО писать:")
+            user_prompt_parts.append("- 'We need to...', 'We must...', 'We should...', 'We can...', 'We will...', 'We'll...'")
+            user_prompt_parts.append("- 'Let's create...', 'Let us...', 'Let me...'")
+            user_prompt_parts.append("- 'I'll generate...', 'I will...', 'I need...', 'I should...', 'I can...', 'I'm going...'")
+            user_prompt_parts.append("- 'Here is...', 'This is...', 'The code...', 'The test...'")
+            user_prompt_parts.append("- 'Will produce...', 'Should output...', 'Must include...', 'Need to output...'")
+            user_prompt_parts.append("- 'We'll produce...', 'We're going to...', 'Now produce...', 'Let's craft...'")
+            user_prompt_parts.append("- Любые планы действий или описания того, что ты собираешься сделать")
+            user_prompt_parts.append("- Любой текст на английском языке перед блоком ```python")
+            user_prompt_parts.append("ТВОЙ ОТВЕТ ДОЛЖЕН БЫТЬ ТОЛЬКО:")
+            user_prompt_parts.append("```python")
+            user_prompt_parts.append("import pytest")
+            user_prompt_parts.append("# ... готовый код ...")
+            user_prompt_parts.append("```")
+            user_prompt_parts.append("НИКАКИХ объяснений перед блоком кода. НИКАКИХ планов. ТОЛЬКО КОД.")
             user_prompt_parts.append("Если нужно несколько файлов — используй несколько блоков ```python ... ```")
             user_prompt_parts.append("Можешь добавлять пояснения МЕЖДУ блоками кода (перед следующим ```python)")
             
