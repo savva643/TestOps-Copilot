@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { MdMoreVert, MdSend, MdDeleteOutline, MdInfoOutline, MdMemory } from 'react-icons/md'
 import { Alert } from '@snack-uikit/alert'
-import { Card } from '@snack-uikit/card'
 import { ButtonFilled } from '@snack-uikit/button'
 import {
   sendChatMessage,
@@ -11,7 +10,7 @@ import {
   compressChat,
   type ChatMessage,
 } from '../api/gigachat'
-import { getStoredLlmApiKey, getStoredCredentials } from '../api/auth'
+import { getStoredCredentials } from '../api/auth'
 import './GigachatPage.css'
 
 interface Message {
@@ -57,7 +56,7 @@ export function GigachatPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [contextTokens, setContextTokens] = useState(0)
+  const [, setContextTokens] = useState(0)
   const [contextPercentage, setContextPercentage] = useState(0)
   const [contextFull, setContextFull] = useState(false)
   const [sessionId] = useState(() => generateSessionId())

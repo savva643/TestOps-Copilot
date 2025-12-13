@@ -40,7 +40,7 @@ export function TaskDetailsPage() {
   const [progressFading, setProgressFading] = useState(false)
   const [recreating, setRecreating] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
-  const pollingRef = useRef<number | null>(null)
+  const pollingRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const usePollingRef = useRef(false)
 
   const isTerminal = (status?: string) => {
@@ -125,7 +125,7 @@ export function TaskDetailsPage() {
     setConnecting(true)
     const url = getTasksWebSocketUrl(taskId)
     
-    let wsTimeout: number | null = null
+    let wsTimeout: ReturnType<typeof setTimeout> | null = null
     
     try {
       const ws = new WebSocket(url)
