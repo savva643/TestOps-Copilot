@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import test_generation, tasks, gitlab_tasks, export
+from app.api.v1.endpoints import test_generation, tasks, gitlab_tasks, export, gigachat
 
 api_router = APIRouter()
 
@@ -28,6 +28,12 @@ api_router.include_router(
     export.router,
     prefix="/export",
     tags=["export"],
+)
+
+api_router.include_router(
+    gigachat.router,
+    prefix="/gigachat",
+    tags=["gigachat"],
 )
 
 

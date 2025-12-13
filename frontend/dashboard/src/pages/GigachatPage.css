@@ -50,6 +50,63 @@
   margin: 0;
 }
 
+.gigachat-context-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 16px;
+}
+
+.gigachat-context-progress-bar {
+  width: 120px;
+  height: 6px;
+  background: var(--surface-secondary);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.gigachat-context-progress-fill {
+  height: 100%;
+  background: var(--accent-primary);
+  border-radius: 3px;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.gigachat-context-progress-fill.context-warning {
+  background: #f59e0b;
+}
+
+.gigachat-context-progress-fill.context-full {
+  background: #ef4444;
+}
+
+.gigachat-context-percentage {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  min-width: 45px;
+  text-align: right;
+}
+
+.gigachat-clear-context-button {
+  margin-top: 12px;
+  padding: 8px 16px;
+  background: var(--accent-primary);
+  color: var(--accent-contrast);
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gigachat-clear-context-button:hover {
+  background: #22c172;
+  transform: translateY(-1px);
+}
+
 .gigachat-header-right {
   position: relative;
 }
@@ -498,4 +555,115 @@
 .gigachat-input::-webkit-scrollbar-thumb {
   background: var(--border-strong);
   border-radius: 2px;
+}
+
+/* Модальное окно памяти GigaChat */
+.gigachat-memory-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.gigachat-memory-modal {
+  background: var(--surface-primary);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 800px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  animation: scaleIn 0.3s ease;
+}
+
+.gigachat-memory-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.gigachat-memory-modal-header h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.gigachat-memory-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 28px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.gigachat-memory-modal-close:hover {
+  background: var(--muted);
+  color: var(--text-primary);
+}
+
+.gigachat-memory-modal-content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  min-height: 200px;
+}
+
+.gigachat-memory-loading {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 40px 0;
+}
+
+.gigachat-memory-text {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.6;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.gigachat-memory-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-primary);
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Адаптивность модального окна */
+@media (max-width: 768px) {
+  .gigachat-memory-modal {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .gigachat-memory-modal-header {
+    padding: 16px;
+  }
+
+  .gigachat-memory-modal-content {
+    padding: 16px;
+  }
+
+  .gigachat-memory-modal-footer {
+    padding: 12px 16px;
+  }
 }

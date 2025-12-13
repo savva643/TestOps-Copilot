@@ -1,8 +1,17 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { MdMoreVert, MdSend, MdDeleteOutline, MdInfoOutline } from 'react-icons/md'
+import { MdMoreVert, MdSend, MdDeleteOutline, MdInfoOutline, MdMemory } from 'react-icons/md'
 import { Alert } from '@snack-uikit/alert'
-import { sendChatMessage, isGigaChatAvailable, type ChatMessage } from '../api/gigachat'
-import { getStoredLlmApiKey } from '../api/auth'
+import { Card } from '@snack-uikit/card'
+import { ButtonFilled } from '@snack-uikit/button'
+import {
+  sendChatMessage,
+  isGigaChatAvailable,
+  generateSessionId,
+  getChatMemory,
+  compressChat,
+  type ChatMessage,
+} from '../api/gigachat'
+import { getStoredLlmApiKey, getStoredCredentials } from '../api/auth'
 import './GigachatPage.css'
 
 interface Message {
@@ -48,6 +57,13 @@ export function GigachatPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [contextTokens, setContextTokens] = useState(0)
+  const [contextPercentage, setContextPercentage] = useState(0)
+  const [contextFull, setContextFull] = useState(false)
+  const [sessionId] = useState(() => generateSessionId())
+  const [showMemoryModal, setShowMemoryModal] = useState(false)
+  const [memoryContent, setMemoryContent] = useState<string | null>(null)
+  const [loadingMemory, setLoadingMemory] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -91,6 +107,12 @@ export function GigachatPage() {
       return
     }
 
+    // Проверяем, не переполнен ли контекст
+    if (contextFull) {
+      setError('Контекст чата переполнен. Пожалуйста, очистите чат перед отправкой нового сообщения.')
+      return
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -116,11 +138,30 @@ export function GigachatPage() {
         content: userMessage.content,
       })
 
-      // Отправляем запрос в GigaChat
+      // Получаем owner_id из credentials
+      const credentials = getStoredCredentials()
+      const ownerId = credentials?.keyId || undefined
+
+      // Отправляем запрос в GigaChat с session_id
       const response = await sendChatMessage(chatHistory, {
-        maxTokens: 2500,
+        maxTokens: 4000,
         temperature: 0.5,
+        sessionId: sessionId,
+        ownerId: ownerId,
       })
+
+      // Обновляем информацию о контексте
+      setContextTokens(response.context_tokens)
+      setContextPercentage(response.context_percentage)
+      setContextFull(response.context_full)
+
+      // Автоматически сжимаем, если контекст переполнен
+      if (response.context_full && !memoryContent) {
+        // Сжимаем в фоне (не блокируем UI)
+        compressChat(sessionId).catch((err) => {
+          console.warn('Failed to auto-compress chat:', err)
+        })
+      }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -161,6 +202,33 @@ export function GigachatPage() {
     setMessages([])
     setShowMenu(false)
     setError(null)
+    setContextTokens(0)
+    setContextPercentage(0)
+    setContextFull(false)
+    setMemoryContent(null)
+  }
+
+  const handleShowMemory = async () => {
+    setShowMenu(false)
+    setShowMemoryModal(true)
+    setLoadingMemory(true)
+
+    try {
+      // Сначала пытаемся получить память
+      const memory = await getChatMemory(sessionId)
+      setMemoryContent(memory.compressed_context || 'Память еще не сжата.')
+    } catch (err: any) {
+      // Если памяти нет, пытаемся сжать
+      try {
+        await compressChat(sessionId)
+        const memory = await getChatMemory(sessionId)
+        setMemoryContent(memory.compressed_context || 'Память еще не сжата.')
+      } catch (compressErr: any) {
+        setMemoryContent('Ошибка при загрузке памяти: ' + (compressErr.message || 'Неизвестная ошибка'))
+      }
+    } finally {
+      setLoadingMemory(false)
+    }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -196,6 +264,21 @@ export function GigachatPage() {
               }}
             />
             <h2 className="gigachat-header-title">GigaChat</h2>
+            {!isEmpty && (
+              <div className="gigachat-context-progress">
+                <div className="gigachat-context-progress-bar">
+                  <div
+                    className={`gigachat-context-progress-fill ${
+                      contextFull ? 'context-full' : contextPercentage > 80 ? 'context-warning' : ''
+                    }`}
+                    style={{ width: `${Math.min(contextPercentage, 100)}%` }}
+                  />
+                </div>
+                <span className="gigachat-context-percentage">
+                  {contextPercentage.toFixed(1)}%
+                </span>
+              </div>
+            )}
           </div>
           <div className="gigachat-header-right">
             <div className="gigachat-menu-container" ref={menuRef}>
@@ -215,6 +298,14 @@ export function GigachatPage() {
                   >
                     <MdDeleteOutline className="gigachat-menu-item-icon" />
                     <span>Очистить чат</span>
+                  </button>
+                  <button
+                    className="gigachat-menu-item"
+                    onClick={handleShowMemory}
+                    disabled={isEmpty}
+                  >
+                    <MdMemory className="gigachat-menu-item-icon" />
+                    <span>Показать память GigaChat</span>
                   </button>
                   <a
                     href="https://cloud.ru/products/gigachat"
@@ -247,6 +338,29 @@ export function GigachatPage() {
           {error && apiKeyAvailable && (
             <div className="gigachat-error-container">
               <Alert appearance="error" title="Ошибка" description={error} />
+            </div>
+          )}
+
+          {contextFull && !isEmpty && (
+            <div className="gigachat-error-container">
+              <Alert
+                appearance="warning"
+                title="Контекст переполнен"
+                description={
+                  <div>
+                    <p>
+                      Контекст чата заполнен на {contextPercentage.toFixed(1)}%. 
+                      Для продолжения разговора необходимо очистить чат.
+                    </p>
+                    <button
+                      className="gigachat-clear-context-button"
+                      onClick={handleClearChat}
+                    >
+                      Очистить чат
+                    </button>
+                  </div>
+                }
+              />
             </div>
           )}
 
@@ -372,14 +486,51 @@ export function GigachatPage() {
             <button
               className="gigachat-send-button"
               onClick={handleSendMessage}
-              disabled={!inputValue.trim() || isLoading || !apiKeyAvailable}
+              disabled={
+                !inputValue.trim() || isLoading || !apiKeyAvailable || contextFull
+              }
               aria-label="Отправить сообщение"
+              title={contextFull ? 'Контекст переполнен. Очистите чат.' : ''}
             >
               <MdSend className="gigachat-send-icon" />
             </button>
           </div>
         </div>
       </div>
+
+      {/* Модальное окно памяти GigaChat */}
+      {showMemoryModal && (
+        <div className="gigachat-memory-modal-overlay" onClick={() => setShowMemoryModal(false)}>
+          <div className="gigachat-memory-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="gigachat-memory-modal-header">
+              <h3>Память GigaChat</h3>
+              <button
+                className="gigachat-memory-modal-close"
+                onClick={() => setShowMemoryModal(false)}
+                aria-label="Закрыть"
+              >
+                ×
+              </button>
+            </div>
+            <div className="gigachat-memory-modal-content">
+              {loadingMemory ? (
+                <div className="gigachat-memory-loading">Загрузка памяти...</div>
+              ) : (
+                <div className="gigachat-memory-text">
+                  {memoryContent || 'Память еще не сжата. Используйте функцию сжатия для оптимизации контекста.'}
+                </div>
+              )}
+            </div>
+            <div className="gigachat-memory-modal-footer">
+              <ButtonFilled
+                label="Закрыть"
+                onClick={() => setShowMemoryModal(false)}
+                appearance="neutral"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

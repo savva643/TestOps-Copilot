@@ -91,6 +91,9 @@ npm run dev
 
 Экспорт схем: см. [docs/api/README.md](docs/api/README.md).
 
+### GigaChat Integration
+AI-помощник для генерации тестов и анализа кода. Полная документация: [docs/GIGACHAT.md](docs/GIGACHAT.md)
+
 ### Обязательные .env (создать вручную)
 - `backend/core_agent_service/.env`
 - `backend/integration_gateway/.env`
@@ -193,6 +196,7 @@ testops-copilot/
 ### API документация
 - **[docs/api/README.md](docs/api/README.md)** — API схемы и Swagger UI
 - **[docs/API_DOCS_CHECKLIST.md](docs/API_DOCS_CHECKLIST.md)** — Чек-лист публикации API
+- **[docs/GIGACHAT.md](docs/GIGACHAT.md)** — GigaChat Integration (AI-помощник для генерации тестов)
 
 ### Планы и метрики
 - **[docs/TESTING_PLAN.md](docs/TESTING_PLAN.md)** — План тестирования

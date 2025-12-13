@@ -1,50 +1,22 @@
-import OpenAI from 'openai'
+import { createApiClient } from './client'
 import { getStoredLlmApiKey } from './auth'
 
-const GIGACHAT_BASE_URL = 'https://foundation-models.api.cloud.ru/v1'
-// Используем GigaChat3 - бесплатная модель с большим контекстом (262к токенов)
-// и поддержкой Function Calling и Structured Output
-const GIGACHAT_MODEL = 'GigaChat/GigaChat3-10B-A1.8B'
-
-// Системный промпт для GigaChat
-const SYSTEM_PROMPT = `Ты — специализированный помощник для QA-разработчиков в сервисе автоматической генерации тестов.
-
-ТВОЯ РОЛЬ:
-1. Помогать создавать тесты трёх типов:
-   - РУЧНЫЕ ТЕСТЫ: подробное описание шагов в формате Markdown (\`.md\`)
-   - API-ТЕСТЫ: код на Python (\`.py\`) с использованием библиотеки requests + пояснение в \`.md\`
-   - UI-ТЕСТЫ: код на Python (\`.py\`) с использованием selenium/playwright + пояснение в \`.md\`
-
-2. Ты получаешь:
-   - Исходный код приложения (Python, JavaScript, etc.)
-   - Описание функциональности или требования
-   - Файлы проекта для анализа
-   - Конкретный запрос пользователя (например: "создай API-тест для эндпоинта /login")
-
-3. Ты анализируешь материалы и генерируешь:
-   - Чистый, готовый к запуску код на Python
-   - Документацию в формате Markdown
-   - Примеры использования
-   - Обработку ошибок
-
-ФОРМАТ ОТВЕТА:
-- Для кода используй блоки \`\`\`python ... \`\`\`
-- Для документации используй Markdown
-- Если нужно несколько файлов, разделяй их заголовками ### Файл: filename.py
-
-ПРАВИЛА:
-1. Следуй best practices тестирования
-2. Добавляй комментарии в код
-3. Учитывай контекст проекта
-4. Задавай уточняющие вопросы, если информации недостаточно
-5. Помни контекст предыдущих сообщений в разговоре`
+const apiClient = createApiClient()
 
 export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant'
+  role: 'user' | 'assistant'
   content: string
 }
 
-export interface ChatCompletionResponse {
+export interface ChatRequest {
+  messages: ChatMessage[]
+  temperature?: number
+  max_tokens?: number
+  session_id?: string
+  owner_id?: string
+}
+
+export interface ChatResponse {
   content: string
   model: string
   usage?: {
@@ -52,101 +24,117 @@ export interface ChatCompletionResponse {
     completion_tokens?: number
     total_tokens?: number
   }
+  context_tokens: number
+  context_full: boolean
+  context_percentage: number
 }
 
-let gigachatClient: OpenAI | null = null
-let currentApiKey: string | null = null
-
-function getGigaChatClient(): OpenAI {
-  const apiKey = getStoredLlmApiKey()
-  if (!apiKey) {
-    throw new Error('GigaChat API ключ не найден. Пожалуйста, введите API ключ при входе.')
-  }
-
-  // Пересоздаем клиент, если ключ изменился
-  if (!gigachatClient || currentApiKey !== apiKey) {
-    gigachatClient = new OpenAI({
-      apiKey: apiKey,
-      baseURL: GIGACHAT_BASE_URL,
-    })
-    currentApiKey = apiKey
-  }
-
-  return gigachatClient
+export interface ContextInfo {
+  max_context_tokens: number
+  recommended_max_request_tokens: number
+  warning_threshold_percentage: number
+  model: string
+  description: string
 }
 
+/**
+ * Send a chat message to GigaChat via backend API.
+ * 
+ * @param messages - List of chat messages (conversation history)
+ * @param options - Optional parameters (temperature, max_tokens)
+ * @returns Chat response with content and context information
+ */
 export async function sendChatMessage(
   messages: ChatMessage[],
   options?: {
     maxTokens?: number
     temperature?: number
+    sessionId?: string
+    ownerId?: string
   }
-): Promise<ChatCompletionResponse> {
-  try {
-    const client = getGigaChatClient()
-
-    // Добавляем системный промпт, если его еще нет
-    const messagesWithSystem = messages.some((m) => m.role === 'system')
-      ? messages
-      : [{ role: 'system' as const, content: SYSTEM_PROMPT }, ...messages]
-
-    const response = await client.chat.completions.create({
-      model: GIGACHAT_MODEL,
-      messages: messagesWithSystem.map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-      })),
-      // GigaChat3 поддерживает больший контекст (262к токенов), можно увеличить max_tokens
-      max_tokens: options?.maxTokens || 4000,
-      temperature: options?.temperature || 0.5,
-      presence_penalty: 0,
-      top_p: 0.95,
-    })
-
-    return {
-      content: response.choices[0].message.content || '',
-      model: response.model,
-      usage: response.usage
-        ? {
-            prompt_tokens: response.usage.prompt_tokens,
-            completion_tokens: response.usage.completion_tokens,
-            total_tokens: response.usage.total_tokens,
-          }
-        : undefined,
-    }
-  } catch (error: any) {
-    if (error.message?.includes('API ключ')) {
-      throw error
-    }
-    
-    // Обработка ошибок OpenAI SDK
-    if (error.status === 401 || error.statusCode === 401) {
-      resetGigaChatClient()
-      throw new Error('Неверный API ключ GigaChat. Проверьте ключ в настройках.')
-    }
-    
-    if (error.status === 429 || error.statusCode === 429) {
-      throw new Error('Превышен лимит запросов. Попробуйте позже.')
-    }
-    
-    if (error.status === 500 || error.statusCode === 500) {
-      throw new Error('Ошибка сервера GigaChat. Попробуйте позже.')
-    }
-
-    // Обработка ошибок от OpenAI SDK
-    const errorMessage = error.message || error.error?.message || 'Ошибка при обращении к GigaChat API'
-    throw new Error(errorMessage)
+): Promise<ChatResponse> {
+  const llmApiKey = getStoredLlmApiKey()
+  if (!llmApiKey) {
+    throw new Error('GigaChat API ключ не найден. Пожалуйста, введите API ключ при входе.')
   }
+
+  const response = await apiClient.post<ChatResponse>('/api/v1/gigachat/chat', {
+    messages: messages.map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+    })),
+    temperature: options?.temperature || 0.5,
+    max_tokens: options?.maxTokens || 4000,
+    session_id: options?.sessionId,
+    owner_id: options?.ownerId,
+  }, {
+    headers: {
+      'X-LLM-API-Key': llmApiKey,
+    },
+  })
+
+  return response.data
 }
 
-// Функция для проверки доступности API ключа
+/**
+ * Get context information (limits, thresholds, etc.)
+ */
+export async function getContextInfo(): Promise<ContextInfo> {
+  const response = await apiClient.get<ContextInfo>('/api/v1/gigachat/context-info')
+  return response.data
+}
+
+/**
+ * Check if GigaChat is available (API key exists)
+ */
 export function isGigaChatAvailable(): boolean {
   return !!getStoredLlmApiKey()
 }
 
-// Сброс клиента при смене ключа
-export function resetGigaChatClient() {
-  gigachatClient = null
-  currentApiKey = null
+/**
+ * Compress chat history for a session
+ */
+export async function compressChat(sessionId: string): Promise<{
+  session_id: string
+  compressed_context: string
+  compressed_at: string
+  original_messages: number
+}> {
+  const llmApiKey = getStoredLlmApiKey()
+  if (!llmApiKey) {
+    throw new Error('GigaChat API ключ не найден.')
+  }
+
+  const response = await apiClient.post(
+    `/api/v1/gigachat/chat/${sessionId}/compress`,
+    {},
+    {
+      headers: {
+        'X-LLM-API-Key': llmApiKey,
+      },
+    }
+  )
+
+  return response.data
 }
 
+/**
+ * Get compressed memory (context) for a chat session
+ */
+export async function getChatMemory(sessionId: string): Promise<{
+  session_id: string
+  compressed_context: string
+  compressed_at: string | null
+  total_messages: number
+  total_tokens: number
+}> {
+  const response = await apiClient.get(`/api/v1/gigachat/chat/${sessionId}/memory`)
+  return response.data
+}
+
+/**
+ * Generate a unique session ID
+ */
+export function generateSessionId(): string {
+  return `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+}
