@@ -1,0 +1,45 @@
+.gigachat-page {
+  width: 100%;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.page-header p {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.gigachat-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.gigachat-placeholder {
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.gigachat-placeholder h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 16px 0;
+}
+
+.gigachat-placeholder p {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+

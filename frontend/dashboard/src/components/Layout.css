@@ -159,6 +159,40 @@
   transform: rotate(180deg);
 }
 
+.gigachat-button {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  color: var(--text-primary);
+}
+
+.gigachat-button:hover {
+  background: var(--muted);
+  transform: scale(1.05);
+}
+
+.gigachat-icon {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.3s ease;
+}
+
+/* Инверсия цвета для темной темы */
+.theme-dark .gigachat-icon {
+  filter: invert(1);
+}
+
+/* Для светлой темы иконка остается темной (без инверсии) */
+.theme-light .gigachat-icon {
+  filter: none;
+}
+
 .main-content {
   flex: 1;
   padding: 16px 20px 32px;
@@ -254,6 +288,16 @@
   /* Скрываем кнопки профиля/входа на мобильных */
   .header-actions .btn-primary {
     display: none !important;
+  }
+
+  /* Кнопка гигачата видна на мобильных, левее кнопки смены темы */
+  .gigachat-button {
+    padding: 6px 10px;
+  }
+
+  .gigachat-icon {
+    width: 18px;
+    height: 18px;
   }
 
   /* Адаптируем логотип - скрываем текст на мобильных */

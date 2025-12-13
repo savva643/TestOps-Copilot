@@ -7,6 +7,7 @@ import { Status } from '@snack-uikit/status'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { getTaskStatus, getTasksWebSocketUrl } from '../api/tasks'
+import { generateTestCase } from '../api/testGeneration'
 import './TasksPage.css'
 
 interface TestFile {
@@ -37,6 +38,7 @@ export function TaskDetailsPage() {
   const [connecting, setConnecting] = useState(false)
   const [progressVisible, setProgressVisible] = useState(true)
   const [progressFading, setProgressFading] = useState(false)
+  const [recreating, setRecreating] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
   const pollingRef = useRef<number | null>(null)
   const usePollingRef = useRef(false)
@@ -443,6 +445,46 @@ export function TaskDetailsPage() {
     URL.revokeObjectURL(url)
   }
 
+  const handleRecreateTask = async () => {
+    if (!taskStatus?.result) return
+
+    setRecreating(true)
+    setError(null)
+
+    try {
+      // Извлекаем описание из промпта, если оно есть, иначе используем общее описание
+      let description = ''
+      if (taskStatus.result.prompt) {
+        // Пытаемся извлечь описание из промпта
+        description = taskStatus.result.prompt
+      } else {
+        // Если промпта нет, создаем описание на основе доступных данных
+        description = `Пересоздание задачи ${taskStatus.task_id}`
+        if (taskStatus.result.feature) {
+          description += `\nФича: ${taskStatus.result.feature}`
+        }
+      }
+
+      const response = await generateTestCase({
+        description,
+        test_type: taskStatus.result.test_type || 'manual',
+        feature: taskStatus.result.feature || undefined,
+        story: taskStatus.result.story || undefined,
+        priority: taskStatus.result.priority || 'NORMAL',
+        owner: taskStatus.result.owner || undefined,
+        jira_link: taskStatus.result.jira_link || undefined,
+      })
+
+      // Перенаправляем на новую задачу
+      navigate(`/tasks/${response.task_id}`)
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.detail || err.message || 'Не удалось пересоздать задачу'
+      setError(errorMsg)
+    } finally {
+      setRecreating(false)
+    }
+  }
+
   const statusAppearance = taskStatus ? getStatusAppearance(taskStatus.status) : 'neutral'
   const statusLabel = taskStatus ? getStatusLabel(taskStatus.status) : 'Статус неизвестен'
 
@@ -579,8 +621,17 @@ export function TaskDetailsPage() {
             </div>
           )}
 
-          <div className="history-actions" style={{ marginTop: '1rem' }}>
+          <div className="history-actions" style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <ButtonFilled label="К списку задач" appearance="neutral" onClick={() => navigate('/tasks')} />
+            {isTerminal(taskStatus?.status) && taskStatus?.result && (
+              <ButtonFilled 
+                label={recreating ? 'Пересоздание...' : 'Пересоздать задачу'} 
+                appearance="primary" 
+                onClick={handleRecreateTask}
+                disabled={recreating}
+                loading={recreating}
+              />
+            )}
           </div>
         </Card>
       </div>

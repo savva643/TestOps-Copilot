@@ -11,8 +11,7 @@ import {
   MdAddCircle, 
   MdAssignment, 
   MdAnalytics,
-  MdPerson,
-  MdChat
+  MdPerson
 } from 'react-icons/md'
 import './Layout.css'
 
@@ -126,7 +125,7 @@ export function Layout({ children }: LayoutProps) {
                 aria-label="Гигачат"
                 title="Гигачат"
               >
-                <MdChat className="gigachat-icon" />
+                <img src="/gigachat.svg" alt="Гигачат" className="gigachat-icon" />
               </button>
             )}
             {!isLoginPage && isAuthenticated && (

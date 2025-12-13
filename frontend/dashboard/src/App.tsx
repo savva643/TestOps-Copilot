@@ -8,6 +8,7 @@ import { TaskDetailsPage } from './pages/TaskDetailsPage'
 import { OptimizePage } from './pages/OptimizePage'
 import { LoginPage } from './pages/LoginPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { GigachatPage } from './pages/GigachatPage'
 
 function App() {
   return (
@@ -71,6 +72,16 @@ function App() {
               <ProtectedRoute>
                 <div className="page-transition">
                   <OptimizePage />
+                </div>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/gigachat"
+            element={
+              <ProtectedRoute>
+                <div className="page-transition">
+                  <GigachatPage />
                 </div>
               </ProtectedRoute>
             }
