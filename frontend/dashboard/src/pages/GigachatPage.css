@@ -1,45 +1,501 @@
 .gigachat-page {
   width: 100%;
+  height: calc(100vh - 200px);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-secondary);
 }
 
-.page-header {
+.gigachat-chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: var(--surface-primary);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  border: 1px solid var(--border-primary);
+}
+
+/* Хедер чата */
+.gigachat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--surface-primary);
+  position: relative;
+  z-index: 10;
+}
+
+.gigachat-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gigachat-header-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.gigachat-header-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.gigachat-header-right {
+  position: relative;
+}
+
+.gigachat-menu-container {
+  position: relative;
+}
+
+.gigachat-menu-button {
+  background: transparent;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.gigachat-menu-button:hover {
+  background: var(--muted);
+  color: var(--text-primary);
+}
+
+.gigachat-menu-icon {
+  font-size: 20px;
+}
+
+.gigachat-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  z-index: 100;
+  overflow: hidden;
+  animation: fadeIn 0.2s ease;
+}
+
+.gigachat-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: background 0.2s ease;
+  text-decoration: none;
+}
+
+.gigachat-menu-item:hover:not(:disabled) {
+  background: var(--muted);
+}
+
+.gigachat-menu-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gigachat-menu-item-icon {
+  font-size: 18px;
+  color: var(--text-secondary);
+}
+
+.gigachat-menu-item:hover:not(:disabled) .gigachat-menu-item-icon {
+  color: var(--text-primary);
+}
+
+/* Область сообщений */
+.gigachat-messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  background: var(--surface-secondary);
+}
+
+.gigachat-error-container {
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+
+.gigachat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Пустое состояние */
+.gigachat-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.gigachat-empty-logo {
   margin-bottom: 24px;
 }
 
-.page-header h1 {
+.gigachat-empty-logo-img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+}
+
+.gigachat-empty-title {
   font-size: 28px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text-primary);
   margin: 0 0 8px 0;
 }
 
-.page-header p {
+.gigachat-empty-subtitle {
   font-size: 16px;
   color: var(--text-secondary);
-  margin: 0;
+  margin: 0 0 40px 0;
 }
 
-.gigachat-container {
+.gigachat-examples {
+  max-width: 600px;
   width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
 }
 
-.gigachat-placeholder {
-  padding: 48px 24px;
-  text-align: center;
-}
-
-.gigachat-placeholder h2 {
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 16px 0;
-}
-
-.gigachat-placeholder p {
-  font-size: 16px;
+.gigachat-examples-title {
+  font-size: 14px;
+  font-weight: 500;
   color: var(--text-secondary);
-  margin: 0;
+  margin: 0 0 16px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
+.gigachat-examples-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gigachat-example-item {
+  padding: 16px 20px;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+  font-family: inherit;
+}
+
+.gigachat-example-item:hover {
+  border-color: var(--accent-primary);
+  background: rgba(38, 208, 124, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(38, 208, 124, 0.15);
+}
+
+.gigachat-example-item:active {
+  transform: translateY(0);
+}
+
+/* Сообщения */
+.gigachat-message {
+  display: flex;
+  width: 100%;
+  animation: slideIn 0.3s ease;
+}
+
+.gigachat-message-user {
+  justify-content: flex-end;
+}
+
+.gigachat-message-assistant {
+  justify-content: flex-start;
+}
+
+.gigachat-message-content {
+  display: flex;
+  gap: 12px;
+  max-width: 75%;
+  align-items: flex-start;
+}
+
+.gigachat-message-user .gigachat-message-content {
+  flex-direction: row-reverse;
+}
+
+.gigachat-message-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gigachat-message-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.gigachat-message-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gigachat-message-user .gigachat-message-text {
+  align-items: flex-end;
+}
+
+.gigachat-message-assistant .gigachat-message-text {
+  align-items: flex-start;
+}
+
+.gigachat-message-text-content {
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.gigachat-message-user .gigachat-message-text-content {
+  background: var(--accent-primary);
+  color: var(--accent-contrast);
+  border-bottom-right-radius: 4px;
+}
+
+.gigachat-message-assistant .gigachat-message-text-content {
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+  border-bottom-left-radius: 4px;
+}
+
+.gigachat-message-time {
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding: 0 4px;
+}
+
+/* Индикатор печати */
+.gigachat-typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding: 12px 16px;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 16px;
+  border-bottom-left-radius: 4px;
+}
+
+.gigachat-typing-indicator span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  animation: typing 1.4s infinite;
+}
+
+.gigachat-typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.gigachat-typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-8px);
+    opacity: 1;
+  }
+}
+
+/* Поле ввода */
+.gigachat-input-container {
+  padding: 16px 20px;
+  background: var(--surface-primary);
+  border-top: 1px solid var(--border-primary);
+}
+
+.gigachat-input-wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 24px;
+  padding: 8px 12px;
+  transition: all 0.2s ease;
+}
+
+.gigachat-input-wrapper:focus-within {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(38, 208, 124, 0.1);
+}
+
+.gigachat-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  max-height: 120px;
+  overflow-y: auto;
+  padding: 4px 8px;
+  outline: none;
+}
+
+.gigachat-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.gigachat-send-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent-primary);
+  color: var(--accent-contrast);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.gigachat-send-button:hover:not(:disabled) {
+  background: #22c172;
+  transform: scale(1.05);
+}
+
+.gigachat-send-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.gigachat-send-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gigachat-send-icon {
+  font-size: 20px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .gigachat-page {
+    height: calc(100vh - 140px);
+  }
+
+  .gigachat-chat-container {
+    border-radius: 0;
+    height: 100%;
+  }
+
+  .gigachat-header {
+    padding: 12px 16px;
+  }
+
+  .gigachat-header-title {
+    font-size: 16px;
+  }
+
+  .gigachat-messages-container {
+    padding: 16px;
+  }
+
+  .gigachat-message-content {
+    max-width: 85%;
+  }
+
+  .gigachat-empty-logo-img {
+    width: 80px;
+    height: 80px;
+  }
+
+  .gigachat-empty-title {
+    font-size: 24px;
+  }
+
+  .gigachat-examples {
+    max-width: 100%;
+  }
+
+  .gigachat-input-container {
+    padding: 12px 16px;
+  }
+}
+
+/* Скроллбар */
+.gigachat-messages-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.gigachat-messages-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.gigachat-messages-container::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+
+.gigachat-messages-container::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.gigachat-input::-webkit-scrollbar {
+  width: 4px;
+}
+
+.gigachat-input::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.gigachat-input::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 2px;
+}
