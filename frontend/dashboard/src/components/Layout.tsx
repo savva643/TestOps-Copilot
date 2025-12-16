@@ -83,7 +83,11 @@ export function Layout({ children }: LayoutProps) {
     if (!isResizing) return
 
     const handleMouseMove = (event: MouseEvent) => {
-      const newWidth = Math.min(Math.max(event.clientX, 320), 800)
+      if (typeof window === 'undefined') return
+      // Панель теперь справа, поэтому ширина = расстояние от курсора до правого края
+      const viewportWidth = window.innerWidth
+      const distanceFromRight = Math.max(viewportWidth - event.clientX, 0)
+      const newWidth = Math.min(Math.max(distanceFromRight, 320), 800)
       setGigachatWidth(newWidth)
     }
 

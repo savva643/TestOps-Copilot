@@ -215,20 +215,20 @@
 .gigachat-panel {
   position: fixed;
   top: 56px; /* высота хедера примерно */
-  left: 0;
+  right: 0;
   bottom: 0;
   width: 0;
   max-width: 800px;
   min-width: 0;
   background: var(--surface-primary);
-  border-right: 1px solid var(--border-primary);
-  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.15);
+  border-left: 1px solid var(--border-primary);
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: row;
   overflow: hidden;
   z-index: 50;
   transition: width 0.25s ease, transform 0.25s ease;
-  transform: translateX(-100%);
+  transform: translateX(100%);
 }
 
 .gigachat-panel-open {
