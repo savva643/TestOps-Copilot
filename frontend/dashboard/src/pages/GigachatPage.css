@@ -489,38 +489,48 @@
 /* Адаптивность */
 @media (max-width: 768px) {
   /* Убираем padding у main-content для страницы GigaChat */
-  .main-content:has(.gigachat-page) {
-    padding: 0;
-    max-width: 100%;
+  .main-content:has(.gigachat-page),
+  .main-content .gigachat-page {
+    padding: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
   }
 
-  .gigachat-page {
-    position: fixed;
-    top: 56px; /* Высота header */
-    left: 0;
-    right: 0;
-    bottom: 60px; /* Высота bottom-nav */
-    height: calc(100vh - 56px - 60px);
-    max-height: calc(100vh - 56px - 60px);
-    width: 100vw;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    margin: 0;
-    box-sizing: border-box;
+  /* Более специфичный селектор для гарантии применения стилей */
+  .gigachat-page,
+  .main-content .gigachat-page,
+  div.gigachat-page {
+    position: fixed !important;
+    top: 56px !important; /* Высота header */
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 60px !important; /* Высота bottom-nav */
+    height: calc(100vh - 56px - 60px) !important;
+    max-height: calc(100vh - 56px - 60px) !important;
+    width: 100vw !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
   }
 
-  .gigachat-chat-container {
-    border-radius: 0;
-    height: 100%;
-    max-height: 100%;
-    width: 100%;
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    box-sizing: border-box;
+  .gigachat-chat-container,
+  .gigachat-page .gigachat-chat-container,
+  div.gigachat-chat-container {
+    border-radius: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    width: 100% !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   .gigachat-header {
