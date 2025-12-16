@@ -7,6 +7,14 @@
   background: var(--surface-secondary);
 }
 
+/* На мобильных переопределяем базовые стили */
+@media (max-width: 768px) {
+  .gigachat-page {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+}
+
 .gigachat-chat-container {
   display: flex;
   flex-direction: column;
@@ -504,9 +512,10 @@
     top: 56px !important; /* Высота header */
     left: 0 !important;
     right: 0 !important;
-    bottom: 60px !important; /* Высота bottom-nav */
-    height: calc(100vh - 56px - 60px) !important;
-    max-height: calc(100vh - 56px - 60px) !important;
+    bottom: 60px !important; /* Высота bottom-nav - высота вычисляется автоматически */
+    height: auto !important; /* Высота вычисляется из top и bottom */
+    max-height: none !important;
+    min-height: 0 !important;
     width: 100vw !important;
     overflow: hidden !important;
     display: flex !important;
