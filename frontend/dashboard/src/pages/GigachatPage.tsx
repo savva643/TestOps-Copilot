@@ -320,7 +320,7 @@ export function GigachatPage() {
                     <span>Показать память GigaChat</span>
                   </button>
                   <a
-                    href="https://cloud.ru/products/gigachat"
+                    href="https://giga.chat/help"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="gigachat-menu-item"

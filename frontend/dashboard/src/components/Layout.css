@@ -365,6 +365,12 @@
     padding-bottom: calc(80px + env(safe-area-inset-bottom));
   }
 
+  /* Убираем padding для страницы GigaChat на мобильных */
+  .main-content:has(.gigachat-page) {
+    padding: 0;
+    max-width: 100%;
+  }
+
   .footer {
     padding-bottom: calc(60px + env(safe-area-inset-bottom));
     margin-bottom: calc(60px + env(safe-area-inset-bottom));
