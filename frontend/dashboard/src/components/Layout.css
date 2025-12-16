@@ -214,7 +214,7 @@
 /* Выдвижная панель GigaChat для десктопа */
 .gigachat-panel {
   position: fixed;
-  top: 56px; /* высота хедера примерно */
+  top: 62px; /* высота хедера */
   right: 0;
   bottom: 0;
   width: 0;
