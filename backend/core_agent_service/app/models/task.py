@@ -2,7 +2,8 @@
 
 from datetime import datetime
 from typing import Optional
-from sqlalchemy import Column, String, DateTime, Text
+from sqlalchemy import Column, String, DateTime, Text, Integer, ForeignKey
+from sqlalchemy.orm import relationship
 
 from app.db import Base
 
@@ -34,6 +35,14 @@ class TaskRecord(Base):
     gitlab_spec_path = Column(String, nullable=True)
     is_gitlab_task = Column(String, nullable=True, default="false")  # "true" or "false" as string
 
+    # Связанные артефакты (сгенерированные файлы тестов)
+    artifacts = relationship(
+        "TaskArtifact",
+        back_populates="task",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
     def update_status(
         self,
         status: str,
@@ -49,5 +58,22 @@ class TaskRecord(Base):
             self.progress_message = progress_message
         if result_summary is not None:
             self.result_summary = result_summary
+
+
+class TaskArtifact(Base):
+    """Single test file (manual / API / UI) generated for a task.
+
+    Мы явно храним текст, а не файлы: filename, описание и содержимое.
+    """
+
+    __tablename__ = "task_artifacts"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    task_id = Column(String, ForeignKey("tasks.task_id", ondelete="CASCADE"), nullable=False, index=True)
+    filename = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    content = Column(Text, nullable=False)
+
+    task = relationship("TaskRecord", back_populates="artifacts")
 
 

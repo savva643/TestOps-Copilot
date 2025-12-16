@@ -9,7 +9,7 @@ import structlog
 from app.core.security import verify_api_key
 from app.tasks.celery_app import celery_app
 from app.db import get_db
-from app.models import TaskRecord
+from app.models import TaskRecord, TaskArtifact
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -135,7 +135,7 @@ def _upsert_task_record(
     result_summary = None
     result = response.get("result")
     if isinstance(result, dict):
-        # Store a compact summary, not full content
+        # Store a compact summary, без тяжёлого содержимого тестов
         fields = {k: v for k, v in result.items() if k != "test_case"}
         if fields:
             result_summary = str(fields)
@@ -157,6 +157,49 @@ def _upsert_task_record(
             result_summary=result_summary,
         )
         db.add(record)
+
+    # Если в результате есть тесты, сохраняем их как артефакты в БД,
+    # чтобы они были доступны с любого устройства, независимо от Celery.
+    if isinstance(result, dict) and "test_case" in result:
+        test_case = result["test_case"]
+        artifacts: list[TaskArtifact] = []
+
+        # Новая структура: {"files": [{filename, code, description}]}
+        if isinstance(test_case, dict) and isinstance(test_case.get("files"), list):
+            for file in test_case["files"]:
+                filename = str(file.get("filename") or "test.py")
+                code = str(file.get("code") or "")
+                description = file.get("description")
+                if not code:
+                    continue
+                artifacts.append(
+                    TaskArtifact(
+                        task_id=response["task_id"],
+                        filename=filename,
+                        description=description,
+                        content=code,
+                    )
+                )
+        # Старая структура: test_case как строка
+        elif isinstance(test_case, str):
+            is_manual = str(result.get("test_type", "")).lower() == "manual"
+            filename = "manual_test_case.md" if is_manual else "test.py"
+            if test_case.strip():
+                artifacts.append(
+                    TaskArtifact(
+                        task_id=response["task_id"],
+                        filename=filename,
+                        description=None,
+                        content=test_case,
+                    )
+                )
+
+        if artifacts:
+            # Удаляем старые артефакты для этой задачи и сохраняем новые снимком
+            db.query(TaskArtifact).filter(TaskArtifact.task_id == response["task_id"]).delete()
+            for artifact in artifacts:
+                db.add(artifact)
+
     db.commit()
 
 
@@ -236,7 +279,7 @@ async def get_task_status(
                 "progress": None,
             }
 
-        # Persist status snapshot for history
+        # Persist status snapshot and artifacts for history
         try:
             _upsert_task_record(db, response)
         except Exception as db_err:
@@ -290,6 +333,60 @@ async def list_tasks(
         total=total,
         page=page,
         page_size=page_size,
+    )
+
+
+class TaskFile(BaseModel):
+    """Single test file attached to a task."""
+
+    filename: str
+    description: Optional[str] = None
+    content: str
+
+
+class TaskArtifactsResponse(BaseModel):
+    """Full set of test files for a task, loaded from DB."""
+
+    task_id: str
+    test_type: Optional[str] = None
+    priority: Optional[str] = None
+    feature: Optional[str] = None
+    files: List[TaskFile]
+
+
+@router.get("/{task_id}/artifacts", response_model=TaskArtifactsResponse)
+async def get_task_artifacts(
+    task_id: str,
+    api_key: str = Depends(verify_api_key),
+    db: Session = Depends(get_db),
+):
+    """Return all stored test files for a task from Postgres.
+
+    Это позволяет открывать задачу и видеть тесты с любого устройства,
+    даже если Celery-результат уже недоступен.
+    """
+    record = db.get(TaskRecord, task_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    artifacts = (
+        db.query(TaskArtifact)
+        .filter(TaskArtifact.task_id == task_id)
+        .order_by(TaskArtifact.id)
+        .all()
+    )
+
+    files: List[TaskFile] = [
+        TaskFile(filename=a.filename, description=a.description, content=a.content)
+        for a in artifacts
+    ]
+
+    return TaskArtifactsResponse(
+        task_id=task_id,
+        test_type=record.test_type,
+        priority=record.priority,
+        feature=record.feature,
+        files=files,
     )
 
 

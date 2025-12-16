@@ -6,7 +6,7 @@ import { Card } from '@snack-uikit/card'
 import { Status } from '@snack-uikit/status'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { getTaskStatus, getTasksWebSocketUrl } from '../api/tasks'
+import { getTaskStatus, getTasksWebSocketUrl, getTaskArtifacts, type TaskFileArtifact } from '../api/tasks'
 import { generateTestCase } from '../api/testGeneration'
 import './TasksPage.css'
 
@@ -34,6 +34,7 @@ export function TaskDetailsPage() {
   const { taskId = '' } = useParams()
   const navigate = useNavigate()
   const [taskStatus, setTaskStatus] = useState<TaskStatus | null>(null)
+  const [artifacts, setArtifacts] = useState<TestFile[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [connecting, setConnecting] = useState(false)
   const [progressVisible, setProgressVisible] = useState(true)
@@ -266,6 +267,29 @@ export function TaskDetailsPage() {
     }
     
     loadInitialStatus()
+
+    // Отдельно грузим артефакты из БД, чтобы тесты были доступны даже без Celery
+    const loadArtifacts = async () => {
+      if (!taskId) return
+      try {
+        const data = await getTaskArtifacts(taskId)
+        if (data.files && data.files.length > 0) {
+          const files: TestFile[] = data.files.map((file: TaskFileArtifact) => ({
+            filename: file.filename,
+            code: file.content,
+            description: file.description ?? null,
+          }))
+          setArtifacts(files)
+        } else {
+          setArtifacts(null)
+        }
+      } catch (err) {
+        // Тихо игнорируем отсутствие артефактов, чтобы не ломать старый поток
+        setArtifacts(null)
+      }
+    }
+
+    loadArtifacts()
     
     return () => {
       wsRef.current?.close()
@@ -295,6 +319,11 @@ export function TaskDetailsPage() {
 
   // Получаем структуру файлов из результата
   const getTestFiles = (): TestFile[] => {
+    // Сначала пробуем взять артефакты из БД
+    if (artifacts && artifacts.length > 0) {
+      return artifacts
+    }
+
     if (!taskStatus?.result?.test_case) return []
     
     const testCase = taskStatus.result.test_case

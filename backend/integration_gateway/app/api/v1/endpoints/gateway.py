@@ -530,6 +530,71 @@ async def gitlab_validate_token_proxy(request: Request):
         )
 
 
+@router.get("/gitlab/project/{project_path:path}/tree")
+async def gitlab_project_tree_proxy(
+    project_path: str,
+    request: Request,
+):
+    """Proxy to gitlab-integration-service for repository tree.
+
+    Используется аналитикой для валидации репозитория и проверки структуры.
+    """
+    try:
+        # Извлекаем токен и базовый URL GitLab из заголовков, как на фронте
+        gitlab_token = request.headers.get("X-GitLab-Token")
+        gitlab_url = request.headers.get("X-GitLab-URL")
+
+        if not gitlab_token:
+          raise HTTPException(status_code=401, detail="GitLab token required")
+
+        params = dict(request.query_params)
+
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{settings.GITLAB_INTEGRATION_URL}/api/v1/gitlab/project/{project_path}/tree",
+                params={
+                    **params,
+                    "private_token": gitlab_token,
+                    "gitlab_base_url": gitlab_url or settings.GITLAB_URL,
+                },
+                timeout=30.0,
+            )
+
+            return Response(
+                content=response.content,
+                status_code=response.status_code,
+                headers=dict(response.headers),
+            )
+    except httpx.TimeoutException as e:
+        logger.error("Timeout proxying gitlab project tree request", error=str(e))
+        raise ServiceUnavailableError(
+            "Backend service timeout",
+            details={"service": "gitlab-integration-service", "error": str(e)},
+        )
+    except httpx.ConnectError as e:
+        logger.error("Connection error proxying gitlab project tree request", error=str(e))
+        raise ServiceUnavailableError(
+            "Backend service unavailable",
+            details={"service": "gitlab-integration-service", "error": str(e)},
+        )
+    except httpx.HTTPStatusError as e:
+        logger.error(
+            "HTTP error proxying gitlab project tree request",
+            status_code=e.response.status_code,
+            error=str(e),
+        )
+        raise ProxyError(
+            f"Backend service returned error: {e.response.status_code}",
+            details={"service": "gitlab-integration-service", "status_code": e.response.status_code},
+        )
+    except Exception as e:
+        logger.error("Unexpected error proxying gitlab project tree request", error=str(e), exc_info=True)
+        raise ProxyError(
+            "Failed to proxy request",
+            details={"service": "gitlab-integration-service", "error": str(e)},
+        )
+
+
 @router.post("/gitlab/task")
 async def gitlab_task_proxy(request: Request):
     """Proxy to core-agent-service for saving GitLab tasks."""

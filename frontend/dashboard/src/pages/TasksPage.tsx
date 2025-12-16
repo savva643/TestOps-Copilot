@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { getTaskStatus, getTasks, TaskListItem } from '../api/tasks'
+import { getTaskStatus, getTasks, getTaskArtifacts, type TaskFileArtifact, TaskListItem } from '../api/tasks'
 import { Card } from '@snack-uikit/card'
 import { ButtonFilled } from '@snack-uikit/button'
 import { Status } from '@snack-uikit/status'
 import { Alert } from '@snack-uikit/alert'
 import { getStoredCredentials } from '../api/auth'
+import { generateTestCase } from '../api/testGeneration'
 import './TasksPage.css'
 
 interface TestFile {
@@ -38,6 +39,7 @@ export function TasksPage() {
   const [tasksPage, setTasksPage] = useState(1)
   const [totalTasks, setTotalTasks] = useState(0)
   const [listLoading, setListLoading] = useState(false)
+  const [recreating, setRecreating] = useState(false)
   const credentials = useMemo(() => getStoredCredentials(), [])
   const ownerId = credentials?.keyId
   const pageSize = 10
@@ -53,6 +55,41 @@ export function TasksPage() {
   useEffect(() => {
     fetchTasks()
   }, [tasksPage, ownerId])
+
+  // Если уже есть выбранная задача, пробуем подгрузить её артефакты из БД,
+  // чтобы в блоке статуса (ниже) всегда были тесты, даже без Celery.
+  useEffect(() => {
+    const loadArtifacts = async () => {
+      if (!taskId) return
+      try {
+        const data = await getTaskArtifacts(taskId)
+        if (data.files && data.files.length > 0) {
+          const files: TestFile[] = data.files.map((file: TaskFileArtifact) => ({
+            filename: file.filename,
+            code: file.content,
+            description: file.description ?? null,
+          }))
+          setTaskStatus((prev) => {
+            if (!prev) {
+              return prev
+            }
+            // Встраиваем test_case в result, чтобы остальной код работал как раньше
+            return {
+              ...prev,
+              result: {
+                ...(prev.result || {}),
+                test_case: { files },
+              },
+            }
+          })
+        }
+      } catch {
+        // Игнорируем ошибки, чтобы не ломать поведение страницы задач
+      }
+    }
+
+    loadArtifacts()
+  }, [taskId])
 
   const handleCheck = async (idToCheck?: string) => {
     const id = idToCheck ?? taskId
@@ -132,6 +169,12 @@ export function TasksPage() {
 
     return () => clearInterval(interval)
   }, [polling, taskId])
+
+  const isTerminalStatus = (status?: string | null): boolean => {
+    if (!status) return false
+    const s = status.toUpperCase()
+    return s === 'SUCCESS' || s === 'COMPLETED' || s === 'FAILURE' || s === 'FAILED'
+  }
 
   const getStatusAppearance = (status: string): 'green' | 'red' | 'yellow' | 'neutral' => {
     const statusUpper = status.toUpperCase()
@@ -313,6 +356,42 @@ export function TasksPage() {
     URL.revokeObjectURL(url)
   }
 
+  const handleRecreateTask = async () => {
+    if (!taskStatus?.result) return
+
+    setRecreating(true)
+    setError(null)
+
+    try {
+      let description = ''
+      if (taskStatus.result.prompt) {
+        description = taskStatus.result.prompt
+      } else {
+        description = `Пересоздание задачи ${taskStatus.task_id}`
+        if (taskStatus.result.feature) {
+          description += `\nФича: ${taskStatus.result.feature}`
+        }
+      }
+
+      const response = await generateTestCase({
+        description,
+        test_type: taskStatus.result.test_type || 'manual',
+        feature: taskStatus.result.feature || undefined,
+        story: taskStatus.result.story || undefined,
+        priority: taskStatus.result.priority || 'NORMAL',
+        owner: taskStatus.result.owner || undefined,
+        jira_link: taskStatus.result.jira_link || undefined,
+      })
+
+      navigate(`/tasks/${response.task_id}`)
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.detail || err.message || 'Не удалось пересоздать задачу'
+      setError(errorMsg)
+    } finally {
+      setRecreating(false)
+    }
+  }
+
   const handleHistoryClick = (historyTaskId: string) => {
     setTaskId(historyTaskId)
     handleCheck(historyTaskId)
@@ -463,7 +542,7 @@ export function TasksPage() {
                 </div>
               )}
 
-              {(taskStatus.status === 'SUCCESS' || taskStatus.status === 'completed') && taskStatus.result && (
+              {isTerminalStatus(taskStatus.status) && taskStatus.result && (
                 <>
                   <div className="result-section">
                     <h4>Сгенерированный тест-кейс</h4>
@@ -529,6 +608,16 @@ export function TasksPage() {
                         </div>
                       )
                     })()}
+                  </div>
+                  <div className="history-actions" style={{ marginTop: '1rem' }}>
+                    <ButtonFilled
+                      label={recreating ? 'Пересоздание...' : 'Пересоздать задачу'}
+                      appearance="primary"
+                      onClick={handleRecreateTask}
+                      disabled={recreating}
+                      loading={recreating}
+                      size="s"
+                    />
                   </div>
                 </>
               )}

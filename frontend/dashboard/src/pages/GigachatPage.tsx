@@ -8,6 +8,7 @@ import {
   generateSessionId,
   getChatMemory,
   compressChat,
+  clearChatSession,
   type ChatMessage,
 } from '../api/gigachat'
 import { getStoredCredentials } from '../api/auth'
@@ -59,7 +60,7 @@ export function GigachatPage() {
   const [, setContextTokens] = useState(0)
   const [contextPercentage, setContextPercentage] = useState(0)
   const [contextFull, setContextFull] = useState(false)
-  const [sessionId] = useState(() => generateSessionId())
+  const [sessionId, setSessionId] = useState(() => generateSessionId())
   const [showMemoryModal, setShowMemoryModal] = useState(false)
   const [memoryContent, setMemoryContent] = useState<string | null>(null)
   const [loadingMemory, setLoadingMemory] = useState(false)
@@ -197,7 +198,7 @@ export function GigachatPage() {
     }, 100)
   }
 
-  const handleClearChat = () => {
+  const handleClearChat = async () => {
     setMessages([])
     setShowMenu(false)
     setError(null)
@@ -205,6 +206,18 @@ export function GigachatPage() {
     setContextPercentage(0)
     setContextFull(false)
     setMemoryContent(null)
+
+    // Пытаемся очистить историю на бэкенде, но не блокируем UI при ошибке
+    try {
+      if (sessionId) {
+        await clearChatSession(sessionId)
+      }
+    } catch (err) {
+      console.warn('Failed to clear chat session on backend', err)
+    } finally {
+      // Начинаем новую сессию, чтобы дальнейшие сообщения шли в чистый контекст
+      setSessionId(generateSessionId())
+    }
   }
 
   const handleShowMemory = async () => {

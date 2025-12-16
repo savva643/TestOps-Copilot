@@ -138,3 +138,14 @@ export async function getChatMemory(sessionId: string): Promise<{
 export function generateSessionId(): string {
   return `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
+
+/**
+ * Clear chat session on backend (delete history from DB)
+ */
+export async function clearChatSession(sessionId: string): Promise<{
+  session_id: string
+  status: string
+}> {
+  const response = await apiClient.delete(`/api/v1/gigachat/chat/${sessionId}`)
+  return response.data
+}

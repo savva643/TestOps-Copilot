@@ -3,7 +3,7 @@ import { Card } from '@snack-uikit/card'
 import { Divider } from '@snack-uikit/divider'
 import { ButtonFilled, ButtonOutline } from '@snack-uikit/button'
 import { Alert } from '@snack-uikit/alert'
-import { storeGitLabToken, getGitLabProjects, GitLabProject } from '../api/gitlab'
+import { getGitLabProjects, GitLabProject } from '../api/gitlab'
 import {
   analyzeCoverage,
   findDuplicates,
@@ -12,6 +12,7 @@ import {
   DuplicateAnalysisResponse,
   OptimizationRecommendationsResponse,
 } from '../api/optimizer'
+import { getStoredGitLabCredentials, storeGitLabCredentials } from '../api/auth'
 import './OptimizePage.css'
 
 type AnalysisStep = 'gitlab-setup' | 'project-select' | 'analyzing' | 'results'
@@ -30,17 +31,16 @@ export function OptimizePage() {
   const [duplicatesResult, setDuplicatesResult] = useState<DuplicateAnalysisResponse | null>(null)
   const [recommendations, setRecommendations] = useState<OptimizationRecommendationsResponse | null>(null)
 
-  // Загружаем сохраненный токен при монтировании
+  // Загружаем сохраненный токен/URL из общих GitLab-кредов (как в генерации)
   useEffect(() => {
-    const savedToken = localStorage.getItem('gitlab_token')
-    const savedUrl = localStorage.getItem('gitlab_url')
-    if (savedToken) {
-      setGitlabToken(savedToken)
-      if (savedUrl) {
-        setGitlabUrl(savedUrl)
+    const creds = getStoredGitLabCredentials()
+    if (creds?.token) {
+      setGitlabToken(creds.token)
+      if (creds.url) {
+        setGitlabUrl(creds.url)
       }
       setStep('project-select')
-      loadProjects(savedToken, savedUrl || 'https://gitlab.com')
+      loadProjects(creds.token, creds.url || 'https://gitlab.com')
     }
   }, [])
 
@@ -68,9 +68,13 @@ export function OptimizePage() {
     setError(null)
 
     try {
+      // Валидируем токен через gateway (так же, как в генерации через storeGitLabToken)
+      const { storeGitLabToken } = await import('../api/gitlab')
       await storeGitLabToken(gitlabToken, gitlabUrl)
-      localStorage.setItem('gitlab_token', gitlabToken)
-      localStorage.setItem('gitlab_url', gitlabUrl)
+
+      // Сохраняем креды в общих GitLab-кредах, чтобы генерация и аналитика использовали один и тот же токен
+      storeGitLabCredentials(gitlabToken, gitlabUrl)
+
       await loadProjects(gitlabToken, gitlabUrl)
       setStep('project-select')
     } catch (err: any) {

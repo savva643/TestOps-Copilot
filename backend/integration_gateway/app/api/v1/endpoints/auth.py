@@ -100,10 +100,16 @@ async def get_gitlab_projects(
     try:
         base_url = gitlab_url or settings.GITLAB_URL
         async with httpx.AsyncClient(timeout=15.0) as client:
+            # Ограничиваемся проектами, где пользователь является участником,
+            # чтобы не показывать все публичные репозитории.
             resp = await client.get(
                 f"{base_url}/projects",
                 headers={"Authorization": f"Bearer {gitlab_token}"},
-                params={"per_page": 100, "simple": True},
+                params={
+                    "per_page": 100,
+                    "simple": True,
+                    "membership": True,
+                },
             )
             resp.raise_for_status()
             projects = resp.json()

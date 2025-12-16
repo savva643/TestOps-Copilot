@@ -295,3 +295,24 @@ async def get_chat_memory(
         "total_tokens": session.total_tokens,
     }
 
+
+@router.delete("/chat/{session_id}")
+async def clear_chat_session(
+    session_id: str,
+    api_key: str = Depends(verify_api_key),
+    db: Session = Depends(get_db),
+):
+    """Delete a chat session and all its messages from the database.
+
+    Используется фронтендом при нажатии «Очистить чат», чтобы реально
+    удалить историю, а не только очистить локальное состояние.
+    """
+    session = db.query(ChatSession).filter(ChatSession.session_id == session_id).first()
+
+    if not session:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+
+    db.delete(session)
+    db.commit()
+
+    return {"session_id": session_id, "status": "cleared"}

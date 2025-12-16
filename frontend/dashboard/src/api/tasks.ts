@@ -72,3 +72,22 @@ export async function getTasks(params: { page?: number; page_size?: number; sear
   return response.data
 }
 
+export interface TaskFileArtifact {
+  filename: string
+  description?: string | null
+  content: string
+}
+
+export interface TaskArtifactsResponse {
+  task_id: string
+  test_type?: string
+  priority?: string
+  feature?: string
+  files: TaskFileArtifact[]
+}
+
+export async function getTaskArtifacts(taskId: string): Promise<TaskArtifactsResponse> {
+  const response = await apiClient.get<TaskArtifactsResponse>(`/api/v1/tasks/${taskId}/artifacts`)
+  return response.data
+}
+
