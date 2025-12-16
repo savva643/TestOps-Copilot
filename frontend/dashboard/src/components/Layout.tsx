@@ -13,6 +13,7 @@ import {
   MdAnalytics,
   MdPerson
 } from 'react-icons/md'
+import { GigachatPage } from '../pages/GigachatPage'
 import './Layout.css'
 
 export enum Theme {
@@ -42,6 +43,62 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const location = useLocation()
   const navigate = useNavigate()
+
+  const [isGigachatOpen, setIsGigachatOpen] = useState(false)
+  const [gigachatWidth, setGigachatWidth] = useState(420)
+  const [isResizing, setIsResizing] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(
+    typeof window !== 'undefined' ? window.innerWidth >= 1024 : false
+  )
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (typeof window === 'undefined') return
+      setIsDesktop(window.innerWidth >= 1024)
+      // При переходе на мобильный закрываем панель, чтобы не мешалась
+      if (window.innerWidth < 1024) {
+        setIsGigachatOpen(false)
+      }
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const handleGigachatToggle = () => {
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+      // На мобильных переходим на отдельную страницу
+      navigate('/gigachat')
+    } else {
+      // На десктопе открываем/закрываем выдвижную панель
+      setIsGigachatOpen((prev) => !prev)
+    }
+  }
+
+  const handleResizeStart = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsResizing(true)
+  }
+
+  useEffect(() => {
+    if (!isResizing) return
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const newWidth = Math.min(Math.max(event.clientX, 320), 800)
+      setGigachatWidth(newWidth)
+    }
+
+    const handleMouseUp = () => {
+      setIsResizing(false)
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isResizing])
   
   // Загружаем сохраненную тему из localStorage
   const getStoredTheme = (): Theme => {
@@ -121,7 +178,7 @@ export function Layout({ children }: LayoutProps) {
             {!isLoginPage && (
               <button
                 className="gigachat-button"
-                onClick={() => navigate('/gigachat')}
+                onClick={handleGigachatToggle}
                 aria-label="Гигачат"
                 title="Гигачат"
               >
@@ -159,6 +216,22 @@ export function Layout({ children }: LayoutProps) {
         </header>
 
         <main className="main-content">{children}</main>
+
+        {/* Выдвижная панель GigaChat для десктопа */}
+        {isDesktop && (
+          <div
+            className={`gigachat-panel ${isGigachatOpen ? 'gigachat-panel-open' : ''}`}
+            style={{ width: isGigachatOpen ? gigachatWidth : 0 }}
+          >
+            <div
+              className="gigachat-panel-resize-handle"
+              onMouseDown={handleResizeStart}
+            />
+            <div className="gigachat-panel-content">
+              {isGigachatOpen && <GigachatPage />}
+            </div>
+          </div>
+        )}
 
         {/* Нижнее меню для мобильных устройств */}
         {!isLoginPage && (
