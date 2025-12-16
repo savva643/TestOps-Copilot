@@ -512,7 +512,7 @@
     top: 56px !important; /* Высота header */
     left: 0 !important;
     right: 0 !important;
-    bottom: 60px !important; /* Высота bottom-nav - высота вычисляется автоматически */
+    bottom: 77.5px !important; /* Реальная высота bottom-nav - высота вычисляется автоматически */
     height: auto !important; /* Высота вычисляется из top и bottom */
     max-height: none !important;
     min-height: 0 !important;
