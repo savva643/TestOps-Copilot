@@ -11,6 +11,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  max-height: 100%;
   width: 100%;
   max-width: 100%;
   margin: 0;
@@ -20,6 +21,7 @@
   overflow: hidden;
   border: none;
   flex: 1;
+  box-sizing: border-box;
 }
 
 /* Хедер чата */
@@ -499,22 +501,26 @@
     right: 0;
     bottom: 60px; /* Высота bottom-nav */
     height: calc(100vh - 56px - 60px);
+    max-height: calc(100vh - 56px - 60px);
     width: 100vw;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     margin: 0;
+    box-sizing: border-box;
   }
 
   .gigachat-chat-container {
     border-radius: 0;
     height: 100%;
+    max-height: 100%;
     width: 100%;
-    flex: 1;
+    flex: 1 1 auto;
     min-height: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    box-sizing: border-box;
   }
 
   .gigachat-header {
@@ -531,9 +537,12 @@
 
   .gigachat-messages-container {
     padding: 16px;
-    flex: 1;
+    flex: 1 1 auto;
     overflow-y: auto;
+    overflow-x: hidden;
     min-height: 0;
+    max-height: 100%;
+    box-sizing: border-box;
   }
 
   .gigachat-message-content {
