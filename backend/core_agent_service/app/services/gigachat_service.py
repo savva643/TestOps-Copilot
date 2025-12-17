@@ -161,28 +161,161 @@ def truncate_messages_to_fit(
 class GigaChatService:
     """Service for interacting with GigaChat API."""
 
-    def __init__(self, api_key: str | None = None, max_retries: int = 3, retry_delay: float = 1.0):
+    def __init__(self, api_key: str | None = None, access_token: str | None = None, max_retries: int = 3, retry_delay: float = 1.0):
         """
         Initialize GigaChat service.
 
         Args:
-            api_key: API key for GigaChat (if None, uses settings)
+            api_key: API key for GigaChat (for foundation-models API)
+            access_token: IAM access token (for official GigaChat API)
             max_retries: Maximum number of retry attempts
             retry_delay: Initial delay between retries in seconds
         """
         self.api_key = api_key or settings.CLOUD_RU_LLM_API_KEY
+        self.access_token = access_token
         self.api_url = settings.CLOUD_RU_LLM_API_URL
-        self.model = "GigaChat/GigaChat3-10B-A1.8B"
+        self.gigachat_api_url = "https://gigachat.api.cloud.ru/api/gigachat/v1"
+        self.project_id = "df406ab5-2b58-4027-a312-eb3c8c89e39d"
+        # Список моделей для попыток (в порядке приоритета)
+        self.models = [
+            "ai-sage/GigaChat3-10B-A1.8B",  # Через foundation-models API
+            "GigaChat/GigaChat-2-Max",       # Через foundation-models API
+            settings.CLOUD_RU_LLM_MODEL,    # Fallback: openai/gpt-oss-120b
+        ]
+        self.current_model_index = 0
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.rate_limiter = RateLimiter(max_requests=10, time_window=60)
-        self.client = httpx.AsyncClient(
-            timeout=120.0,
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
-            },
-        )
+        self.client = httpx.AsyncClient(timeout=120.0)
+
+    async def _try_official_gigachat_api(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float,
+        max_tokens: int,
+    ) -> Dict[str, Any] | None:
+        """Попытка использовать официальный API GigaChat."""
+        if not self.access_token:
+            return None
+        
+        try:
+            # Преобразуем сообщения в формат официального API
+            api_messages = []
+            for msg in messages:
+                api_messages.append({
+                    "role": msg["role"],
+                    "content": msg["content"]
+                })
+            
+            payload = {
+                "messages": api_messages,
+                "model": "GigaChat",
+                "options": {
+                    "temperature": temperature,
+                    "top_p": 0.95,
+                    "max_tokens": max_tokens,
+                    "repetition_penalty": 1.07,
+                    "max_alternatives": 1
+                },
+                "project_id": self.project_id
+            }
+            
+            # Для официального API GigaChat нужен токен без "Bearer "
+            auth_token = self.access_token
+            if auth_token.startswith("Bearer "):
+                auth_token = auth_token.replace("Bearer ", "")
+            
+            response = await self.client.post(
+                f"{self.gigachat_api_url}/chat/completions",
+                json=payload,
+                headers={
+                    "Authorization": auth_token,
+                    "Content-Type": "application/json",
+                },
+            )
+            response.raise_for_status()
+            result = response.json()
+            
+            # Обрабатываем ответ официального API
+            alternatives = result.get("alternatives", [])
+            if not alternatives:
+                return None
+            
+            message = alternatives[0].get("message", {})
+            content = message.get("content", "")
+            if not content:
+                return None
+            
+            usage = result.get("usage", {})
+            model_info = result.get("model_info", {})
+            
+            return {
+                "content": content,
+                "model": model_info.get("name", "GigaChat"),
+                "usage": {
+                    "prompt_tokens": usage.get("prompt_tokens", 0),
+                    "completion_tokens": usage.get("completion_tokens", 0),
+                    "total_tokens": usage.get("total_tokens", 0),
+                },
+                "context_tokens": usage.get("prompt_tokens", 0),
+                "context_full": False,
+            }
+        except Exception as e:
+            logger.warning("Official GigaChat API failed", error=str(e))
+            return None
+
+    async def _try_foundation_models_api(
+        self,
+        model: str,
+        messages: List[Dict[str, str]],
+        temperature: float,
+        max_tokens: int,
+        context_tokens: int,
+        context_full: bool,
+    ) -> Dict[str, Any] | None:
+        """Попытка использовать foundation-models API."""
+        try:
+            payload = {
+                "model": model,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "presence_penalty": 0,
+                "top_p": 0.95,
+            }
+            
+            response = await self.client.post(
+                f"{self.api_url}/chat/completions",
+                json=payload,
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+            )
+            response.raise_for_status()
+            result = response.json()
+            
+            choices = result.get("choices")
+            if not choices:
+                return None
+            
+            message = choices[0].get("message", {})
+            content = message.get("content", "")
+            if not content:
+                return None
+            
+            usage = result.get("usage", {})
+            
+            return {
+                "content": content,
+                "model": result.get("model", model),
+                "usage": usage,
+                "context_tokens": context_tokens,
+                "context_full": context_full,
+            }
+        except Exception as e:
+            logger.warning(f"Foundation-models API failed for model {model}", error=str(e))
+            return None
 
     async def chat(
         self,
@@ -192,6 +325,7 @@ class GigaChatService:
     ) -> Dict[str, Any]:
         """
         Send chat message to GigaChat with context management.
+        Пробует разные API и модели в порядке приоритета.
 
         Args:
             messages: List of messages with 'role' and 'content'
@@ -202,7 +336,7 @@ class GigaChatService:
             Dict with 'content', 'model', 'usage', 'context_tokens', 'context_full'
 
         Raises:
-            LLMError: If request fails
+            LLMError: If all attempts fail
         """
         await self.rate_limiter.acquire()
 
@@ -212,131 +346,31 @@ class GigaChatService:
         )
         context_full = context_tokens >= MAX_REQUEST_TOKENS * 0.9  # 90% заполнен
 
-        last_exception = None
-        delay = self.retry_delay
-
-        for attempt in range(1, self.max_retries + 1):
-            try:
-                payload = {
-                    "model": self.model,
-                    "messages": truncated_messages,
-                    "temperature": temperature,
-                    "max_tokens": max_tokens,
-                    "presence_penalty": 0,
-                    "top_p": 0.95,
-                }
-
-                logger.info(
-                    "Sending request to GigaChat API",
-                    model=self.model,
-                    attempt=attempt,
-                    context_tokens=context_tokens,
-                    context_full=context_full,
-                )
-
-                response = await self.client.post(
-                    f"{self.api_url}/chat/completions",
-                    json=payload,
-                )
-                response.raise_for_status()
-
-                result = response.json()
-
-                choices = result.get("choices")
-                if not choices:
-                    raise ValueError("Invalid API response: missing choices")
-
-                message = choices[0].get("message", {})
-                content = message.get("content", "")
-
-                if not content:
-                    raise ValueError("Empty response from GigaChat API")
-
-                usage = result.get("usage", {})
-
-                logger.info(
-                    "GigaChat response received",
-                    length=len(content),
-                    prompt_tokens=usage.get("prompt_tokens"),
-                    completion_tokens=usage.get("completion_tokens"),
-                )
-
-                return {
-                    "content": content,
-                    "model": result.get("model", self.model),
-                    "usage": usage,
-                    "context_tokens": context_tokens,
-                    "context_full": context_full,
-                }
-
-            except httpx.HTTPStatusError as e:
-                last_exception = e
-                status_code = e.response.status_code
-
-                if 400 <= status_code < 500 and status_code != 429:
-                    logger.error(
-                        "Client error from GigaChat API",
-                        status_code=status_code,
-                        error=str(e),
-                    )
-                    raise LLMError(
-                        f"GigaChat API error: {status_code}",
-                        details={"status_code": status_code, "error": str(e)},
-                    )
-
-                if attempt < self.max_retries:
-                    logger.warning(
-                        "Retrying GigaChat API request",
-                        attempt=attempt,
-                        status_code=status_code,
-                        delay=delay,
-                    )
-                    await asyncio.sleep(delay)
-                    delay *= 2
-                else:
-                    logger.error(
-                        "Max retries reached for GigaChat API",
-                        status_code=status_code,
-                        error=str(e),
-                    )
-
-            except httpx.RequestError as e:
-                last_exception = e
-                if attempt < self.max_retries:
-                    logger.warning(
-                        "Network error, retrying GigaChat API request",
-                        attempt=attempt,
-                        delay=delay,
-                        error=str(e),
-                    )
-                    await asyncio.sleep(delay)
-                    delay *= 2
-                else:
-                    logger.error(
-                        "Max retries reached due to network error",
-                        error=str(e),
-                    )
-
-            except Exception as e:
-                last_exception = e
-                if attempt < self.max_retries:
-                    logger.warning(
-                        "Unexpected error, retrying",
-                        attempt=attempt,
-                        delay=delay,
-                        error=str(e),
-                    )
-                    await asyncio.sleep(delay)
-                    delay *= 2
-                else:
-                    logger.error("Max retries reached", error=str(e))
-
-        if last_exception:
-            raise LLMError(
-                "Failed to get response from GigaChat after all retry attempts",
-                details={"error": str(last_exception), "max_retries": self.max_retries},
+        # 1. Пробуем официальный API GigaChat
+        if self.access_token:
+            logger.info("Trying official GigaChat API")
+            result = await self._try_official_gigachat_api(
+                truncated_messages, temperature, max_tokens
             )
-        raise LLMError("Failed to get response from GigaChat after all retry attempts")
+            if result:
+                logger.info("Official GigaChat API succeeded", model=result.get("model"))
+                return result
+
+        # 2. Пробуем модели через foundation-models API
+        for model in self.models:
+            logger.info("Trying foundation-models API", model=model)
+            result = await self._try_foundation_models_api(
+                model, truncated_messages, temperature, max_tokens, context_tokens, context_full
+            )
+            if result:
+                logger.info("Foundation-models API succeeded", model=model)
+                return result
+
+        # Все попытки провалились
+        raise LLMError(
+            "Failed to get response from GigaChat. All API endpoints and models failed.",
+            details={"models_tried": self.models, "has_access_token": bool(self.access_token)}
+        )
 
     async def close(self):
         """Close the HTTP client."""

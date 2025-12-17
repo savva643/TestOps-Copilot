@@ -91,8 +91,14 @@ async def chat(
                 detail="X-LLM-API-Key header is required. Please provide GigaChat API key.",
             )
 
-        # Создаем сервис с пользовательским API ключом
-        service = GigaChatService(api_key=llm_api_key)
+        # Получаем access_token из Authorization заголовка (для официального API GigaChat)
+        auth_header = http_request.headers.get("Authorization", "")
+        access_token = None
+        if auth_header.startswith("Bearer "):
+            access_token = auth_header.replace("Bearer ", "")
+
+        # Создаем сервис с пользовательским API ключом и токеном
+        service = GigaChatService(api_key=llm_api_key, access_token=access_token)
 
         # Преобразуем сообщения в формат для сервиса
         messages = [{"role": msg.role, "content": msg.content} for msg in request.messages]
@@ -179,12 +185,17 @@ async def chat(
         error_message = str(e)
         if hasattr(e, 'details') and isinstance(e.details, dict):
             api_error = e.details.get('error', '')
-            if '404' in str(api_error) or '404' in error_message:
-                error_message = "Эндпоинт GigaChat API не найден. Проверьте настройки API или попробуйте позже."
-            elif '401' in str(api_error) or '403' in str(api_error) or '401' in error_message or '403' in error_message:
-                error_message = "Ошибка авторизации GigaChat API. Проверьте правильность API ключа."
-            elif '500' in str(api_error) or '500' in error_message:
-                error_message = "Ошибка сервера GigaChat. Попробуйте позже."
+            status_code = e.details.get('status_code', 0)
+            if status_code == 404 or '404' in str(api_error) or '404' in error_message:
+                error_message = (
+                    "Модель GigaChat недоступна через foundation-models API. "
+                    "Используется модель gpt-oss-120b. "
+                    "Проверьте доступность модели GigaChat в вашем аккаунте Cloud.ru или используйте другую модель."
+                )
+            elif status_code == 401 or status_code == 403 or '401' in str(api_error) or '403' in str(api_error):
+                error_message = "Ошибка авторизации API. Проверьте правильность API ключа Cloud.ru Evolution Model."
+            elif status_code == 500 or '500' in str(api_error):
+                error_message = "Ошибка сервера Cloud.ru API. Попробуйте позже."
         raise HTTPException(status_code=500, detail=error_message)
     except HTTPException:
         # Пробрасываем HTTP исключения как есть
