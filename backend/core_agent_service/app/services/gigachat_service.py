@@ -305,12 +305,23 @@ class GigaChatService:
                 return None
             
             usage = result.get("usage", {})
+
+            # Пытаемся использовать реальные токены из usage, если они есть
+            prompt_tokens = usage.get("prompt_tokens")
+            completion_tokens = usage.get("completion_tokens")
+            total_tokens = usage.get("total_tokens")
+
+            # Некоторые модели могут возвращать только часть полей
+            if total_tokens is None and prompt_tokens is not None:
+                total_tokens = prompt_tokens + (completion_tokens or 0)
+
+            effective_context_tokens = total_tokens or prompt_tokens or context_tokens
             
             return {
                 "content": content,
                 "model": result.get("model", model),
                 "usage": usage,
-                "context_tokens": context_tokens,
+                "context_tokens": effective_context_tokens,
                 "context_full": context_full,
             }
         except Exception as e:

@@ -382,6 +382,16 @@
   padding: 0 4px;
 }
 
+.gigachat-copy-tooltip {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--accent-contrast);
+  background: var(--accent-primary);
+  padding: 2px 8px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
 /* Индикатор печати */
 .gigachat-typing-indicator {
   display: flex;

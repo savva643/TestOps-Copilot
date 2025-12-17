@@ -2,6 +2,9 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import { MdMoreVert, MdSend, MdDeleteOutline, MdInfoOutline, MdMemory } from 'react-icons/md'
 import { Alert } from '@snack-uikit/alert'
 import { ButtonFilled } from '@snack-uikit/button'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
 import {
   sendChatMessage,
   isGigaChatAvailable,
@@ -64,6 +67,10 @@ export function GigachatPage() {
   const [showMemoryModal, setShowMemoryModal] = useState(false)
   const [memoryContent, setMemoryContent] = useState<string | null>(null)
   const [loadingMemory, setLoadingMemory] = useState(false)
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
+  const [awaitingTaskConfirmation, setAwaitingTaskConfirmation] = useState(false)
+  const [lastPlanMessage, setLastPlanMessage] = useState<Message | null>(null)
+  const [lastUserPrompt, setLastUserPrompt] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -98,6 +105,37 @@ export function GigachatPage() {
   // Проверка доступности API ключа
   const apiKeyAvailable = isGigaChatAvailable()
 
+  const isYesAnswer = (text: string) => {
+    const normalized = text.trim().toLowerCase()
+    return ['да', 'yes', 'y', 'ага', 'ок', 'окей'].includes(normalized)
+  }
+
+  const detectTestType = (text: string | null): string => {
+    if (!text) return 'manual'
+    const t = text.toLowerCase()
+    if (t.includes('api') || t.includes('rest') || t.includes('эндпоинт')) return 'api'
+    if (t.includes('ui') || t.includes('интерфейс') || t.includes('страниц') || t.includes('selenium') || t.includes('playwright'))
+      return 'ui'
+    return 'manual'
+  }
+
+  const handleMessageContextMenu = (e: React.MouseEvent, message: Message) => {
+    e.preventDefault()
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard
+        .writeText(message.content)
+        .then(() => {
+          setCopiedMessageId(message.id)
+          setTimeout(() => {
+            setCopiedMessageId((prev) => (prev === message.id ? null : prev))
+          }, 1500)
+        })
+        .catch((err) => {
+          console.warn('Failed to copy message', err)
+        })
+    }
+  }
+
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return
 
@@ -113,10 +151,70 @@ export function GigachatPage() {
       return
     }
 
+    const trimmed = inputValue.trim()
+
+    // Обрабатываем подтверждение создания задачи
+    if (awaitingTaskConfirmation && isYesAnswer(trimmed) && lastPlanMessage && lastUserPrompt) {
+      const confirmMessage: Message = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: trimmed,
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, confirmMessage])
+      setInputValue('')
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const description = `Запрос пользователя:\n${lastUserPrompt}\n\nОтвет GigaChat:\n${lastPlanMessage.content}`
+        const testType = detectTestType(lastUserPrompt)
+
+        const { generateTestCase } = await import('../api/testGeneration')
+        const response = await generateTestCase({
+          description,
+          test_type: testType,
+        })
+
+        const taskId = response.task_id
+        const taskUrl = `http://testops.keep-pixel.ru/tasks/${taskId}`
+
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: `Я создал задачу генерации тестов.\n\nID задачи: ${taskId}\nСсылка: ${taskUrl}`,
+          timestamp: new Date(),
+        }
+
+        setMessages((prev) => [...prev, assistantMessage])
+      } catch (err: any) {
+        const errorMessage =
+          err.response?.data?.detail ||
+          err.message ||
+          'Не удалось создать задачу генерации тестов. Попробуйте позже.'
+        setError(errorMessage)
+
+        const errorChatMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: `❌ Ошибка создания задачи: ${errorMessage}`,
+          timestamp: new Date(),
+        }
+        setMessages((prev) => [...prev, errorChatMessage])
+      } finally {
+        setIsLoading(false)
+        setAwaitingTaskConfirmation(false)
+        setLastPlanMessage(null)
+        setLastUserPrompt(null)
+      }
+
+      return
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: inputValue.trim(),
+      content: trimmed,
       timestamp: new Date(),
     }
 
@@ -155,9 +253,8 @@ export function GigachatPage() {
       setContextPercentage(response.context_percentage)
       setContextFull(response.context_full)
 
-      // Автоматически сжимаем, если контекст переполнен
-      if (response.context_full && !memoryContent) {
-        // Сжимаем в фоне (не блокируем UI)
+      // Автоматически сжимаем контекст (не только при переполнении)
+      if (!memoryContent) {
         compressChat(sessionId).catch((err) => {
           // Игнорируем 404 (сессия еще не сохранена) и другие ошибки
           if (err.response?.status !== 404 && !err.message?.includes('404')) {
@@ -173,7 +270,22 @@ export function GigachatPage() {
         timestamp: new Date(),
       }
 
+      // Основной ответ ассистента
       setMessages((prev) => [...prev, assistantMessage])
+
+      // Предлагаем создать задачу генерации тестов по ответу
+      const followupMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        role: 'assistant',
+        content:
+          'Хотите, я создам задачу генерации тестов в TestOps по этому ответу?\n' +
+          'Если да — введите в ответ «да». Если нет — просто задайте следующий вопрос.',
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, followupMessage])
+      setAwaitingTaskConfirmation(true)
+      setLastPlanMessage(assistantMessage)
+      setLastUserPrompt(userMessage.content)
     } catch (err: any) {
       let errorMessage = 'Произошла ошибка при обращении к GigaChat. Попробуйте позже.'
       
@@ -445,7 +557,10 @@ export function GigachatPage() {
                   key={message.id}
                   className={`gigachat-message gigachat-message-${message.role}`}
                 >
-                  <div className="gigachat-message-content">
+                      <div
+                        className="gigachat-message-content"
+                        onContextMenu={(e) => handleMessageContextMenu(e, message)}
+                      >
                     {message.role === 'assistant' && (
                       <div className="gigachat-message-avatar">
                         <img
@@ -459,22 +574,25 @@ export function GigachatPage() {
                         />
                       </div>
                     )}
-                    <div className="gigachat-message-text">
-                      <div className="gigachat-message-text-content">
-                        {message.content.split('\n').map((line, i) => (
-                          <span key={i}>
-                            {line}
-                            {i < message.content.split('\n').length - 1 && <br />}
-                          </span>
-                        ))}
-                      </div>
-                      <div className="gigachat-message-time">
-                        {message.timestamp.toLocaleTimeString('ru-RU', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </div>
-                    </div>
+                        <div className="gigachat-message-text">
+                          <div className="gigachat-message-text-content">
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              rehypePlugins={[rehypeRaw]}
+                            >
+                              {message.content}
+                            </ReactMarkdown>
+                          </div>
+                          <div className="gigachat-message-time">
+                            {message.timestamp.toLocaleTimeString('ru-RU', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </div>
+                          {copiedMessageId === message.id && (
+                            <div className="gigachat-copy-tooltip">Скопировано</div>
+                          )}
+                        </div>
                   </div>
                 </div>
               ))}
