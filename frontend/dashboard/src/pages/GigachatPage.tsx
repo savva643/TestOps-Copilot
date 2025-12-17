@@ -12,7 +12,9 @@ import {
   getChatMemory,
   compressChat,
   clearChatSession,
+  getLatestChatForOwner,
   type ChatMessage,
+  type ChatHistoryMessage,
 } from '../api/gigachat'
 import { getStoredCredentials } from '../api/auth'
 import './GigachatPage.css'
@@ -84,6 +86,42 @@ export function GigachatPage() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  // При первом монтировании пробуем загрузить последнюю сессию из БД по owner_id
+  useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        const credentials = getStoredCredentials()
+        const ownerId = credentials?.keyId || undefined
+        if (!ownerId) return
+
+        const history = await getLatestChatForOwner(ownerId)
+
+        const restoredMessages: Message[] = history.messages.map((m: ChatHistoryMessage) => ({
+          id: String(m.id),
+          role: m.role,
+          content: m.content,
+          timestamp: new Date(m.timestamp),
+        }))
+
+        if (restoredMessages.length > 0) {
+          setMessages(restoredMessages)
+          setSessionId(history.session_id)
+          setContextTokens(history.total_tokens)
+          setContextPercentage(history.context_percentage)
+          setContextFull(history.context_full)
+        }
+      } catch (err: any) {
+        // Если сессий нет (404) — просто начинаем с пустого чата
+        if (err.response?.status !== 404) {
+          console.warn('Failed to load latest GigaChat history', err)
+        }
+      }
+    }
+
+    loadHistory()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Закрытие меню при клике вне его
   useEffect(() => {

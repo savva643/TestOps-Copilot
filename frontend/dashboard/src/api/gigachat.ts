@@ -19,12 +19,24 @@ export interface ChatRequest {
 export interface ChatResponse {
   content: string
   model: string
-  usage?: {
-    prompt_tokens?: number
-    completion_tokens?: number
-    total_tokens?: number
-  }
+  usage?: any
   context_tokens: number
+  context_full: boolean
+  context_percentage: number
+}
+
+export interface ChatHistoryMessage {
+  id: number
+  role: 'user' | 'assistant'
+  content: string
+  timestamp: string
+}
+
+export interface ChatHistoryResponse {
+  session_id: string
+  owner_id?: string | null
+  messages: ChatHistoryMessage[]
+  total_tokens: number
   context_full: boolean
   context_percentage: number
 }
@@ -129,6 +141,24 @@ export async function getChatMemory(sessionId: string): Promise<{
   total_tokens: number
 }> {
   const response = await apiClient.get(`/api/v1/gigachat/chat/${sessionId}/memory`)
+  return response.data
+}
+
+/**
+ * Get full message history for a specific chat session
+ */
+export async function getChatMessages(sessionId: string): Promise<ChatHistoryResponse> {
+  const response = await apiClient.get<ChatHistoryResponse>(`/api/v1/gigachat/chat/${sessionId}/messages`)
+  return response.data
+}
+
+/**
+ * Get latest chat session and history for current owner (by owner_id / keyId)
+ */
+export async function getLatestChatForOwner(ownerId?: string): Promise<ChatHistoryResponse> {
+  const response = await apiClient.get<ChatHistoryResponse>('/api/v1/gigachat/chat/latest', {
+    params: ownerId ? { owner_id: ownerId } : undefined,
+  })
   return response.data
 }
 

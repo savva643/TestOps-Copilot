@@ -49,6 +49,26 @@ class ChatResponse(BaseModel):
     context_percentage: float = Field(..., description="Context usage percentage (0-100)")
 
 
+class ChatMessageOut(BaseModel):
+    """Single chat message in history."""
+
+    id: int
+    role: str
+    content: str
+    timestamp: datetime
+
+
+class ChatHistoryResponse(BaseModel):
+    """Full chat history for a session."""
+
+    session_id: str
+    owner_id: Optional[str]
+    messages: List[ChatMessageOut]
+    total_tokens: int
+    context_full: bool
+    context_percentage: float
+
+
 @router.post("/chat", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,
@@ -331,6 +351,102 @@ async def get_chat_memory(
         "total_messages": session.total_messages,
         "total_tokens": session.total_tokens,
     }
+
+
+@router.get("/chat/{session_id}/messages", response_model=ChatHistoryResponse)
+async def get_chat_messages(
+    session_id: str,
+    api_key: str = Depends(verify_api_key),
+    db: Session = Depends(get_db),
+):
+    """Get full message history for a chat session."""
+    session = db.query(ChatSession).filter(ChatSession.session_id == session_id).first()
+
+    if not session:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+
+    messages = (
+        db.query(ChatMessageModel)
+        .filter(ChatMessageModel.session_id == session_id)
+        .order_by(ChatMessageModel.timestamp)
+        .all()
+    )
+
+    # Если сообщений нет, возвращаем пустую историю, но сессия существует
+    history_messages = [
+        ChatMessageOut(
+            id=msg.id,
+            role=msg.role,
+            content=msg.content,
+            timestamp=msg.timestamp,
+        )
+        for msg in messages
+    ]
+
+    # Используем total_tokens из сессии для расчета процента
+    total_tokens = session.total_tokens or 0
+    context_percentage = (total_tokens / MAX_CONTEXT_TOKENS) * 100 if total_tokens > 0 else 0.0
+    context_full = total_tokens >= MAX_CONTEXT_TOKENS * 0.9
+
+    return ChatHistoryResponse(
+        session_id=session.session_id,
+        owner_id=session.owner_id,
+        messages=history_messages,
+        total_tokens=total_tokens,
+        context_full=context_full,
+        context_percentage=round(context_percentage, 2),
+    )
+
+
+@router.get("/chat/latest", response_model=ChatHistoryResponse)
+async def get_latest_chat_for_owner(
+    owner_id: Optional[str] = None,
+    api_key: str = Depends(verify_api_key),
+    db: Session = Depends(get_db),
+):
+    """Get latest chat session and messages for an owner_id."""
+    query = db.query(ChatSession)
+
+    if owner_id:
+        query = query.filter(ChatSession.owner_id == owner_id)
+
+    session = (
+        query.order_by(ChatSession.updated_at.desc())
+        .first()
+    )
+
+    if not session:
+        raise HTTPException(status_code=404, detail="No chat sessions found")
+
+    messages = (
+        db.query(ChatMessageModel)
+        .filter(ChatMessageModel.session_id == session.session_id)
+        .order_by(ChatMessageModel.timestamp)
+        .all()
+    )
+
+    history_messages = [
+        ChatMessageOut(
+            id=msg.id,
+            role=msg.role,
+            content=msg.content,
+            timestamp=msg.timestamp,
+        )
+        for msg in messages
+    ]
+
+    total_tokens = session.total_tokens or 0
+    context_percentage = (total_tokens / MAX_CONTEXT_TOKENS) * 100 if total_tokens > 0 else 0.0
+    context_full = total_tokens >= MAX_CONTEXT_TOKENS * 0.9
+
+    return ChatHistoryResponse(
+        session_id=session.session_id,
+        owner_id=session.owner_id,
+        messages=history_messages,
+        total_tokens=total_tokens,
+        context_full=context_full,
+        context_percentage=round(context_percentage, 2),
+    )
 
 
 @router.delete("/chat/{session_id}")
