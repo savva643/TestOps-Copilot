@@ -159,7 +159,10 @@ export function GigachatPage() {
       if (response.context_full && !memoryContent) {
         // Сжимаем в фоне (не блокируем UI)
         compressChat(sessionId).catch((err) => {
-          console.warn('Failed to auto-compress chat:', err)
+          // Игнорируем 404 (сессия еще не сохранена) и другие ошибки
+          if (err.response?.status !== 404 && !err.message?.includes('404')) {
+            console.warn('Failed to auto-compress chat:', err)
+          }
         })
       }
 
@@ -172,8 +175,19 @@ export function GigachatPage() {
 
       setMessages((prev) => [...prev, assistantMessage])
     } catch (err: any) {
-      const errorMessage =
-        err.message || 'Произошла ошибка при обращении к GigaChat. Попробуйте позже.'
+      let errorMessage = 'Произошла ошибка при обращении к GigaChat. Попробуйте позже.'
+      
+      // Более понятные сообщения об ошибках
+      if (err.response?.status === 500) {
+        errorMessage = 'Ошибка сервера GigaChat. Пожалуйста, попробуйте еще раз через несколько секунд.'
+      } else if (err.response?.status === 404) {
+        errorMessage = 'Эндпоинт GigaChat не найден. Проверьте настройки API.'
+      } else if (err.response?.status === 401 || err.response?.status === 403) {
+        errorMessage = 'Ошибка авторизации. Проверьте правильность API ключа GigaChat.'
+      } else if (err.message) {
+        errorMessage = err.message
+      }
+      
       setError(errorMessage)
 
       // Добавляем сообщение об ошибке в чат
@@ -230,13 +244,27 @@ export function GigachatPage() {
       const memory = await getChatMemory(sessionId)
       setMemoryContent(memory.compressed_context || 'Память еще не сжата.')
     } catch (err: any) {
-      // Если памяти нет, пытаемся сжать
-      try {
-        await compressChat(sessionId)
-        const memory = await getChatMemory(sessionId)
-        setMemoryContent(memory.compressed_context || 'Память еще не сжата.')
-      } catch (compressErr: any) {
-        setMemoryContent('Ошибка при загрузке памяти: ' + (compressErr.message || 'Неизвестная ошибка'))
+      // Если сессии нет (404) или памяти нет, пытаемся сжать
+      if (err.response?.status === 404 || err.message?.includes('404')) {
+        // Сессии нет в БД - это нормально для нового чата
+        if (messages.length === 0) {
+          setMemoryContent('Память пуста. Начните диалог, чтобы создать память.')
+        } else {
+          // Есть сообщения, но сессии нет - пытаемся сжать
+          try {
+            await compressChat(sessionId)
+            const memory = await getChatMemory(sessionId)
+            setMemoryContent(memory.compressed_context || 'Память еще не сжата.')
+          } catch (compressErr: any) {
+            if (compressErr.response?.status === 404 || compressErr.message?.includes('404')) {
+              setMemoryContent('Сессия еще не сохранена в базе данных. Память будет доступна после первого сохранения.')
+            } else {
+              setMemoryContent('Ошибка при загрузке памяти: ' + (compressErr.message || 'Неизвестная ошибка'))
+            }
+          }
+        }
+      } else {
+        setMemoryContent('Ошибка при загрузке памяти: ' + (err.message || 'Неизвестная ошибка'))
       }
     } finally {
       setLoadingMemory(false)

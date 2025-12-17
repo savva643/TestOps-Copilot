@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 import structlog
 
 from app.core.security import verify_api_key
+from app.core.exceptions import LLMError
 from app.services.gigachat_service import GigaChatService, MAX_CONTEXT_TOKENS
 from app.services.chat_compressor import ChatCompressor
 from app.db import get_db
@@ -168,10 +169,33 @@ async def chat(
             context_percentage=round(context_percentage, 2),
         )
 
+    except LLMError as e:
+        # Ошибка от LLM API - передаем понятное сообщение
+        logger.error(
+            "LLM error in GigaChat chat endpoint",
+            error=str(e),
+            details=e.details if hasattr(e, 'details') else None,
+        )
+        error_message = str(e)
+        if hasattr(e, 'details') and isinstance(e.details, dict):
+            api_error = e.details.get('error', '')
+            if '404' in str(api_error) or '404' in error_message:
+                error_message = "Эндпоинт GigaChat API не найден. Проверьте настройки API или попробуйте позже."
+            elif '401' in str(api_error) or '403' in str(api_error) or '401' in error_message or '403' in error_message:
+                error_message = "Ошибка авторизации GigaChat API. Проверьте правильность API ключа."
+            elif '500' in str(api_error) or '500' in error_message:
+                error_message = "Ошибка сервера GigaChat. Попробуйте позже."
+        raise HTTPException(status_code=500, detail=error_message)
+    except HTTPException:
+        # Пробрасываем HTTP исключения как есть
+        raise
     except Exception as e:
-        logger.error("Error in GigaChat chat endpoint", error=str(e))
-        if isinstance(e, HTTPException):
-            raise
+        # Неожиданная ошибка
+        logger.error(
+            "Unexpected error in GigaChat chat endpoint",
+            error=str(e),
+            error_type=type(e).__name__,
+        )
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
