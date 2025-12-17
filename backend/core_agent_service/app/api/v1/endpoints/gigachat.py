@@ -41,7 +41,9 @@ class ChatResponse(BaseModel):
 
     content: str = Field(..., description="Assistant's response")
     model: str = Field(..., description="Model used")
-    usage: Optional[Dict[str, int]] = Field(None, description="Token usage statistics")
+    # У usage теперь может быть вложенная структура (prompt_tokens_details и т.п.),
+    # поэтому разрешаем любые значения, а не только int
+    usage: Optional[Dict[str, Any]] = Field(None, description="Token usage statistics")
     context_tokens: int = Field(..., description="Estimated tokens in context")
     context_full: bool = Field(..., description="Whether context is nearly full")
     context_percentage: float = Field(..., description="Context usage percentage (0-100)")
